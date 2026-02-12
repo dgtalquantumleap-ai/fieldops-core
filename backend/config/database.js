@@ -64,11 +64,15 @@ if (!fs.existsSync(dbPath)) {
     );
   `);
   
-  // Insert sample data
+  // Insert sample data with correct password hashes
+  const bcrypt = require('bcrypt');
+  const adminPassword = bcrypt.hashSync('admin123', 10);
+  const staffPassword = bcrypt.hashSync('password123', 10);
+  
   db.exec(`
     INSERT OR IGNORE INTO users (name, email, password, role, phone) VALUES
-    ('Admin User', 'admin@fieldops.com', '$2b$10$rOzJqQjQjQjQjQjQjQjQjOzJqQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQ', 'admin', '555-0101'),
-    ('John Staff', 'john@fieldops.com', '$2b$10$rOzJqQjQjQjQjQjQjQjQjOzJqQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQ', 'staff', '555-0102');
+    ('Admin User', 'admin@fieldops.com', '${adminPassword}', 'admin', '555-0101'),
+    ('John Staff', 'john@fieldops.com', '${staffPassword}', 'staff', '555-0102');
   `);
   
   db.close();
