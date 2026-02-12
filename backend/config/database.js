@@ -62,14 +62,20 @@ db.exec(`
   );
 `);
 
-// Insert sample data if users table is empty
+// Insert sample data if users table is empty, or update existing users
 const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
 if (userCount === 0) {
   console.log('📝 Inserting sample users...');
   db.exec(`
     INSERT INTO users (name, email, password, role, phone) VALUES
-    ('Admin User', 'admin@fieldops.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin', '555-0101'),
-    ('John Staff', 'john@fieldops.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'staff', '555-0102');
+    ('Admin User', 'admin@fieldops.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', '555-0101'),
+    ('John Staff', 'john@fieldops.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'staff', '555-0102');
+  `);
+} else {
+  console.log('📝 Updating existing user passwords...');
+  db.exec(`
+    UPDATE users SET password = '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' WHERE email = 'admin@fieldops.com';
+    UPDATE users SET password = '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' WHERE email = 'john@fieldops.com';
   `);
 }
 
