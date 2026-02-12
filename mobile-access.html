@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FieldOps Mobile Access</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            color: #333;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+        .qr-section {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .qr-card {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex: 1;
+            min-width: 250px;
+        }
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            margin: 15px auto;
+            background: white;
+            border: 3px solid #4a5568;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .url {
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        .instructions {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #4299e1;
+        }
+        h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        .icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 FieldOps Mobile Access</h1>
+        
+        <div class="qr-section">
+            <div class="qr-card">
+                <h3><span class="icon">👨‍💼</span>Admin Dashboard</h3>
+                <div class="qr-code">
+                    QR Code for Admin
+                </div>
+                <div class="url">https://fieldops-core-production.up.railway.app/admin</div>
+                <p><strong>Login:</strong> admin@fieldops.com</p>
+            </div>
+            
+            <div class="qr-card">
+                <h3><span class="icon">👷</span>Staff Portal</h3>
+                <div class="qr-code">
+                    QR Code for Staff
+                </div>
+                <div class="url">https://fieldops-core-production.up.railway.app/staff</div>
+                <p><strong>Login:</strong> john@fieldops.com</p>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📲 How to Add to Home Screen</h3>
+            
+            <div class="step">
+                <strong>iPhone/iPad:</strong>
+                <ol>
+                    <li>Open this page in Safari</li>
+                    <li>Tap the Share button (square with arrow)</li>
+                    <li>Scroll down and tap "Add to Home Screen"</li>
+                    <li>Tap "Add" to create the app icon</li>
+                </ol>
+            </div>
+            
+            <div class="step">
+                <strong>Android:</strong>
+                <ol>
+                    <li>Open this page in Chrome</li>
+                    <li>Tap the Menu button (three dots)</li>
+                    <li>Tap "Add to Home screen" or "Install app"</li>
+                    <li>Tap "Add" or "Install"</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>🌟 Benefits of Home Screen Access</h3>
+            <ul>
+                <li>✅ Works like a native app</li>
+                <li>✅ No app store download needed</li>
+                <li>✅ Always up-to-date</li>
+                <li>✅ Works offline (basic features)</li>
+                <li>✅ Full screen experience</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
