@@ -1,9 +1,80 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, '../../fieldops.db');
+// Use /app for Railway deployment, fallback to local development
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? '/app/fieldops.db' 
+  : path.join(__dirname, '../../fieldops.db');
+
+// Create database file if it doesn't exist
+if (!fs.existsSync(dbPath)) {
+  console.log('📝 Creating new database at:', dbPath);
+  const db = new Database(dbPath);
+  
+  // Create tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'staff',
+      phone TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      address TEXT,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE IF NOT EXISTS jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER,
+      staff_id INTEGER,
+      service_type TEXT NOT NULL,
+      date TEXT NOT NULL,
+      time TEXT,
+      location TEXT,
+      notes TEXT,
+      status TEXT DEFAULT 'scheduled',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (customer_id) REFERENCES customers(id),
+      FOREIGN KEY (staff_id) REFERENCES users(id)
+    );
+    
+    CREATE TABLE IF NOT EXISTS invoices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id INTEGER,
+      customer_id INTEGER,
+      invoice_number TEXT UNIQUE NOT NULL,
+      amount DECIMAL(10,2) NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      paid_date DATETIME,
+      notes TEXT,
+      FOREIGN KEY (job_id) REFERENCES jobs(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id)
+    );
+  `);
+  
+  // Insert sample data
+  db.exec(`
+    INSERT OR IGNORE INTO users (name, email, password, role, phone) VALUES
+    ('Admin User', 'admin@fieldops.com', '$2b$10$rOzJqQjQjQjQjQjQjQjQjOzJqQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQ', 'admin', '555-0101'),
+    ('John Staff', 'john@fieldops.com', '$2b$10$rOzJqQjQjQjQjQjQjQjQjOzJqQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQjQ', 'staff', '555-0102');
+  `);
+  
+  db.close();
+}
+
 const db = new Database(dbPath);
-
 db.pragma('foreign_keys = ON');
 
 console.log('✅ SQLite Database connected at:', dbPath);
