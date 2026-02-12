@@ -1,0 +1,217 @@
+<!-- Enhanced Job Detail Modal -->
+<div id="job-detail-modal" class="job-detail-modal">
+    <div class="modal-content-enhanced">
+        <!-- Premium Header -->
+        <div class="modal-header-enhanced">
+            <div class="modal-header-content">
+                <div class="modal-title-section">
+                    <h2 id="modal-job-title">Job Details</h2>
+                    <div class="job-status-indicator" id="modal-job-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Scheduled</span>
+                    </div>
+                </div>
+                <div class="modal-header-actions">
+                    <button onclick="shareJob()" class="btn-header-action" title="Share Job">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    <button onclick="closeJobDetail()" class="btn-header-action" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Modal Body -->
+        <div class="modal-body-enhanced">
+            <!-- Customer Information Card -->
+            <div class="customer-card-enhanced">
+                <div class="customer-header">
+                    <div class="customer-avatar" id="customer-avatar">
+                        <span id="customer-avatar-text">?</span>
+                        <div class="avatar-status online"></div>
+                    </div>
+                    <div class="customer-info">
+                        <h3 id="modal-customer-name">Customer Name</h3>
+                        <p id="modal-customer-phone">Phone Number</p>
+                        <div class="customer-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <span>4.5 (12 jobs)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="customer-actions">
+                    <button class="action-btn primary" onclick="callCustomer()">
+                        <i class="fas fa-phone"></i>
+                        <span>Call</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="messageCustomer()">
+                        <i class="fas fa-message"></i>
+                        <span>Message</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="navigateToCustomer()">
+                        <i class="fas fa-directions"></i>
+                        <span>Directions</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Job Details Card -->
+            <div class="job-details-card-enhanced">
+                <h4>Job Information</h4>
+                <div class="job-info-grid">
+                    <div class="info-item-enhanced">
+                        <div class="info-icon service">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="info-content">
+                            <label>Service</label>
+                            <p id="modal-service-name">Service Name</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item-enhanced">
+                        <div class="info-icon date">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="info-content">
+                            <label>Date</label>
+                            <p id="modal-job-date">Date</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item-enhanced">
+                        <div class="info-icon time">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="info-content">
+                            <label>Time</label>
+                            <p id="modal-job-time">Time</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item-enhanced">
+                        <div class="info-icon location">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="info-content">
+                            <label>Location</label>
+                            <p id="modal-job-location">Location</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item-enhanced">
+                        <div class="info-icon duration">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="info-content">
+                            <label>Duration</label>
+                            <p id="modal-job-duration">Estimated duration</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item-enhanced">
+                        <div class="info-icon payment">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="info-content">
+                            <label>Payment</label>
+                            <p id="modal-job-payment">Payment status</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="job-notes-enhanced" id="job-notes-section" style="display: none;">
+                    <label>Notes</label>
+                    <p id="modal-job-notes">No additional notes</p>
+                </div>
+            </div>
+
+            <!-- Photo Management Section -->
+            <div class="photo-management-card-enhanced">
+                <div class="photo-header">
+                    <h4>Job Photos</h4>
+                    <div class="photo-stats">
+                        <span class="photo-count before" id="before-count">0 before</span>
+                        <span class="photo-count after" id="after-count">0 after</span>
+                    </div>
+                </div>
+                
+                <div class="photo-tabs-enhanced">
+                    <button class="photo-tab-enhanced active" onclick="switchPhotoTab('before')" data-tab="before">
+                        <i class="fas fa-camera"></i>
+                        <span>Before Photos</span>
+                    </button>
+                    <button class="photo-tab-enhanced" onclick="switchPhotoTab('after')" data-tab="after">
+                        <i class="fas fa-camera-retro"></i>
+                        <span>After Photos</span>
+                    </button>
+                </div>
+                
+                <div class="photo-grid-enhanced" id="photo-grid">
+                    <div class="photo-upload-area" onclick="takePhoto('before')">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <p>Tap to add photos</p>
+                        <small>Take or upload photos</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Actions -->
+            <div class="job-actions-card-enhanced">
+                <h4>Job Actions</h4>
+                <div class="action-buttons-enhanced">
+                    <button class="action-btn-large success" id="btn-start-job" onclick="startJob()">
+                        <i class="fas fa-play"></i>
+                        <span>Start Job</span>
+                    </button>
+                    <button class="action-btn-large warning" id="btn-pause-job" onclick="pauseJob()" style="display: none;">
+                        <i class="fas fa-pause"></i>
+                        <span>Pause Job</span>
+                    </button>
+                    <button class="action-btn-large success" id="btn-complete-job" onclick="completeJob()" style="display: none;">
+                        <i class="fas fa-check"></i>
+                        <span>Complete Job</span>
+                    </button>
+                    <button class="action-btn-large secondary" onclick="reportIssue()">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Report Issue</span>
+                    </button>
+                    <button class="action-btn-large secondary" onclick="requestHelp()">
+                        <i class="fas fa-hands-helping"></i>
+                        <span>Request Help</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Time Tracking -->
+            <div class="time-tracking-card-enhanced" id="time-tracking" style="display: none;">
+                <h4>Time Tracking</h4>
+                <div class="time-display">
+                    <div class="current-time" id="elapsed-time">00:00:00</div>
+                    <small>Time elapsed</small>
+                </div>
+                <div class="time-controls">
+                    <button class="btn-time-control" onclick="pauseTracking()" title="Pause">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button class="btn-time-control" onclick="resumeTracking()" title="Resume">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="btn-time-control" onclick="stopTracking()" title="Stop">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,27 @@
+<!-- Stilt Heights Booking Integration -->
+<!-- Add this to your website where you want the booking form -->
+<script>
+(function() {
+    // Create booking button or form
+    const bookingBtn = document.createElement('a');
+    bookingBtn.href = 'http://localhost:3000/booking.html';
+    bookingBtn.target = '_blank';
+    bookingBtn.textContent = 'Book Now';
+    bookingBtn.style.cssText = 'display: inline-block; padding: 15px 30px; background: #ea580c; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;';
+    
+    // Replace this with your actual button element ID
+    const container = document.getElementById('booking-button-container');
+    if (container) {
+        container.appendChild(bookingBtn);
+    }
+})();
+</script>
+
+<!-- Alternative: Embed full form in iframe -->
+<iframe 
+    src="http://localhost:3000/booking.html" 
+    width="100%" 
+    height="800" 
+    frameborder="0"
+    style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+</iframe>

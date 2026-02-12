@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stilt Heights - Professional Cleaning Services</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <span class="logo-icon">🏠</span>
+                    <span class="logo-text">Stilt Heights</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#testimonials">Testimonials</a></li>
+                    <li><a href="#ceo-story">Our Story</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+                <div class="nav-cta">
+                    <a href="tel:8259946606" class="phone-btn">📞 8259946606</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">Professional Cleaning Services</h1>
+                <p class="hero-subtitle">Experience the difference with our tailored cleaning solutions designed to meet your unique needs.</p>
+                <p class="hero-description">At Stilt Heights, we prioritize your satisfaction and deliver exceptional results every time. Discover a cleaner, healthier space with our professional team dedicated to exceeding your expectations.</p>
+                <div class="hero-actions">
+                    <button class="btn-primary" onclick="scrollToBooking()">Book Now</button>
+                    <button class="btn-secondary" onclick="scrollToServices()">View Services</button>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="hero-illustration">
+                    <div class="cleaning-icon">🧹</div>
+                    <div class="sparkle">✨</div>
+                    <div class="sparkle">✨</div>
+                    <div class="sparkle">✨</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Overview -->
+    <section id="services" class="services-overview">
+        <div class="container">
+            <h2 class="section-title">Our Services</h2>
+            <div class="services-grid" id="services-grid">
+                <!-- Services will be loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials-section">
+        <div class="container">
+            <h2 class="section-title">What Our Customers Say</h2>
+            <div class="testimonials-grid" id="testimonials-grid">
+                <!-- Testimonials will be loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- CEO Story Section -->
+    <section id="ceo-story" class="ceo-story-section">
+        <div class="container">
+            <h2 class="section-title">Our Journey</h2>
+            <div class="ceo-story-container">
+                <div class="ceo-story-content">
+                    <div class="story-header">
+                        <div class="ceo-info">
+                            <h3>John Heights</h3>
+                            <p>Founder & CEO</p>
+                        </div>
+                        <div class="story-date">Founded 2020</div>
+                    </div>
+                    <div class="story-timeline" id="story-timeline">
+                        <!-- CEO stories will be loaded dynamically -->
+                    </div>
+                </div>
+                <div class="ceo-image">
+                    <img src="https://via.placeholder.com/400x400/2563eb/ffffff?text=CEO+John+Heights" alt="CEO John Heights">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="container">
+            <div class="about-content">
+                <h2 class="section-title">About Stilt Heights</h2>
+                <div class="about-grid">
+                    <div class="about-text">
+                        <p class="about-intro">Stilt Heights was founded with a simple mission: to provide exceptional cleaning services that people could trust. We saw how many cleaning companies cut corners, and we knew there was a better way.</p>
+                        <p>Today, we're a family of 20+ professionals who share the same values: integrity, excellence, and customer satisfaction. Every team member is trained not just in cleaning techniques, but in customer service and communication.</p>
+                        <p>We're not just cleaning houses - we're building relationships. Our goal is to become the most trusted cleaning service in the region, known for reliability, quality, and exceptional customer care.</p>
+                    </div>
+                    <div class="about-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">500+</div>
+                            <div class="stat-label">Happy Customers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">4.9★</div>
+                            <div class="stat-label">Average Rating</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">20+</div>
+                            <div class="stat-label">Team Members</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">5+</div>
+                            <div class="stat-label">Years Experience</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">What You Can Expect From Us</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Trusted & Experienced</h3>
+                    <p>Years of experience in professional cleaning services with satisfied customers across the region</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Reliable & Fully Insured</h3>
+                    <p>Fully insured and bonded for your peace of mind. We show up on time, every time</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📋</div>
+                    <h3>No Contracts</h3>
+                    <p>Flexible service options with no long-term contracts required. Pay as you go</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✨</div>
+                    <h3>Satisfaction Guaranteed</h3>
+                    <p>Your satisfaction is our priority. We'll make it right if you're not completely happy</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2 class="section-title">Our Pricing Plans</h2>
+            <div class="pricing-grid" id="pricing-grid">
+                <!-- Pricing plans will be loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <h2 class="section-title">Get In Touch</h2>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">📞</div>
+                        <div class="contact-details">
+                            <h3>Phone</h3>
+                            <p>825-994-6606</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📧</div>
+                        <div class="contact-details">
+                            <h3>Email</h3>
+                            <p>dgtalquantumleap@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📍</div>
+                        <div class="contact-details">
+                            <h3>Service Area</h3>
+                            <p>Metropolitan Area</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <h3>Quick Quote</h3>
+                    <form id="quick-quote-form">
+                        <div class="form-group">
+                            <label for="quick-name">Name</label>
+                            <input type="text" id="quick-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quick-phone">Phone</label>
+                            <input type="tel" id="quick-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quick-service">Service</label>
+                            <select id="quick-service" required>
+                                <option value="">Select a service</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="quick-message">Message</label>
+                            <textarea id="quick-message" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">Get Quote</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <span class="logo-icon">🏠</span>
+                        <span class="logo-text">Stilt Heights</span>
+                    </div>
+                    <p class="footer-tagline">Professional Cleaning Services</p>
+                </div>
+                
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Quick Links</h4>
+                        <ul>
+                            <li><a href="#home">Home</a></li>
+                            <li><a href="#services">Services</a></li>
+                            <li><a href="#testimonials">Testimonials</a></li>
+                            <li><a href="#contact">Contact</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Services</h4>
+                        <ul>
+                            <li><a href="#services">Residential Cleaning</a></li>
+                            <li><a href="#services">Commercial Cleaning</a></li>
+                            <li><a href="#services">Deep Cleaning</a></li>
+                            <li><a href="#services">Move In/Out</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Contact</h4>
+                        <ul>
+                            <li>📞 8259946606</li>
+                            <li>📧 dgtalquantumleap@gmail.com</li>
+                            <li>📍 Metropolitan Area</li>
+                            <li>🕒 Mon-Fri: 8AM-6PM</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Stilt Heights. Professional Cleaning Services</p>
+                <p>Powered by FieldOps Core - Professional Operations Management</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

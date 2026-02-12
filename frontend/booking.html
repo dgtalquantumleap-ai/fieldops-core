@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Cleaning - Stilt Heights</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        .booking-container { max-width: 600px; margin: 40px auto; padding: 20px; }
+        .booking-header { background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
+        .booking-header h1 { font-size: 28px; margin-bottom: 10px; }
+        .booking-header p { opacity: 0.9; }
+        .booking-form { background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #374151; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3b82f6; }
+        .btn-submit { width: 100%; padding: 15px; background: #ea580c; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .btn-submit:hover { background: #c2410c; transform: translateY(-2px); }
+        .btn-submit:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+        .success-message { background: #dcfce7; color: #166534; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
+        .error-message { background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
+        .contact-info { text-align: center; margin-top: 20px; color: #6b7280; }
+        .contact-info a { color: #3b82f6; text-decoration: none; }
+        .loading { display: none; text-align: center; color: #6b7280; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="booking-container">
+        <div class="booking-header">
+            <h1>🏠 Stilt Heights</h1>
+            <p>Professional Cleaning Services</p>
+            <p style="margin-top: 10px; font-size: 18px;">📞 8259946606</p>
+        </div>
+        
+        <div class="booking-form">
+            <div id="success-msg" class="success-message"></div>
+            <div id="error-msg" class="error-message"></div>
+            <div id="loading" class="loading">Loading services...</div>
+            
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" name="name" required placeholder="John Doe">
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" name="phone" required placeholder="(555) 123-4567">
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="john@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Service Address *</label>
+                    <input type="text" name="address" required placeholder="123 Main Street">
+                </div>
+                
+                <div class="form-group">
+                    <label>Service Type *</label>
+                    <select name="service" id="serviceSelect" required>
+                        <option value="">Loading services...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Preferred Date *</label>
+                    <input type="date" name="date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Preferred Time</label>
+                    <input type="time" name="time" value="09:00">
+                </div>
+                
+                <div class="form-group">
+                    <label>Additional Notes</label>
+                    <textarea name="notes" rows="4" placeholder="Any special requests or details..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit" id="submitBtn">Book Now</button>
+            </form>
+            
+            <div class="contact-info">
+                <p>Or call us directly: <a href="tel:8259946606">8259946606</a></p>
+                <p style="margin-top: 10px;"><a href="/admin">Admin Login</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        
+        // Load services when page loads
+        async function loadServices() {
+            const select = document.getElementById('serviceSelect');
+            const loading = document.getElementById('loading');
+            
+            try {
+                loading.style.display = 'block';
+                console.log('Fetching services from:', `${API_URL}/booking/services`);
+                
+                const res = await fetch(`${API_URL}/booking/services`);
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                const services = await res.json();
+                console.log('Services loaded:', services);
+                
+                loading.style.display = 'none';
+                
+                if (!services || services.length === 0) {
+                    select.innerHTML = '<option value="">No services available</option>';
+                    showError('No services found. Please contact us at 8259946606');
+                    return;
+                }
+                
+                // Populate dropdown
+                select.innerHTML = '<option value="">Select a service...</option>' + 
+                    services.map(service => {
+                        const price = service.price ? ` - $${service.price}` : '';
+                        return `<option value="${service.name}">${service.name}${price}</option>`;
+                    }).join('');
+                    
+                console.log('Services dropdown populated');
+                
+            } catch (error) {
+                console.error('Error loading services:', error);
+                loading.style.display = 'none';
+                select.innerHTML = '<option value="">Error loading services</option>';
+                showError('Unable to load services. Please call us at 8259946606');
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const successMsg = document.getElementById('success-msg');
+            const errorMsg = document.getElementById('error-msg');
+            
+            // Validate service selection
+            if (!data.service) {
+                showError('Please select a service');
+                return;
+            }
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Booking...';
+            
+            try {
+                console.log('Submitting booking:', data);
+                
+                const res = await fetch(`${API_URL}/booking/book`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await res.json();
+                console.log('Booking result:', result);
+                
+                if (result.success) {
+                    successMsg.textContent = result.message || 'Booking confirmed! Check your email for details.';
+                    successMsg.style.display = 'block';
+                    errorMsg.style.display = 'none';
+                    e.target.reset();
+                    
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Reset button after delay
+                    setTimeout(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Book Now';
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'Booking failed');
+                }
+            } catch (error) {
+                console.error('Booking error:', error);
+                showError('Failed to create booking. Please call us at 8259946606');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Book Now';
+            }
+        });
+        
+        // Helper function to show errors
+        function showError(message) {
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+            successMsg.style.display = 'none';
+        }
+        
+        // Set minimum date to today
+        const dateInput = document.querySelector('input[type="date"]');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = today;
+        
+        // Load services on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, fetching services...');
+            loadServices();
+        });
+    </script>
+</body>
+</html>

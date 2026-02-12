@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stilt Heights - Professional Operations Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <div class="header-left">
+            <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+            <h1>Stilt Heights Operations</h1>
+        </div>
+        <div class="header-right">
+            <span class="business-name">Stilt Heights</span>
+            <button class="notification-btn" onclick="showNotifications()">🔔</button>
+        </div>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🏠</span>
+                <div>
+                    <h2>Stilt Heights</h2>
+                    <p class="business-subtitle">Professional Operations</p>
+                </div>
+            </div>
+            <div class="powered-by">
+                <span class="powered-text">Powered by FieldOps Core</span>
+                <span class="creator-text">by Ebenova Solutions</span>
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="nav-item active" onclick="showSection('dashboard')">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="#customers" class="nav-item" onclick="showSection('customers')">
+                <span class="nav-icon">👥</span>
+                <span>Customers</span>
+            </a>
+            <a href="#jobs" class="nav-item" onclick="showSection('jobs')">
+                <span class="nav-icon">📋</span>
+                <span>Jobs</span>
+            </a>
+            <a href="#staff" class="nav-item" onclick="showSection('staff')">
+                <span class="nav-icon">👤</span>
+                <span>Staff</span>
+            </a>
+            <a href="#invoices" class="nav-item" onclick="showSection('invoices')">
+                <span class="nav-icon">💰</span>
+                <span>Invoices</span>
+            </a>
+            <a href="#automations" class="nav-item" onclick="showSection('automations')">
+                <span class="nav-icon">🤖</span>
+                <span>Automations</span>
+            </a>
+            <a href="#settings" class="nav-item" onclick="showSection('settings')">
+                <span class="nav-icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">👤</div>
+                <div class="user-info">
+                    <div class="user-name">Admin User</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="content-section active">
+            <div class="section-header">
+                <h2>Stilt Heights Operations Dashboard</h2>
+                <div class="header-actions">
+                    <button class="btn-primary" onclick="showCreateJobModal()">+ Create Job</button>
+                    <button class="btn-secondary" onclick="refreshDashboard()">🔄 Refresh</button>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-card today-jobs">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-content">
+                        <h3 id="today-jobs-count">0</h3>
+                        <p>Today's Jobs</p>
+                        <span class="stat-trend" id="today-jobs-trend">+0%</span>
+                    </div>
+                </div>
+                <div class="stat-card pending-jobs">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-content">
+                        <h3 id="pending-jobs-count">0</h3>
+                        <p>Pending Jobs</p>
+                        <span class="stat-trend" id="pending-jobs-trend">+0%</span>
+                    </div>
+                </div>
+                <div class="stat-card completed-jobs">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <h3 id="completed-jobs-count">0</h3>
+                        <p>Completed</p>
+                        <span class="stat-trend" id="completed-jobs-trend">+0%</span>
+                    </div>
+                </div>
+                <div class="stat-card revenue">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <h3 id="revenue-count">$0</h3>
+                        <p>Total Revenue</p>
+                        <span class="stat-trend" id="revenue-trend">+0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Revenue Trend (7 Days)</h3>
+                    <div class="chart-container">
+                        <canvas id="revenue-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Job Status Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="status-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="activity-section">
+                <h3>Recent Activity</h3>
+                <div class="activity-feed" id="activity-feed">
+                    <div class="activity-item loading">Loading recent activity...</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-card" onclick="openSchedulingPlugin()">
+                    <span class="action-icon">📅</span>
+                    <span>Scheduling Plugin</span>
+                </button>
+                <button class="action-card" onclick="showSection('customers')">
+                    <span class="action-icon">👥</span>
+                    <span>Add Customer</span>
+                </button>
+                <button class="action-card" onclick="showSection('invoices')">
+                    <span class="action-icon">💰</span>
+                    <span>Create Invoice</span>
+                </button>
+                <button class="action-card" onclick="showSection('staff')">
+                    <span class="action-icon">👤</span>
+                    <span>Assign Staff</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Customers Section -->
+        <section id="customers" class="content-section">
+            <div class="section-header">
+                <h2>Customer Management</h2>
+                <div class="header-actions">
+                    <button class="btn-primary" onclick="showAddCustomerModal()">+ Add Customer</button>
+                    <input type="search" placeholder="Search customers..." class="search-input" id="customer-search">
+                </div>
+            </div>
+            <div class="customers-grid" id="customers-list">
+                <div class="loading">Loading customers...</div>
+            </div>
+        </section>
+
+        <!-- Jobs Section -->
+        <section id="jobs" class="content-section">
+            <div class="section-header">
+                <h2>Job Management</h2>
+                <div class="header-actions">
+                    <button class="btn-primary" onclick="showCreateJobModal()">+ Create Job</button>
+                    <select class="filter-select" id="job-filter" title="Filter jobs by status">
+                        <option value="all">All Jobs</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            <div class="jobs-list" id="jobs-list">
+                <div class="loading">Loading jobs...</div>
+            </div>
+        </section>
+
+        <!-- Staff Management Section (Enhanced) -->
+        <section id="staff" class="content-section">
+            <div class="section-header">
+                <h2>Staff Management</h2>
+                <div class="header-actions">
+                    <select class="filter-select" id="staff-filter" title="Filter staff by status" onchange="loadStaffManagement()">
+                        <option value="all">All Staff</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                        <option value="inactive">Terminated</option>
+                    </select>
+                    <button class="btn-primary" onclick="showModal('onboard-staff-modal')">+ Onboard Staff</button>
+                </div>
+            </div>
+            
+            <!-- Staff Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <h3 id="total-staff-count">0</h3>
+                        <p>Total Staff</p>
+                    </div>
+                </div>
+                <div class="stat-card active-staff">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <h3 id="active-staff-count">0</h3>
+                        <p>Active</p>
+                    </div>
+                </div>
+                <div class="stat-card suspended-staff">
+                    <div class="stat-icon">⏸️</div>
+                    <div class="stat-content">
+                        <h3 id="suspended-staff-count">0</h3>
+                        <p>Suspended</p>
+                    </div>
+                </div>
+                <div class="stat-card terminated-staff">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-content">
+                        <h3 id="terminated-staff-count">0</h3>
+                        <p>Terminated</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="staff-grid" id="staff-management-list">
+                <div class="loading">Loading staff...</div>
+            </div>
+        </section>
+
+        <!-- Invoices Section -->
+        <section id="invoices" class="content-section">
+            <div class="section-header">
+                <h2>Invoicing & Payments</h2>
+                <div class="header-actions">
+                    <button class="btn-primary" onclick="showCreateInvoiceModal()">+ Create Invoice</button>
+                    <select class="filter-select" id="invoice-filter" title="Filter invoices by status">
+                        <option value="all">All Invoices</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+            </div>
+            <div class="invoices-list" id="invoices-list">
+                <div class="loading">Loading invoices...</div>
+            </div>
+        </section>
+
+        <!-- Automations Section -->
+        <section id="automations" class="content-section">
+            <div class="section-header">
+                <h2>Automation Settings</h2>
+                <div class="header-actions">
+                    <button class="btn-primary" onclick="showAddAutomationModal()">+ Add Automation</button>
+                </div>
+            </div>
+            <div class="automations-list" id="automations-list">
+                <div class="loading">Loading automations...</div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="content-section">
+            <div class="section-header">
+                <h2>Settings & Customization</h2>
+            </div>
+            <div class="settings-grid">
+                <div class="setting-card">
+                    <h3>Business Information</h3>
+                    <div class="setting-content">
+                        <div class="form-group">
+                            <label for="business-name">Business Name</label>
+                            <input type="text" value="Stilt Heights" id="business-name" title="Business name" placeholder="Enter business name">
+                        </div>
+                        <div class="form-group">
+                            <label for="business-phone">Phone</label>
+                            <input type="tel" value="8259946606" id="business-phone" title="Business phone" placeholder="Enter business phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="business-email">Email</label>
+                            <input type="email" value="dgtalquantumleap@gmail.com" id="business-email" title="Business email" placeholder="Enter business email">
+                        </div>
+                        <button class="btn-primary" onclick="saveBusinessSettings()">Save Changes</button>
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>Service Types</h3>
+                    <div class="setting-content">
+                        <div class="service-list" id="service-list">
+                            <div class="service-item">
+                                <span>Regular Housekeeping</span>
+                                <button class="btn-small" onclick="editService(this)">Edit</button>
+                            </div>
+                            <div class="service-item">
+                                <span>One-time Cleaning</span>
+                                <button class="btn-small" onclick="editService(this)">Edit</button>
+                            </div>
+                            <div class="service-item">
+                                <span>Dish Washing</span>
+                                <button class="btn-small" onclick="editService(this)">Edit</button>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="addNewService()">+ Add Service</button>
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>Label Customization</h3>
+                    <div class="setting-content">
+                        <div class="form-group">
+                            <label>Jobs Label</label>
+                            <input type="text" value="Jobs" id="jobs-label">
+                        </div>
+                        <div class="form-group">
+                            <label>Customers Label</label>
+                            <input type="text" value="Customers" id="customers-label">
+                        </div>
+                        <div class="form-group">
+                            <label>Staff Label</label>
+                            <input type="text" value="Staff" id="staff-label">
+                        </div>
+                        <button class="btn-primary" onclick="saveLabelSettings()">Apply Changes</button>
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>Module Settings</h3>
+                    <div class="setting-content">
+                        <div class="module-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <span>Customer Management</span>
+                        </div>
+                        <div class="module-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <span>Job Management</span>
+                        </div>
+                        <div class="module-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <span>Staff Management</span>
+                        </div>
+                        <div class="module-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <span>Invoicing</span>
+                        </div>
+                        <div class="module-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <span>Automations</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Attribution -->
+    <footer class="footer-attribution">
+        <div class="footer-content">
+            <p class="footer-text">
+                Powered by <strong>FieldOps Core</strong> • Built by <a href="https://ebenova.com" target="_blank" rel="noopener" class="creator-link">Ebenova Solutions</a>
+            </p>
+            <p class="footer-subtitle">Professional Operations Management for Stilt Heights</p>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeAllModals()"></div>
+    
+    <!-- Create Job Modal -->
+    <div id="create-job-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Job</h3>
+                <button class="close-btn" onclick="closeModal('create-job-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="create-job-form">
+                    <div class="form-group">
+                        <label for="job-customer">Customer *</label>
+                        <select id="job-customer" title="Select customer for job" required>
+                            <option value="">Select Customer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-service">Service Type *</label>
+                        <select id="job-service" title="Select service type" required>
+                            <option value="">Select Service</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-staff">Staff Member</label>
+                        <select id="job-staff" title="Assign staff member">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="job-date">Date *</label>
+                            <input type="date" id="job-date" title="Job date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="job-time">Time *</label>
+                            <input type="time" id="job-time" title="Job start time" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-location">Location *</label>
+                        <input type="text" id="job-location" title="Job location" placeholder="Enter job address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-notes">Notes</label>
+                        <textarea id="job-notes" title="Additional job notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('create-job-modal')">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Job</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div id="add-customer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Customer</h3>
+                <button class="close-btn" onclick="closeModal('add-customer-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-customer-form">
+                    <div class="form-group">
+                        <label for="customer-name">Name *</label>
+                        <input type="text" id="customer-name" title="Customer full name" placeholder="Enter customer name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-phone">Phone *</label>
+                        <input type="tel" id="customer-phone" title="Customer phone number" placeholder="Enter phone number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-email">Email</label>
+                        <input type="email" id="customer-email" title="Customer email address" placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-address">Address</label>
+                        <input type="text" id="customer-address" title="Customer address" placeholder="Enter customer address">
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-notes">Notes</label>
+                        <textarea id="customer-notes" title="Additional customer notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('add-customer-modal')">Cancel</button>
+                        <button type="submit" class="btn-primary">Add Customer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Invoice Modal -->
+    <div id="create-invoice-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Invoice</h3>
+                <button class="close-btn" onclick="closeModal('create-invoice-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="create-invoice-form">
+                    <div class="form-group">
+                        <label for="invoice-job">Select Job *</label>
+                        <select id="invoice-job" title="Select completed job for invoice" required>
+                            <option value="">Select Completed Job</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-customer">Customer</label>
+                        <input type="text" id="invoice-customer" title="Invoice customer (auto-filled)" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-service">Service</label>
+                        <input type="text" id="invoice-service" title="Invoice service (auto-filled)" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-amount">Amount *</label>
+                        <input type="number" id="invoice-amount" title="Invoice amount" step="0.01" min="0" placeholder="Enter invoice amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-notes">Notes</label>
+                        <textarea id="invoice-notes" title="Additional invoice notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('create-invoice-modal')">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Invoice</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboard Staff Modal -->
+    <div id="onboard-staff-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Onboard New Staff Member</h3>
+                <button class="close-btn" onclick="closeModal('onboard-staff-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="onboard-staff-form" onsubmit="event.preventDefault(); onboardStaff();">
+                    <div class="form-group">
+                        <label for="onboard-name">Full Name *</label>
+                        <input type="text" id="onboard-name" title="Staff member full name" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="onboard-email">Email *</label>
+                        <input type="email" id="onboard-email" title="Staff member email address" placeholder="john@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="onboard-phone">Phone</label>
+                        <input type="tel" id="onboard-phone" title="Staff member phone number" placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="onboard-role">Role *</label>
+                        <select id="onboard-role" title="Select staff role" required>
+                            <option value="">Select Role</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Staff">Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="onboard-password">Temporary Password *</label>
+                        <input type="password" id="onboard-password" title="Temporary password for new staff member" required minlength="6" placeholder="Min 6 characters">
+                        <small>This password will be shared with the staff member. They should change it on first login.</small>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('onboard-staff-modal')">Cancel</button>
+                        <button type="submit" class="btn-primary">Onboard Staff</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Details Modal -->
+    <div id="staff-details-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Staff Details</h3>
+                <button class="close-btn" onclick="closeModal('staff-details-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="staff-details-grid">
+                    <div class="staff-info-section">
+                        <h4>Basic Information</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Name:</label>
+                                <span id="detail-staff-name">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Email:</label>
+                                <span id="detail-staff-email">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Phone:</label>
+                                <span id="detail-staff-phone">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Role:</label>
+                                <span id="detail-staff-role">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Status:</label>
+                                <span id="detail-staff-status">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Hire Date:</label>
+                                <span id="detail-staff-hire-date">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Last Login:</label>
+                                <span id="detail-staff-last-login">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Termination Date:</label>
+                                <span id="detail-staff-termination-date">-</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes:</label>
+                            <p id="detail-staff-notes">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="staff-stats-section">
+                        <h4>Job Statistics</h4>
+                        <div class="stats-grid-small">
+                            <div class="stat-card-small">
+                                <h4 id="detail-total-jobs">0</h4>
+                                <p>Total Jobs</p>
+                            </div>
+                            <div class="stat-card-small">
+                                <h4 id="detail-completed-jobs">0</h4>
+                                <p>Completed</p>
+                            </div>
+                            <div class="stat-card-small">
+                                <h4 id="detail-scheduled-jobs">0</h4>
+                                <p>Scheduled</p>
+                            </div>
+                            <div class="stat-card-small">
+                                <h4 id="detail-in-progress-jobs">0</h4>
+                                <p>In Progress</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="activity-section">
+                    <h4>Activity Log</h4>
+                    <div class="activity-log" id="staff-activity-log">
+                        <div class="loading">Loading activity...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Automation Modal -->
+    <div id="add-automation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Automation</h3>
+                <button class="close-btn" onclick="closeModal('add-automation-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-automation-form">
+                    <div class="form-group">
+                        <label>Trigger Event *</label>
+                        <select id="automation-trigger" required>
+                            <option value="">Select Trigger</option>
+                            <option value="Job Created">Job Created</option>
+                            <option value="Job Completed">Job Completed</option>
+                            <option value="Customer Booking">Customer Booking</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Channel *</label>
+                        <select id="automation-channel" required>
+                            <option value="">Select Channel</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="SMS">SMS</option>
+                            <option value="Email">Email</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Message Template *</label>
+                        <textarea id="automation-message" rows="4" required placeholder="Enter your message template. Use {customer_name}, {job_date}, {service_name} as placeholders."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="automation-enabled" checked>
+                            Enable this automation
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('add-automation-modal')">Cancel</button>
+                        <button type="submit" class="btn-primary">Add Automation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/staff-management-functions.js"></script>
+</body>
+</html>
