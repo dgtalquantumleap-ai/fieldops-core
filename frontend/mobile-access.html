@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FieldOps Mobile Access</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,18 +43,14 @@
             flex: 1;
             min-width: 250px;
         }
-        .qr-code {
+        .qrcode {
             width: 200px;
             height: 200px;
             margin: 15px auto;
             background: white;
             border: 3px solid #4a5568;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #666;
+            padding: 10px;
         }
         .url {
             font-family: monospace;
@@ -62,6 +59,7 @@
             border-radius: 5px;
             margin: 10px 0;
             word-break: break-all;
+            font-size: 12px;
         }
         .instructions {
             background: #edf2f7;
@@ -84,6 +82,27 @@
             font-size: 24px;
             margin-right: 10px;
         }
+        .badge {
+            background: #4299e1;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .download-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+        }
+        .download-btn:hover {
+            background: #3182ce;
+        }
     </style>
 </head>
 <body>
@@ -93,20 +112,20 @@
         <div class="qr-section">
             <div class="qr-card">
                 <h3><span class="icon">👨‍💼</span>Admin Dashboard</h3>
-                <div class="qr-code">
-                    QR Code for Admin
-                </div>
+                <div class="qrcode" id="admin-qr"></div>
                 <div class="url">https://fieldops-core-production.up.railway.app/admin</div>
                 <p><strong>Login:</strong> admin@fieldops.com</p>
+                <p><strong>Password:</strong> secret</p>
+                <button class="download-btn" onclick="downloadQR('admin')">📥 Download QR</button>
             </div>
             
             <div class="qr-card">
-                <h3><span class="icon">👷</span>Staff Portal</h3>
-                <div class="qr-code">
-                    QR Code for Staff
-                </div>
+                <h3><span class="icon">👷</span>Staff Portal <span class="badge">Most Used</span></h3>
+                <div class="qrcode" id="staff-qr"></div>
                 <div class="url">https://fieldops-core-production.up.railway.app/staff</div>
                 <p><strong>Login:</strong> john@fieldops.com</p>
+                <p><strong>Password:</strong> secret</p>
+                <button class="download-btn" onclick="downloadQR('staff')">📥 Download QR</button>
             </div>
         </div>
 
@@ -114,20 +133,20 @@
             <h3>📲 How to Add to Home Screen</h3>
             
             <div class="step">
-                <strong>iPhone/iPad:</strong>
+                <strong>🍎 iPhone/iPad:</strong>
                 <ol>
-                    <li>Open this page in Safari</li>
-                    <li>Tap the Share button (square with arrow)</li>
+                    <li>Scan QR code with camera or open this page in Safari</li>
+                    <li>Tap the Share button <span style="background: #007AFF; color: white; padding: 2px 6px; border-radius: 3px;">⬆️</span></li>
                     <li>Scroll down and tap "Add to Home Screen"</li>
-                    <li>Tap "Add" to create the app icon</li>
+                    <li>Tap "Add" to create the FieldOps app icon</li>
                 </ol>
             </div>
             
             <div class="step">
-                <strong>Android:</strong>
+                <strong>🤖 Android:</strong>
                 <ol>
-                    <li>Open this page in Chrome</li>
-                    <li>Tap the Menu button (three dots)</li>
+                    <li>Scan QR code with camera or open this page in Chrome</li>
+                    <li>Tap the Menu button <span style="background: #4285F4; color: white; padding: 2px 6px; border-radius: 3px;">⋮</span></li>
                     <li>Tap "Add to Home screen" or "Install app"</li>
                     <li>Tap "Add" or "Install"</li>
                 </ol>
@@ -137,13 +156,59 @@
         <div class="instructions">
             <h3>🌟 Benefits of Home Screen Access</h3>
             <ul>
-                <li>✅ Works like a native app</li>
-                <li>✅ No app store download needed</li>
-                <li>✅ Always up-to-date</li>
-                <li>✅ Works offline (basic features)</li>
-                <li>✅ Full screen experience</li>
+                <li>✅ Works like a native app with icon on home screen</li>
+                <li>✅ No app store download or approval needed</li>
+                <li>✅ Always up-to-date with latest features</li>
+                <li>✅ Works offline for basic features</li>
+                <li>✅ Full screen professional experience</li>
+                <li>✅ Fast loading and easy access</li>
             </ul>
         </div>
+
+        <div class="instructions">
+            <h3>🔗 Quick Links</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                <a href="https://fieldops-core-production.up.railway.app/staff" target="_blank" style="background: #4299e1; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">📱 Open Staff App</a>
+                <a href="https://fieldops-core-production.up.railway.app/admin" target="_blank" style="background: #805AD5; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">👨‍💼 Open Admin</a>
+                <a href="https://fieldops-core-production.up.railway.app/booking.html" target="_blank" style="background: #38A169; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">📝 Booking Form</a>
+            </div>
+        </div>
     </div>
+
+    <script>
+        // Generate QR codes when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Admin QR Code
+            new QRCode(document.getElementById("admin-qr"), {
+                text: "https://fieldops-core-production.up.railway.app/admin",
+                width: 180,
+                height: 180,
+                colorDark: "#2d3748",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Staff QR Code
+            new QRCode(document.getElementById("staff-qr"), {
+                text: "https://fieldops-core-production.up.railway.app/staff",
+                width: 180,
+                height: 180,
+                colorDark: "#2d3748",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        });
+
+        // Download QR code as image
+        function downloadQR(type) {
+            const canvas = document.querySelector(`#${type}-qr canvas`);
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = `fieldops-${type}-qrcode.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            }
+        }
+    </script>
 </body>
 </html>
