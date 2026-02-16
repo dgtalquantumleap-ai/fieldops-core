@@ -139,6 +139,10 @@
             transform: none;
         }
 
+        .btn-loading {
+            display: none;
+        }
+
         .message {
             padding: 1rem;
             border-radius: 8px;
@@ -309,7 +313,7 @@
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary" id="submit-btn">
                     <span class="btn-text">Book Now</span>
-                    <span class="btn-loading" style="display: none;">Processing...</span>
+                    <span class="btn-loading">Processing...</span>
                 </button>
                 <button type="button" class="btn btn-secondary" id="clear-btn">Clear Form</button>
             </div>
@@ -361,7 +365,7 @@
             
             try {
                 // Send to FieldOps API
-                const response = await fetch('http://10.0.0.104:3000/api/booking/book', {
+                const response = await fetch('https://fieldops-core-production.up.railway.app/api/booking/book', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

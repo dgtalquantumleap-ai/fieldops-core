@@ -1,5 +1,5 @@
 // Stilt Heights Website with WordPress Integration
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://fieldops-core-production.up.railway.app/api';
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
