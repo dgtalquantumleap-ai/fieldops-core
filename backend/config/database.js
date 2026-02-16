@@ -76,41 +76,28 @@ db.exec(`
 `);
 
 // Add missing columns if they don't exist (for existing databases)
-try {
-  db.exec(`ALTER TABLE users ADD COLUMN password_changed_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
-} catch (e) {
-  // Column already exists
-}
+const addColumnIfNotExists = (tableName, columnName, columnDef) => {
+  try {
+    // Check if column exists
+    const tableInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
+    const columnExists = tableInfo.some(col => col.name === columnName);
+    
+    if (!columnExists) {
+      db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`);
+      console.log(`✅ Added column ${tableName}.${columnName}`);
+    }
+  } catch (e) {
+    console.log(`⚠️  Could not add column ${tableName}.${columnName}:`, e.message);
+  }
+};
 
-try {
-  db.exec(`ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1`);
-} catch (e) {
-  // Column already exists
-}
-
-try {
-  db.exec(`ALTER TABLE jobs ADD COLUMN service_id INTEGER`);
-} catch (e) {
-  // Column already exists
-}
-
-try {
-  db.exec(`ALTER TABLE jobs ADD COLUMN job_date TEXT`);
-} catch (e) {
-  // Column already exists
-}
-
-try {
-  db.exec(`ALTER TABLE jobs ADD COLUMN job_time TEXT`);
-} catch (e) {
-  // Column already exists
-}
-
-try {
-  db.exec(`ALTER TABLE jobs ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
-} catch (e) {
-  // Column already exists
-}
+// Add missing columns safely
+addColumnIfNotExists('users', 'password_changed_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+addColumnIfNotExists('users', 'is_active', 'INTEGER DEFAULT 1');
+addColumnIfNotExists('jobs', 'service_id', 'INTEGER');
+addColumnIfNotExists('jobs', 'job_date', 'TEXT');
+addColumnIfNotExists('jobs', 'job_time', 'TEXT');
+addColumnIfNotExists('jobs', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 
 // Insert default services if services table is empty
 const serviceCount = db.prepare('SELECT COUNT(*) as count FROM services').get().count;
@@ -129,35 +116,47 @@ if (serviceCount === 0) {
 // Create admin user only if no admin exists and ADMIN_EMAIL is set
 const adminEmail = process.env.ADMIN_EMAIL;
 if (adminEmail) {
-  // Check if admin user exists (handle both old and new schema)
-  let adminCount;
+  // Check if admin user exists with robust schema detection
+  let adminCount = 0;
+  
   try {
-    adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "admin" AND is_active = 1').get().count;
+    // First, check if users table exists and has the expected structure
+    const tableInfo = db.prepare(`PRAGMA table_info(users)`).all();
+    const hasIsActiveColumn = tableInfo.some(col => col.name === 'is_active');
+    
+    if (hasIsActiveColumn) {
+      adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "admin" AND is_active = 1').get().count;
+    } else {
+      adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "admin"').get().count;
+    }
   } catch (e) {
-    // Fallback for old schema without is_active column
-    adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "admin"').get().count;
+    console.log('⚠️  Could not check for existing admin user:', e.message);
+    // Assume no admin exists if we can't check
+    adminCount = 0;
   }
   
   if (adminCount === 0) {
     console.log('📝 Creating initial admin user...');
-    const bcrypt = require('bcrypt');
-    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4);
-    const hashedPassword = bcrypt.hashSync(tempPassword, 10);
-    
-    // Try to insert with new schema first, fallback to old schema
     try {
+      const bcrypt = require('bcrypt');
+      const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4);
+      const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+      
+      // Insert admin user with basic columns that should always exist
       db.prepare(`
         INSERT INTO users (name, email, password, role, phone) 
         VALUES (?, ?, ?, 'admin', ?)
       `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
+      
+      console.log('\n🔐 ADMIN USER CREATED:');
+      console.log(`   Email: ${adminEmail}`);
+      console.log(`   Temporary Password: ${tempPassword}`);
+      console.log('   ⚠️  CHANGE THIS PASSWORD IMMEDIATELY AFTER FIRST LOGIN!\n');
     } catch (e) {
-      console.error('Failed to create admin user:', e.message);
+      console.error('❌ Failed to create admin user:', e.message);
     }
-    
-    console.log('\n🔐 ADMIN USER CREATED:');
-    console.log(`   Email: ${adminEmail}`);
-    console.log(`   Temporary Password: ${tempPassword}`);
-    console.log('   ⚠️  CHANGE THIS PASSWORD IMMEDIATELY AFTER FIRST LOGIN!\n');
+  } else {
+    console.log('✅ Admin user already exists');
   }
 } else {
   console.log('⚠️  WARNING: No ADMIN_EMAIL environment variable set. Admin user not created.');
