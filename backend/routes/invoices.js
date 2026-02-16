@@ -223,63 +223,64 @@ router.get('/summary/stats', async (req, res) => {
     }
 });
 
-module.exports = router;
-
 // PDF generation route
 router.get('/:id/pdf', requireAuth, (req, res) => {
-  const PDFDocument = require('pdfkit');
+    try {
+        const invoiceId = req.params.id;
+        
+        const invoice = db.prepare(`
+            SELECT i.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone,
+                   c.address as customer_address, j.job_date, j.notes as job_notes
+            FROM invoices i
+            LEFT JOIN customers c ON i.customer_id = c.id
+            LEFT JOIN jobs j ON i.job_id = j.id
+            WHERE i.id = ?
+        `).get(invoiceId);
 
-  const invoice = db.prepare(`
-    SELECT i.*, c.name as customer_name, c.email as customer_email,
-           c.phone as customer_phone, c.address as customer_address,
-           j.job_date, j.location, s.name as service_name
-    FROM invoices i
-    LEFT JOIN customers c ON i.customer_id = c.id
-    LEFT JOIN jobs j ON i.job_id = j.id
-    LEFT JOIN services s ON j.service_id = s.id
-    WHERE i.id = ?
-  `).get(req.params.id);
+        if (!invoice) {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
 
-  if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+        // Generate PDF
+        const PDFDocument = require('pdfkit');
+        const doc = new PDFDocument({ margin: 50 });
 
-  const filename = `invoice-${invoice.invoice_number || invoice.id}.pdf`;
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  
-  const doc = new PDFDocument({ margin: 50 });
-  doc.pipe(res);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoice.invoice_number || invoice.id}.pdf`);
 
-  doc.fontSize(24).font('Helvetica-Bold').text('INVOICE', 50, 50);
-  doc.fontSize(10).font('Helvetica').fillColor('#64748B').text('Stilt Heights Professional Cleaning', 50, 82);
+        doc.pipe(res);
 
-  doc.fillColor('#1E293B').fontSize(12).font('Helvetica-Bold')
-     .text(`Invoice #${invoice.invoice_number || invoice.id}`, 350, 50, { align: 'right' });
-  doc.fontSize(10).font('Helvetica')
-     .text(`Issued: ${new Date(invoice.issued_at).toLocaleDateString()}`, 350, 70, { align: 'right' })
-     .text(`Status: ${(invoice.status || '').toUpperCase()}`, 350, 86, { align: 'right' });
+        // PDF content
+        doc.fontSize(24).fillColor('#1E293B').text('INVOICE', 50, 50);
+        doc.fontSize(12).fillColor('#64748B').text(`Invoice #: ${invoice.invoice_number || invoice.id}`, 50, 80);
+        doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, 50, 95);
+        
+        doc.fontSize(14).fillColor('#374151').text('Bill To:', 50, 130);
+        doc.fontSize(12).fillColor('#64748B')
+           .text(invoice.customer_name || 'N/A', 50, 150)
+           .text(invoice.customer_email || 'N/A', 50, 165)
+           .text(invoice.customer_phone || 'N/A', 50, 180)
+           .text(invoice.customer_address || 'N/A', 50, 195);
 
-  doc.moveTo(50, 110).lineTo(550, 110).strokeColor('#E2E8F0').stroke();
+        doc.moveTo(50, 215).lineTo(550, 215).strokeColor('#1E293B').lineWidth(1).stroke();
+        doc.font('Helvetica-Bold').fontSize(10)
+           .text('Service', 50, 200).text('Date', 250, 200).text('Amount', 450, 200, { align: 'right', width: 100 });
+        doc.font('Helvetica').fontSize(10).fillColor('#374151')
+           .text(invoice.service_name || 'Cleaning Service', 50, 230)
+           .text(invoice.job_date ? new Date(invoice.job_date).toLocaleDateString() : 'N/A', 250, 230)
+           .text(`$${(invoice.amount || 0).toFixed(2)}`, 450, 230, { align: 'right', width: 100 });
 
-  doc.fillColor('#64748B').fontSize(9).text('BILL TO', 50, 125);
-  doc.fillColor('#1E293B').fontSize(11).font('Helvetica-Bold').text(invoice.customer_name || 'N/A', 50, 140);
-  doc.font('Helvetica').fontSize(10)
-     .text(invoice.customer_email || '', 50, 155)
-     .text(invoice.customer_phone || '', 50, 168)
-     .text(invoice.customer_address || '', 50, 181);
+        doc.font('Helvetica-Bold').fontSize(14).fillColor('#1E293B')
+           .text(`TOTAL: $${(invoice.amount || 0).toFixed(2)}`, 350, 270, { align: 'right' });
 
-  doc.moveTo(50, 215).lineTo(550, 215).strokeColor('#1E293B').lineWidth(1).stroke();
-  doc.font('Helvetica-Bold').fontSize(10)
-     .text('Service', 50, 200).text('Date', 250, 200).text('Amount', 450, 200, { align: 'right', width: 100 });
-  doc.font('Helvetica').fontSize(10).fillColor('#374151')
-     .text(invoice.service_name || 'Cleaning Service', 50, 230)
-     .text(invoice.job_date ? new Date(invoice.job_date).toLocaleDateString() : 'N/A', 250, 230)
-     .text(`$${(invoice.amount || 0).toFixed(2)}`, 450, 230, { align: 'right', width: 100 });
+        doc.fontSize(9).fillColor('#94A3B8').font('Helvetica')
+           .text('Payment due within 30 days. Thank you for your business.', 50, 720, { align: 'center' });
 
-  doc.font('Helvetica-Bold').fontSize(14).fillColor('#1E293B')
-     .text(`TOTAL: $${(invoice.amount || 0).toFixed(2)}`, 350, 270, { align: 'right' });
-
-  doc.fontSize(9).fillColor('#94A3B8').font('Helvetica')
-     .text('Payment due within 30 days. Thank you for your business.', 50, 720, { align: 'center' });
-
-  doc.end();
+        doc.end();
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        res.status(500).json({ error: 'Failed to generate PDF' });
+    }
 });
+
+module.exports = router;

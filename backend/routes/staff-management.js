@@ -106,9 +106,16 @@ router.post('/onboard', requireAdmin, async (req, res) => {
     }
     
     res.status(201).json({
+      success: true,
       message: 'Staff member onboarded successfully',
-      staff: newStaff,
-      temporaryPassword: password // Send this once, they should change it
+      staff: {
+        id: newStaff.id,
+        name: newStaff.name,
+        email: newStaff.email,
+        role: newStaff.role,
+        phone: newStaff.phone,
+        created_at: newStaff.created_at
+      }
     });
   } catch (error) {
     console.error('Onboarding error:', error);
@@ -354,31 +361,39 @@ router.post('/:id/terminate', requireAdmin, async (req, res) => {
   }
   
   try {
-    // Update status to inactive and set termination date
-    db.prepare(`
-      UPDATE users 
-      SET status = 'inactive', 
-          termination_date = ?, 
-          notes = ?
-      WHERE id = ?
-    `).run(
+    // Use transaction for atomic termination process
+    const terminateStaffTransaction = db.transaction((staffId, staffName, termDate, termReason) => {
+      // Update status to inactive and set termination date
+      db.prepare(`
+        UPDATE users 
+        SET status = 'inactive', 
+            termination_date = ?, 
+            notes = ?
+        WHERE id = ?
+      `).run(termDate, termReason, staffId);
+      
+      // Revoke all active sessions
+      db.prepare('UPDATE staff_sessions SET revoked_at = datetime(\'now\') WHERE staff_id = ? AND revoked_at IS NULL')
+        .run(staffId);
+      
+      // Unassign from all pending/scheduled jobs
+      const unassignedJobs = db.prepare(`
+        UPDATE jobs 
+        SET assigned_to = NULL, 
+            notes = notes || ' [Staff terminated: ' || ? || ']'
+        WHERE assigned_to = ? 
+          AND status IN ('Scheduled', 'In Progress')
+      `).run(staffName, staffId);
+      
+      return unassignedJobs.changes;
+    });
+    
+    const unassignedCount = terminateStaffTransaction(
+      req.params.id,
+      staff.name,
       termination_date || new Date().toISOString().split('T')[0],
-      reason || 'Terminated by admin',
-      req.params.id
+      reason || 'Terminated by admin'
     );
-    
-    // Revoke all active sessions
-    db.prepare('UPDATE staff_sessions SET revoked_at = datetime(\'now\') WHERE staff_id = ? AND revoked_at IS NULL')
-      .run(req.params.id);
-    
-    // Unassign from all pending/scheduled jobs
-    const unassignedJobs = db.prepare(`
-      UPDATE jobs 
-      SET assigned_to = NULL, 
-          notes = notes || ' [Staff terminated: ' || ? || ']'
-      WHERE assigned_to = ? 
-        AND status IN ('Scheduled', 'In Progress')
-    `).run(staff.name, req.params.id);
     
     // Log the termination
     logActivity(
@@ -388,7 +403,7 @@ router.post('/:id/terminate', requireAdmin, async (req, res) => {
       reason || 'Terminated by admin',
       JSON.stringify({ 
         termination_date: termination_date || new Date().toISOString().split('T')[0],
-        unassigned_jobs: unassignedJobs.changes 
+        unassigned_jobs: unassignedCount 
       })
     );
     

@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 // Validate required environment variables
@@ -15,19 +16,97 @@ if (missing.length) {
   process.exit(1);
 }
 
+// Configure allowed origins for CORS
+const getAllowedOrigins = () => {
+  const allowed = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://fieldops-core-production.up.railway.app';
+  return allowed.split(',').map(origin => origin.trim());
+};
+
+const allowedOrigins = getAllowedOrigins();
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('🚫 CORS blocked request from:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count', 'X-Request-ID']
+};
+
+// Rate limiting configuration
+const createRateLimiter = (windowMs, max, message) => rateLimit({
+  windowMs,
+  max,
+  message: {
+    success: false,
+    error: 'Too many requests',
+    message
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    console.warn(`🚫 Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
+    res.status(429).json({
+      success: false,
+      error: 'Too many requests',
+      message: `Rate limit exceeded. Try again in ${Math.ceil(windowMs / 60000)} minutes.`
+    });
+  }
+});
+
+// Different rate limits for different endpoints
+const bookingLimiter = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  5, // 5 bookings per 15 minutes
+  'Too many booking attempts. Please try again later.'
+);
+
+const authLimiter = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  10, // 10 login attempts per 15 minutes
+  'Too many login attempts. Please try again later.'
+);
+
+const generalLimiter = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  100, // 100 requests per 15 minutes
+  'Too many requests. Please slow down.'
+);
+
+const strictLimiter = createRateLimiter(
+  60 * 60 * 1000, // 1 hour
+  1000, // 1000 requests per hour
+  'Rate limit exceeded for this hour.'
+);
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+
+// Apply rate limiting
+app.use('/api/booking/book', bookingLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/', generalLimiter);
 
 // Store io instance for real-time updates
 app.set('io', io);
