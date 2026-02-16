@@ -75,6 +75,43 @@ db.exec(`
   );
 `);
 
+// Add missing columns if they don't exist (for existing databases)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN password_changed_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE jobs ADD COLUMN service_id INTEGER`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE jobs ADD COLUMN job_date TEXT`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE jobs ADD COLUMN job_time TEXT`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE jobs ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+} catch (e) {
+  // Column already exists
+}
+
 // Insert default services if services table is empty
 const serviceCount = db.prepare('SELECT COUNT(*) as count FROM services').get().count;
 if (serviceCount === 0) {
@@ -92,17 +129,30 @@ if (serviceCount === 0) {
 // Create admin user only if no admin exists and ADMIN_EMAIL is set
 const adminEmail = process.env.ADMIN_EMAIL;
 if (adminEmail) {
-  const adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "admin" AND is_active = 1').get().count;
+  // Check if admin user exists (handle both old and new schema)
+  let adminCount;
+  try {
+    adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "admin" AND is_active = 1').get().count;
+  } catch (e) {
+    // Fallback for old schema without is_active column
+    adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "admin"').get().count;
+  }
+  
   if (adminCount === 0) {
     console.log('📝 Creating initial admin user...');
     const bcrypt = require('bcrypt');
     const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4);
     const hashedPassword = bcrypt.hashSync(tempPassword, 10);
     
-    db.prepare(`
-      INSERT INTO users (name, email, password, role, phone) 
-      VALUES (?, ?, ?, 'admin', ?)
-    `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
+    // Try to insert with new schema first, fallback to old schema
+    try {
+      db.prepare(`
+        INSERT INTO users (name, email, password, role, phone) 
+        VALUES (?, ?, ?, 'admin', ?)
+      `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
+    } catch (e) {
+      console.error('Failed to create admin user:', e.message);
+    }
     
     console.log('\n🔐 ADMIN USER CREATED:');
     console.log(`   Email: ${adminEmail}`);
