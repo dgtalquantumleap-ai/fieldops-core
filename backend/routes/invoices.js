@@ -168,7 +168,7 @@ router.post('/create', async (req, res) => {
             });
             
             // Send notification (non-blocking)
-            const customerId = customer_id; // Capture for async scope
+            const customerId = job.customer_id; // Capture for async scope
             setImmediate(async () => {
                 try {
                     const { sendInvoiceEmail } = require('../utils/emailTemplates');
