@@ -141,11 +141,6 @@ app.get('/admin-ai', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/admin-ai-dashboard.html'));
 });
 
-// Enhanced Booking Page
-app.get('/booking-enhanced', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/booking-enhanced.html'));
-});
-
 // Static file serving for specific directories
 app.use('/staff', express.static(path.join(__dirname, '../frontend/staff-app')));
 app.use('/stiltheights', express.static(path.join(__dirname, '../frontend/stiltheights')));
