@@ -1,10 +1,24 @@
 // FieldOps Core - Modern Operations System for Stilt Heights
+// CORRECTED AND OPTIMIZED VERSION
 const API_URL = '/api';
 let socket;
 let revenueChart, statusChart;
 let currentSection = 'dashboard';
 
-// Initialize Socket.IO for real-time updates
+// ============================================
+// AUTH HEADERS - FIXED
+// ============================================
+function getAuthHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+    };
+}
+
+// ============================================
+// SOCKET.IO INITIALIZATION
+// ============================================
 function initializeSocket() {
     socket = io();
     
@@ -15,7 +29,7 @@ function initializeSocket() {
     
     socket.on('new-booking', (data) => {
         console.log('📅 New booking received:', data);
-        showNotification('New Stilt Heights booking received!', 'success');
+        showNotification('New booking received!', 'success');
         if (currentSection === 'dashboard') loadDashboard();
         addActivityItem('New Booking', `${data.customer?.name} - ${data.job?.service_name}`, '📅');
     });
@@ -26,26 +40,23 @@ function initializeSocket() {
         if (currentSection === 'jobs') loadJobs();
         addActivityItem('Job Updated', `Status changed to ${data.job?.status}`, '🔄');
     });
-    
-    socket.on('photo-uploaded', (data) => {
-        console.log('📸 Photo uploaded:', data);
-        addActivityItem('Photo Uploaded', `Job ${data.job_id} - ${data.media_type}`, '📸');
-    });
 }
 
-// Navigation
+// ============================================
+// NAVIGATION
+// ============================================
 function showSection(sectionName) {
     // Update active section
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
     });
-    document.getElementById(sectionName).classList.add('active');
+    document.getElementById(sectionName)?.classList.add('active');
     
     // Update active nav item
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
-    document.querySelector(`[href="#${sectionName}"]`).classList.add('active');
+    document.querySelector(`[href="#${sectionName}"]`)?.classList.add('active');
     
     currentSection = sectionName;
     
@@ -75,74 +86,61 @@ function showSection(sectionName) {
     }
 }
 
-// Sidebar toggle
+// ============================================
+// SIDEBAR TOGGLE
+// ============================================
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('active');
+    sidebar?.classList.toggle('active');
 }
 
-// Dashboard Loading
+// ============================================
+// DASHBOARD
+// ============================================
 async function loadDashboard() {
     try {
-        console.log('🔄 Loading dashboard from:', API_URL);
-        // Don't call showLoading for dashboard - it has multiple components
+        console.log('🔄 Loading dashboard...');
         
-        // Load all data in parallel
-        console.log('📡 Fetching dashboard data...');
         const [jobsRes, invoicesRes, customersRes] = await Promise.all([
             fetch(`${API_URL}/jobs`, { headers: getAuthHeaders() }),
             fetch(`${API_URL}/invoices`, { headers: getAuthHeaders() }),
             fetch(`${API_URL}/customers`, { headers: getAuthHeaders() })
         ]);
         
-        console.log('📊 Jobs API status:', jobsRes.status);
-        console.log('📊 Invoices API status:', invoicesRes.status);
-        console.log('📊 Customers API status:', customersRes.status);
-        
         const jobs = await jobsRes.json();
-        console.log('📋 Jobs loaded:', jobs.length);
-        
-        // Handle invoices API (might not exist yet)
         let invoices = [];
+        let customers = [];
+        
         if (invoicesRes.ok) {
-            invoices = await invoicesRes.json();
-            console.log('💰 Invoices loaded:', invoices.length);
-        } else {
-            console.log('⚠️ Invoices API not available, using empty array');
+            const invoiceData = await invoicesRes.json();
+            invoices = Array.isArray(invoiceData) ? invoiceData : (invoiceData.data || []);
         }
         
-        // Handle customers API
-        let customers = [];
         if (customersRes.ok) {
-            customers = await customersRes.json();
-            console.log('👥 Customers loaded:', customers.length);
-        } else {
-            console.log('⚠️ Customers API not available, using empty array');
+            const customerData = await customersRes.json();
+            customers = Array.isArray(customerData) ? customerData : (customerData.data || []);
         }
         
         // Calculate metrics
         const today = new Date().toISOString().split('T')[0];
         const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        
         const todayJobs = jobs.filter(job => job.job_date === today);
         const yesterdayJobs = jobs.filter(job => job.job_date === yesterday);
-        const pendingJobs = jobs.filter(job => job.status === 'scheduled');
-        const completedJobs = jobs.filter(job => job.status === 'completed');
+        const pendingJobs = jobs.filter(job => job.status === 'Scheduled');
+        const completedJobs = jobs.filter(job => job.status === 'Completed');
         
-        const paidInvoices = invoices.filter(inv => inv.status === 'paid');
-        const unpaidInvoices = invoices.filter(inv => inv.status === 'Unpaid');
+        // Handle invoice status case-insensitivity
+        const paidInvoices = invoices.filter(inv => 
+            inv.status?.toLowerCase() === 'paid'
+        );
+        const unpaidInvoices = invoices.filter(inv => 
+            inv.status?.toLowerCase() === 'unpaid'
+        );
+        
         const totalRevenue = paidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-        const pendingRevenue = unpaidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
         
-        console.log('📈 Dashboard metrics calculated:');
-        console.log('  Today jobs:', todayJobs.length);
-        console.log('  Pending jobs:', pendingJobs.length);
-        console.log('  Completed jobs:', completedJobs.length);
-        console.log('  Paid invoices:', paidInvoices.length);
-        console.log('  Unpaid invoices:', unpaidInvoices.length);
-        console.log('  Total revenue:', totalRevenue);
-        console.log('  Pending revenue:', pendingRevenue);
-        
-        // Update stats with animation
+        // Update stats
         updateStatWithAnimation('today-jobs-count', todayJobs.length, calcTrend(todayJobs.length, yesterdayJobs.length));
         updateStatWithAnimation('pending-jobs-count', pendingJobs.length);
         updateStatWithAnimation('completed-jobs-count', completedJobs.length);
@@ -156,27 +154,19 @@ async function loadDashboard() {
         updateActivityFeed(jobs.slice(0, 5));
         
         console.log('✅ Dashboard loaded successfully');
-        
     } catch (error) {
         console.error('❌ Error loading dashboard:', error);
-        // Don't show error for dashboard as it has multiple components
     }
 }
 
 function updateStatWithAnimation(elementId, value, trend = null) {
     const element = document.getElementById(elementId);
-    if (!element) {
-        console.error(`❌ Element not found: ${elementId}`);
-        return;
-    }
+    if (!element) return;
     
-    const oldValue = element.textContent || '';
-    
-    if (oldValue !== value) {
+    if (element.textContent !== String(value)) {
         element.style.transform = 'scale(1.1)';
         element.textContent = value;
         
-        // Add trend indicator if provided
         const trendElement = document.getElementById(elementId + '-trend');
         if (trendElement && trend) {
             trendElement.textContent = trend;
@@ -189,11 +179,13 @@ function updateStatWithAnimation(elementId, value, trend = null) {
     }
 }
 
-// Chart Functions
+// ============================================
+// CHARTS
+// ============================================
 function updateRevenueChart(jobs, invoices) {
-    const ctx = document.getElementById('revenue-chart').getContext('2d');
+    const ctx = document.getElementById('revenue-chart');
+    if (!ctx) return;
     
-    // Generate last 7 days data
     const last7Days = [];
     const revenueData = [];
     
@@ -203,16 +195,15 @@ function updateRevenueChart(jobs, invoices) {
         const dateStr = date.toISOString().split('T')[0];
         
         const dayRevenue = invoices
-            .filter(inv => inv.status === 'paid' && inv.issued_at && inv.issued_at.startsWith(dateStr))
+            .filter(inv => inv.status?.toLowerCase() === 'paid' && 
+                          inv.issued_at?.startsWith(dateStr))
             .reduce((sum, inv) => sum + (inv.amount || 0), 0);
         
-        last7Days.push(date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+        last7Days.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
         revenueData.push(dayRevenue);
     }
     
-    if (revenueChart) {
-        revenueChart.destroy();
-    }
+    if (revenueChart) revenueChart.destroy();
     
     revenueChart = new Chart(ctx, {
         type: 'line',
@@ -230,11 +221,7 @@ function updateRevenueChart(jobs, invoices) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -250,7 +237,8 @@ function updateRevenueChart(jobs, invoices) {
 }
 
 function updateStatusChart(jobs) {
-    const ctx = document.getElementById('status-chart').getContext('2d');
+    const ctx = document.getElementById('status-chart');
+    if (!ctx) return;
     
     const statusCounts = {
         'Scheduled': jobs.filter(job => job.status === 'Scheduled').length,
@@ -259,9 +247,7 @@ function updateStatusChart(jobs) {
         'Cancelled': jobs.filter(job => job.status === 'Cancelled').length
     };
     
-    if (statusChart) {
-        statusChart.destroy();
-    }
+    if (statusChart) statusChart.destroy();
     
     statusChart = new Chart(ctx, {
         type: 'doughnut',
@@ -269,28 +255,20 @@ function updateStatusChart(jobs) {
             labels: Object.keys(statusCounts),
             datasets: [{
                 data: Object.values(statusCounts),
-                backgroundColor: [
-                    '#2563eb',
-                    '#f59e0b',
-                    '#10b981',
-                    '#64748b'
-                ]
+                backgroundColor: ['#2563eb', '#f59e0b', '#10b981', '#64748b']
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
+            plugins: { legend: { position: 'bottom' } }
         }
     });
 }
 
 function updateActivityFeed(recentJobs) {
     const feed = document.getElementById('activity-feed');
+    if (!feed) return;
     
     if (recentJobs.length === 0) {
         feed.innerHTML = '<div class="activity-item">No recent activity</div>';
@@ -312,12 +290,12 @@ function updateActivityFeed(recentJobs) {
 
 function addActivityItem(title, description, icon) {
     const feed = document.getElementById('activity-feed');
+    if (!feed) return;
+    
     const newItem = document.createElement('div');
     newItem.className = 'activity-item';
     newItem.innerHTML = `
-        <div class="activity-icon" style="background: #2563eb; color: white;">
-            ${icon}
-        </div>
+        <div class="activity-icon" style="background: #2563eb; color: white;">${icon}</div>
         <div class="activity-content">
             <div class="activity-title">${title}</div>
             <div class="activity-time">${description}</div>
@@ -325,41 +303,31 @@ function addActivityItem(title, description, icon) {
     `;
     
     feed.insertBefore(newItem, feed.firstChild);
-    
-    // Remove old items if too many
     while (feed.children.length > 10) {
         feed.removeChild(feed.lastChild);
     }
 }
 
-// Customer Management
+// ============================================
+// CUSTOMERS
+// ============================================
 async function loadCustomers() {
     try {
         console.log('🔄 Loading customers...');
         showLoading('customers-list');
         
-        const res = await fetch(`${API_URL}/customers`, {
-            headers: getAuthHeaders()
-        });
-        console.log('📡 Customers API status:', res.status);
+        const res = await fetch(`${API_URL}/customers`, { headers: getAuthHeaders() });
         
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const data = await res.json();
-        const customers = Array.isArray(data) ? data : (data.customers || []);
-        console.log('👥 Customers loaded:', customers.length);
+        const customers = Array.isArray(data) ? data : (data.data || []);
         
         const list = document.getElementById('customers-list');
-        if (!list) {
-            console.error('❌ customers-list element not found');
-            return;
-        }
+        if (!list) return;
         
         if (customers.length === 0) {
             list.innerHTML = '<div class="no-data">No customers found</div>';
-            hideLoading('customers-list');
             return;
         }
         
@@ -373,49 +341,37 @@ async function loadCustomers() {
                 <p><strong>Email:</strong> ${customer.email || 'N/A'}</p>
                 <p><strong>Address:</strong> ${customer.address || 'N/A'}</p>
                 <div style="margin-top: 1rem;">
-                    <button class="btn-small" onclick="viewCustomerDetails(${customer.id})">View Details</button>
+                    <button class="btn-small" onclick="viewCustomerDetails(${customer.id})">View</button>
                     <button class="btn-small" onclick="editCustomer(${customer.id})">Edit</button>
                 </div>
             </div>
         `).join('');
         
-        console.log('✅ Customers rendered successfully');
         hideLoading('customers-list');
     } catch (error) {
         console.error('❌ Error loading customers:', error);
         const list = document.getElementById('customers-list');
-        if (list) {
-            list.innerHTML = `<div class="error-message">Failed to load customers: ${error.message}</div>`;
-        }
+        if (list) list.innerHTML = `<div class="error-message">Failed to load customers</div>`;
     }
 }
 
-// Job Management
+// ============================================
+// JOBS
+// ============================================
 async function loadJobs() {
     try {
-        console.log('🔄 Loading jobs from:', `${API_URL}/jobs`);
+        console.log('🔄 Loading jobs...');
         showLoading('jobs-list');
         
-        const res = await fetch(`${API_URL}/jobs`, {
-            headers: getAuthHeaders()
-        });
-        console.log('📡 Jobs API response status:', res.status);
+        const res = await fetch(`${API_URL}/jobs`, { headers: getAuthHeaders() });
         
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const jobs = await res.json();
-        console.log('📋 Jobs loaded:', jobs.length, 'jobs found');
-        
-        // Store jobs globally for filtering
         window.allJobs = Array.isArray(jobs) ? jobs : [];
         
         const list = document.getElementById('jobs-list');
-        if (!list) {
-            console.error('❌ jobs-list element not found');
-            return;
-        }
+        if (!list) return;
         
         if (jobs.length === 0) {
             list.innerHTML = '<div class="no-data">No jobs found</div>';
@@ -432,52 +388,25 @@ async function loadJobs() {
                 <p><strong>Date:</strong> ${formatDate(job.job_date)} at ${job.job_time || 'TBD'}</p>
                 <p><strong>Location:</strong> ${job.location || 'N/A'}</p>
                 <div style="margin-top: 1rem;">
-                    <button class="btn-small" onclick="viewJobDetails(${job.id})">View Details</button>
+                    <button class="btn-small" onclick="viewJobDetails(${job.id})">View</button>
                     <button class="btn-small" onclick="editJob(${job.id})">Edit</button>
                 </div>
             </div>
         `).join('');
         
-        console.log('✅ Jobs rendered successfully');
         hideLoading('jobs-list');
-        
-        // Add filter functionality
-        const filterSelect = document.getElementById('job-filter');
-        if (filterSelect) {
-            filterSelect.addEventListener('change', function() {
-                filterJobs(this.value);
-            });
-        }
     } catch (error) {
         console.error('❌ Error loading jobs:', error);
-        showError('jobs-list', `Failed to load jobs: ${error.message}`);
+        const list = document.getElementById('jobs-list');
+        if (list) list.innerHTML = `<div class="error-message">Failed to load jobs</div>`;
     }
 }
 
-// Filter jobs
 function filterJobs(filter) {
-    // Store all jobs globally for filtering
-    if (!window.allJobs) {
-        window.allJobs = [];
-        // Load all jobs if not already stored
-        fetch(`${API_URL}/jobs`, {
-            headers: getAuthHeaders()
-        })
-            .then(res => res.json())
-            .then(data => {
-                window.allJobs = Array.isArray(data) ? data : [];
-                applyJobFilter(filter);
-            })
-            .catch(error => console.error('Error loading jobs for filtering:', error));
-        return;
-    }
+    if (!window.allJobs) return;
     
-    applyJobFilter(filter);
-}
-
-function applyJobFilter(filter) {
     const list = document.getElementById('jobs-list');
-    if (!list || !window.allJobs) return;
+    if (!list) return;
     
     let filteredJobs = window.allJobs;
     
@@ -494,14 +423,10 @@ function applyJobFilter(filter) {
         case 'cancelled':
             filteredJobs = window.allJobs.filter(job => job.status === 'Cancelled');
             break;
-        case 'all':
-        default:
-            filteredJobs = window.allJobs;
-            break;
     }
     
     if (filteredJobs.length === 0) {
-        list.innerHTML = '<div class="no-data">No jobs found for this filter</div>';
+        list.innerHTML = '<div class="no-data">No jobs found</div>';
         return;
     }
     
@@ -515,43 +440,33 @@ function applyJobFilter(filter) {
             <p><strong>Date:</strong> ${formatDate(job.job_date)} at ${job.job_time || 'TBD'}</p>
             <p><strong>Location:</strong> ${job.location || 'N/A'}</p>
             <div style="margin-top: 1rem;">
-                <button class="btn-small" onclick="viewJobDetails(${job.id})">View Details</button>
+                <button class="btn-small" onclick="viewJobDetails(${job.id})">View</button>
                 <button class="btn-small" onclick="editJob(${job.id})">Edit</button>
             </div>
         </div>
     `).join('');
-    
-    console.log(`✅ Filtered jobs: ${filteredJobs.length} jobs shown`);
 }
 
-// Staff Management
+// ============================================
+// STAFF
+// ============================================
 async function loadStaff() {
     try {
         console.log('🔄 Loading staff...');
-        showLoading('staff-management-list');
+        showLoading('staff-list');
         
-        const res = await fetch(`${API_URL}/staff`, {
-            headers: getAuthHeaders()
-        });
-        console.log('📡 Staff API status:', res.status);
+        const res = await fetch(`${API_URL}/staff`, { headers: getAuthHeaders() });
         
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const data = await res.json();
-        const staff = Array.isArray(data) ? data : (data.staff || []);
-        console.log('👥 Staff loaded:', staff.length);
+        const staff = Array.isArray(data) ? data : (data.data || []);
         
         const list = document.getElementById('staff-list');
-        if (!list) {
-            console.error('❌ staff-list element not found');
-            return;
-        }
+        if (!list) return;
         
         if (staff.length === 0) {
             list.innerHTML = '<div class="no-data">No staff found</div>';
-            hideLoading('staff-list');
             return;
         }
         
@@ -565,135 +480,87 @@ async function loadStaff() {
                 <p><strong>Role:</strong> ${member.role || 'Staff'}</p>
                 <p><strong>Phone:</strong> ${member.phone || 'N/A'}</p>
                 <div style="margin-top: 1rem;">
-                    <button class="btn-small" onclick="viewStaffDetails(${member.id})">View Details</button>
+                    <button class="btn-small" onclick="viewStaffDetails(${member.id})">View</button>
                     <button class="btn-small" onclick="editStaff(${member.id})">Edit</button>
                 </div>
             </div>
         `).join('');
         
-        console.log('✅ Staff rendered successfully');
         hideLoading('staff-list');
     } catch (error) {
         console.error('❌ Error loading staff:', error);
         const list = document.getElementById('staff-list');
-        if (list) {
-            list.innerHTML = `<div class="error-message">Failed to load staff: ${error.message}</div>`;
-        }
+        if (list) list.innerHTML = `<div class="error-message">Failed to load staff</div>`;
     }
 }
 
-// Invoice Management
+// ============================================
+// INVOICES
+// ============================================
 async function loadInvoices() {
     try {
         console.log('🔄 Loading invoices...');
         showLoading('invoices-list');
         
-        const res = await fetch(`${API_URL}/invoices`, {
-            headers: getAuthHeaders()
-        });
-        console.log('📡 Invoices API status:', res.status);
+        const res = await fetch(`${API_URL}/invoices`, { headers: getAuthHeaders() });
         
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const data = await res.json();
-        console.log('📊 Raw API response:', data);
-        const invoices = Array.isArray(data) ? data : (data.invoices || []);
-        console.log('💰 Processed invoices:', invoices.length);
-        console.log('💰 Invoice sample:', invoices[0]);
+        window.allInvoices = Array.isArray(data) ? data : (data.data || []);
         
         const list = document.getElementById('invoices-list');
-        if (!list) {
-            console.error('❌ invoices-list element not found');
-            return;
-        }
+        if (!list) return;
         
-        if (invoices.length === 0) {
+        if (window.allInvoices.length === 0) {
             list.innerHTML = '<div class="no-data">No invoices found</div>';
-            hideLoading('invoices-list');
             return;
         }
         
-        list.innerHTML = invoices.map(invoice => `
+        list.innerHTML = window.allInvoices.map(invoice => `
             <div class="invoice-card">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <h3>${invoice.invoice_number || `INV-${invoice.id}`}</h3>
-                    <span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span>
+                    <span class="status-badge status-${invoice.status?.toLowerCase()}">${invoice.status}</span>
                 </div>
                 <p><strong>Customer:</strong> ${invoice.customer_name || 'N/A'}</p>
                 <p><strong>Amount:</strong> $${(invoice.amount || 0).toFixed(2)}</p>
                 <p><strong>Issue Date:</strong> ${formatDate(invoice.issued_at)}</p>
-                <p><strong>Job Date:</strong> ${formatDate(invoice.job_date)}</p>
                 <div style="margin-top: 1rem;">
-                    <button class="btn-small" onclick="viewInvoiceDetails(${invoice.id})">View Details</button>
+                    <button class="btn-small" onclick="viewInvoiceDetails(${invoice.id})">View</button>
                     <button class="btn-small" onclick="downloadInvoice(${invoice.id})">Download</button>
-                    ${invoice.status === 'Unpaid' ? `<button class="btn-small btn-success" onclick="markAsPaid(${invoice.id})">Mark as Paid</button>` : ''}
+                    ${invoice.status?.toLowerCase() === 'unpaid' ? `<button class="btn-small btn-success" onclick="markAsPaid(${invoice.id})">Mark Paid</button>` : ''}
                 </div>
             </div>
         `).join('');
         
-        console.log('✅ Invoices rendered successfully');
         hideLoading('invoices-list');
-        
-        // Add filter functionality
-        const filterSelect = document.getElementById('invoice-filter');
-        if (filterSelect) {
-            filterSelect.addEventListener('change', function() {
-                filterInvoices(this.value);
-            });
-        }
     } catch (error) {
         console.error('❌ Error loading invoices:', error);
         const list = document.getElementById('invoices-list');
-        if (list) {
-            list.innerHTML = `<div class="error-message">Failed to load invoices: ${error.message}</div>`;
-        }
+        if (list) list.innerHTML = `<div class="error-message">Failed to load invoices</div>`;
     }
 }
 
-// Filter invoices
 function filterInvoices(filter) {
-    // Store all invoices globally for filtering
-    if (!window.allInvoices) {
-        window.allInvoices = [];
-        // Load all invoices if not already stored
-        fetch(`${API_URL}/invoices`, {
-            headers: getAuthHeaders()
-        })
-            .then(res => res.json())
-            .then(data => {
-                window.allInvoices = Array.isArray(data) ? data : (data.invoices || []);
-                applyInvoiceFilter(filter);
-            })
-            .catch(error => console.error('Error loading invoices for filtering:', error));
-        return;
-    }
+    if (!window.allInvoices) return;
     
-    applyInvoiceFilter(filter);
-}
-
-function applyInvoiceFilter(filter) {
     const list = document.getElementById('invoices-list');
-    if (!list || !window.allInvoices) return;
+    if (!list) return;
     
     let filteredInvoices = window.allInvoices;
     
     switch(filter) {
         case 'paid':
-            filteredInvoices = window.allInvoices.filter(inv => inv.status === 'Paid');
+            filteredInvoices = window.allInvoices.filter(inv => inv.status?.toLowerCase() === 'paid');
             break;
         case 'unpaid':
-            filteredInvoices = window.allInvoices.filter(inv => inv.status === 'Unpaid');
-            break;
-        case 'all':
-        default:
-            filteredInvoices = window.allInvoices;
+            filteredInvoices = window.allInvoices.filter(inv => inv.status?.toLowerCase() === 'unpaid');
             break;
     }
     
     if (filteredInvoices.length === 0) {
-        list.innerHTML = '<div class="no-data">No invoices found for this filter</div>';
+        list.innerHTML = '<div class="no-data">No invoices found</div>';
         return;
     }
     
@@ -701,953 +568,78 @@ function applyInvoiceFilter(filter) {
         <div class="invoice-card">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                 <h3>${invoice.invoice_number || `INV-${invoice.id}`}</h3>
-                <span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span>
+                <span class="status-badge status-${invoice.status?.toLowerCase()}">${invoice.status}</span>
             </div>
             <p><strong>Customer:</strong> ${invoice.customer_name || 'N/A'}</p>
             <p><strong>Amount:</strong> $${(invoice.amount || 0).toFixed(2)}</p>
             <p><strong>Issue Date:</strong> ${formatDate(invoice.issued_at)}</p>
-            <p><strong>Job Date:</strong> ${formatDate(invoice.job_date)}</p>
             <div style="margin-top: 1rem;">
-                <button class="btn-small" onclick="viewInvoiceDetails(${invoice.id})">View Details</button>
+                <button class="btn-small" onclick="viewInvoiceDetails(${invoice.id})">View</button>
                 <button class="btn-small" onclick="downloadInvoice(${invoice.id})">Download</button>
-                ${invoice.status === 'Unpaid' ? `<button class="btn-small btn-success" onclick="markAsPaid(${invoice.id})">Mark as Paid</button>` : ''}
+                ${invoice.status?.toLowerCase() === 'unpaid' ? `<button class="btn-small btn-success" onclick="markAsPaid(${invoice.id})">Mark Paid</button>` : ''}
             </div>
         </div>
     `).join('');
 }
 
-// Show Create Invoice Modal
-function showCreateInvoiceModal() {
-    showModal('create-invoice-modal');
-    loadInvoiceFormOptions();
-}
-
-// Load options for invoice form
-async function loadInvoiceFormOptions() {
-    try {
-        // Load completed jobs that don't have invoices yet
-        const jobsRes = await fetch(`${API_URL}/jobs`, {
-            headers: getAuthHeaders()
-        });
-        
-        if (!jobsRes.ok) {
-            throw new Error(`HTTP ${jobsRes.status}: ${jobsRes.statusText}`);
-        }
-        
-        const jobs = await jobsRes.json();
-        
-        // Get existing invoices to exclude jobs that already have invoices
-        const invoicesRes = await fetch(`${API_URL}/invoices`, {
-            headers: getAuthHeaders()
-        });
-        
-        if (!invoicesRes.ok) {
-            throw new Error(`HTTP ${invoicesRes.status}: ${invoicesRes.statusText}`);
-        }
-        
-        const invoices = await invoicesRes.json();
-        const invoicedJobIds = invoices.map(inv => inv.job_id);
-        
-        // Filter completed jobs without invoices
-        const availableJobs = jobs.filter(job => 
-            job.status === 'Completed' && !invoicedJobIds.includes(job.id)
-        );
-        
-        const jobSelect = document.getElementById('invoice-job');
-        jobSelect.innerHTML = '<option value="">Select Completed Job</option>' + 
-            availableJobs.map(job => `
-                <option value="${job.id}" 
-                        data-customer="${job.customer_name}" 
-                        data-service="${job.service_name}" 
-                        data-amount="${job.service_price || 0}">
-                    ${job.customer_name} - ${job.service_name} ($${job.service_price || 0})
-                </option>
-            `).join('');
-        
-        // Add change event listener
-        jobSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            document.getElementById('invoice-customer').value = selectedOption.dataset.customer || '';
-            document.getElementById('invoice-service').value = selectedOption.dataset.service || '';
-            document.getElementById('invoice-amount').value = selectedOption.dataset.amount || '';
-        });
-        
-    } catch (error) {
-        console.error('Error loading invoice form options:', error);
-    }
-}
-
-// Add Staff Form Handler
-document.getElementById('add-staff-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = {
-        name: document.getElementById('staff-name').value,
-        email: document.getElementById('staff-email').value,
-        phone: document.getElementById('staff-phone').value,
-        role: document.getElementById('staff-role').value,
-        password: document.getElementById('staff-password').value,
-        notes: document.getElementById('staff-notes').value
-    };
-    
-    try {
-        const res = await fetch(`${API_URL}/staff`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(formData)
-        });
-        
-        if (res.ok) {
-            showNotification('Staff member added successfully!', 'success');
-            closeModal('add-staff-modal');
-            if (currentSection === 'staff') loadStaff();
-        } else {
-            const error = await res.json();
-            showNotification(`Failed to add staff: ${error.error}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error adding staff:', error);
-        showNotification('Error adding staff', 'error');
-    }
-});
-
-// Add Automation Form Handler
-document.getElementById('add-automation-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = {
-        trigger_event: document.getElementById('automation-trigger').value,
-        channel: document.getElementById('automation-channel').value,
-        message_template: document.getElementById('automation-message').value,
-        enabled: document.getElementById('automation-enabled').checked
-    };
-    
-    try {
-        const res = await fetch(`${API_URL}/automations`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(formData)
-        });
-        
-        if (res.ok) {
-            showNotification('Automation added successfully!', 'success');
-            closeModal('add-automation-modal');
-            if (currentSection === 'automations') loadAutomations();
-        } else {
-            const error = await res.json();
-            showNotification(`Failed to add automation: ${error.error}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error adding automation:', error);
-        showNotification('Error adding automation', 'error');
-    }
-});
-
-// Create Invoice Form Handler
-document.getElementById('create-invoice-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = {
-        job_id: document.getElementById('invoice-job').value,
-        amount: parseFloat(document.getElementById('invoice-amount').value),
-        notes: document.getElementById('invoice-notes').value
-    };
-    
-    try {
-        const res = await fetch(`${API_URL}/invoices/create`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(formData)
-        });
-        
-        if (res.ok) {
-            showNotification('Invoice created successfully!', 'success');
-            closeModal('create-invoice-modal');
-            loadInvoices(); // Refresh invoice list
-        } else {
-            const error = await res.json();
-            showNotification(`Failed to create invoice: ${error.error}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error creating invoice', 'error');
-    }
-});
-
-// Mark Invoice as Paid
-async function markAsPaid(invoiceId) {
-    if (!confirm('Mark this invoice as paid?')) return;
-    
-    try {
-        const res = await fetch(`${API_URL}/invoices/${invoiceId}/pay`, {
-            method: 'PATCH',
-            headers: getAuthHeaders()
-        });
-        
-        if (res.ok) {
-            showNotification('Invoice marked as paid!', 'success');
-            loadInvoices(); // Refresh invoice list
-        } else {
-            showNotification('Failed to mark invoice as paid', 'error');
-        }
-    } catch (error) {
-        console.error('Error marking invoice as paid:', error);
-        showNotification('Error marking invoice as paid', 'error');
-    }
-}
-
-// View Customer Details
-function viewCustomerDetails(customerId) {
-    console.log(`👤 Viewing customer details for ID: ${customerId}`);
-    
-    // Fetch customer details including job history and invoices
-    Promise.all([
-        fetch(`${API_URL}/customers/${customerId}`),
-        fetch(`${API_URL}/jobs?customer_id=${customerId}`),
-        fetch(`${API_URL}/invoices?customer_id=${customerId}`)
-    ]).then(([customerRes, jobsRes, invoicesRes]) => {
-        if (!customerRes.ok) {
-            showNotification('Failed to load customer details', 'error');
-            return;
-        }
-        
-        return Promise.all([
-            customerRes.json(),
-            jobsRes.ok ? jobsRes.json() : [],
-            invoicesRes.ok ? invoicesRes.json() : []
-        ]);
-    }).then(([customer, jobs, invoices]) => {
-        // Create detailed view modal
-        const modalContent = `
-            <div class="modal-header">
-                <h3>Customer Details</h3>
-                <button class="close-btn" onclick="closeModal('view-details-modal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="customer-details">
-                    <div class="detail-section">
-                        <h4>Customer Information</h4>
-                        <p><strong>Name:</strong> ${customer.name || 'N/A'}</p>
-                        <p><strong>Email:</strong> ${customer.email || 'N/A'}</p>
-                        <p><strong>Phone:</strong> ${customer.phone || 'N/A'}</p>
-                        <p><strong>Address:</strong> ${customer.address || 'N/A'}</p>
-                        <p><strong>Notes:</strong> ${customer.notes || 'N/A'}</p>
-                        <p><strong>Created:</strong> ${formatDate(customer.created_at)}</p>
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h4>Job History (${jobs.length} jobs)</h4>
-                        ${jobs.length === 0 ? '<p>No jobs found</p>' : jobs.map(job => `
-                            <div class="job-item">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                    <span class="status-badge status-${job.status.toLowerCase().replace(' ', '-')}">${job.status}</span>
-                                    <span class="job-date">${formatDate(job.job_date)} at ${job.job_time || 'TBD'}</span>
-                                </div>
-                                <p><strong>Service:</strong> ${job.service_name || 'N/A'}</p>
-                                <p><strong>Location:</strong> ${job.location || 'N/A'}</p>
-                                <p><strong>Notes:</strong> ${job.notes || 'N/A'}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h4>Invoices (${invoices.length} invoices)</h4>
-                        ${invoices.length === 0 ? '<p>No invoices found</p>' : invoices.map(invoice => `
-                            <div class="invoice-item">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                    <span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span>
-                                    <span class="invoice-number">${invoice.invoice_number || `INV-${invoice.id}`}</span>
-                                </div>
-                                <p><strong>Amount:</strong> $${(invoice.amount || 0).toFixed(2)}</p>
-                                <p><strong>Issue Date:</strong> ${formatDate(invoice.issued_at)}</p>
-                                <p><strong>Job Date:</strong> ${formatDate(invoice.job_date)}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeModal('view-details-modal')">Close</button>
-            </div>
-        `;
-        
-        // Create modal if it doesn't exist
-        if (!document.getElementById('view-details-modal')) {
-            const modal = document.createElement('div');
-            modal.id = 'view-details-modal';
-            modal.className = 'modal';
-            modal.innerHTML = modalContent;
-            document.body.appendChild(modal);
-        } else {
-            document.getElementById('view-details-modal').innerHTML = modalContent;
-        }
-        
-        showModal('view-details-modal');
-    }).catch(error => {
-        console.error('Error loading customer details:', error);
-        showNotification('Failed to load customer details', 'error');
-    });
-}
-
-// View Job Details
-function viewJobDetails(jobId) {
-    console.log(`📋 Viewing job details for ID: ${jobId}`);
-    
-    fetch(`${API_URL}/jobs/${jobId}`)
-        .then(response => response.json())
-        .then(job => {
-            const modalContent = `
-                <div class="modal-header">
-                    <h3>Job Details</h3>
-                    <button class="close-btn" onclick="closeModal('view-details-modal')">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="job-details">
-                        <div class="detail-section">
-                            <h4>Job Information</h4>
-                            <p><strong>Customer:</strong> ${job.customer_name || 'N/A'}</p>
-                            <p><strong>Service:</strong> ${job.service_name || 'N/A'}</p>
-                            <p><strong>Staff:</strong> ${job.staff_name || 'Unassigned'}</p>
-                            <p><strong>Date:</strong> ${formatDate(job.job_date)} at ${job.job_time || 'TBD'}</p>
-                            <p><strong>Location:</strong> ${job.location || 'N/A'}</p>
-                            <p><strong>Status:</strong> <span class="status-badge status-${job.status.toLowerCase().replace(' ', '-')}">${job.status}</span></p>
-                            <p><strong>Notes:</strong> ${job.notes || 'N/A'}</p>
-                        </div>
-                        
-                        <div class="detail-section">
-                            <h4>Actions</h4>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn-small" onclick="editJob(${job.id})">Edit Job</button>
-                                <button class="btn-small btn-success" onclick="markJobCompleted(${job.id})">Mark Completed</button>
-                                <button class="btn-small btn-danger" onclick="markJobCancelled(${job.id})">Cancel Job</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" onclick="closeModal('view-details-modal')">Close</button>
-                </div>
-            `;
-            
-            // Create modal if it doesn't exist
-            if (!document.getElementById('view-details-modal')) {
-                const modal = document.createElement('div');
-                modal.id = 'view-details-modal';
-                modal.className = 'modal';
-                modal.innerHTML = modalContent;
-                document.body.appendChild(modal);
-            } else {
-                document.getElementById('view-details-modal').innerHTML = modalContent;
-            }
-            
-            showModal('view-details-modal');
-        })
-        .catch(error => {
-            console.error('Error loading job details:', error);
-            showNotification('Failed to load job details', 'error');
-        });
-}
-
-// View Staff Details
-function viewStaffDetails(staffId) {
-    console.log(`👤 Viewing staff details for ID: ${staffId}`);
-    
-    fetch(`${API_URL}/staff/${staffId}`)
-        .then(response => response.json())
-        .then(staff => {
-            const modalContent = `
-                <div class="modal-header">
-                    <h3>Staff Details</h3>
-                    <button class="close-btn" onclick="closeModal('view-details-modal')">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="staff-details">
-                        <div class="detail-section">
-                            <h4>Staff Information</h4>
-                            <p><strong>Name:</strong> ${staff.name || 'N/A'}</p>
-                            <p><strong>Email:</strong> ${staff.email || 'N/A'}</p>
-                            <p><strong>Phone:</strong> ${staff.phone || 'N/A'}</p>
-            <p><strong>Role:</strong> ${staff.role || 'Staff'}</p>
-                            <p><strong>Status:</strong> <span class="status-badge status-${staff.is_active ? 'active' : 'inactive'}">${staff.is_active ? 'Active' : 'Inactive'}</span></p>
-                            <p><strong>Created:</strong> ${formatDate(staff.created_at)}</p>
-                        </div>
-                        
-                        <div class="detail-section">
-                            <h4>Actions</h4>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn-small" onclick="editStaff(${staff.id})">Edit Staff</button>
-                                <button class="btn-small ${staff.is_active ? 'btn-warning' : 'btn-success'}" onclick="toggleStaffStatus(${staff.id})">${staff.is_active ? 'Deactivate' : 'Activate'}</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" onclick="closeModal('view-details-modal')">Close</button>
-                </div>
-            `;
-            
-            // Create modal if it doesn't exist
-            if (!document.getElementById('view-details-modal')) {
-                const modal = document.createElement('div');
-                modal.id = 'view-details-modal';
-                modal.className = 'modal';
-                modal.innerHTML = modalContent;
-                document.body.appendChild(modal);
-            } else {
-                document.getElementById('view-details-modal').innerHTML = modalContent;
-            }
-            
-            showModal('view-details-modal');
-        })
-        .catch(error => {
-            console.error('Error loading staff details:', error);
-            showNotification('Failed to load staff details', 'error');
-        });
-}
-
-// View Invoice Details
-function viewInvoiceDetails(invoiceId) {
-    console.log(`💰 Viewing invoice details for ID: ${invoiceId}`);
-    
-    fetch(`${API_URL}/invoices/${invoiceId}`)
-        .then(response => response.json())
-        .then(invoice => {
-            const modalContent = `
-                <div class="modal-header">
-                    <h3>Invoice Details</h3>
-                    <button class="close-btn" onclick="closeModal('view-details-modal')">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="invoice-details">
-                        <div class="detail-section">
-                            <h4>Invoice Information</h4>
-                            <p><strong>Invoice Number:</strong> ${invoice.invoice_number || `INV-${invoice.id}`}</p>
-                            <p><strong>Customer:</strong> ${invoice.customer_name || 'N/A'}</p>
-                            <p><strong>Amount:</strong> $${(invoice.amount || 0).toFixed(2)}</p>
-                            <p><strong>Status:</strong> <span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span></p>
-                            <p><strong>Issue Date:</strong> ${formatDate(invoice.issued_at)}</p>
-                            <p><strong>Job Date:</strong> ${formatDate(invoice.job_date)}</p>
-                        </div>
-                        
-                        <div class="detail-section">
-                            <h4>Actions</h4>
-                            <div style="display: flex; gap: 0.5rem;">
-                                ${invoice.status === 'Unpaid' ? `<button class="btn-small btn-success" onclick="markAsPaid(${invoice.id})">Mark as Paid</button>` : ''}
-                                <button class="btn-small" onclick="downloadInvoice(${invoice.id})">Download PDF</button>
-                                <button class="btn-small" onclick="editInvoice(${invoice.id})">Edit Invoice</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" onclick="closeModal('view-details-modal')">Close</button>
-                </div>
-            `;
-            
-            // Create modal if it doesn't exist
-            if (!document.getElementById('view-details-modal')) {
-                const modal = document.createElement('div');
-                modal.id = 'view-details-modal';
-                modal.className = 'modal';
-                modal.innerHTML = modalContent;
-                document.body.appendChild(modal);
-            } else {
-                document.getElementById('view-details-modal').innerHTML = modalContent;
-            }
-            
-            showModal('view-details-modal');
-        })
-        .catch(error => {
-            console.error('Error loading invoice details:', error);
-            showNotification('Failed to load invoice details', 'error');
-        });
-}
-
-// Edit Functions
-function editCustomer(customerId) {
-    console.log(`✏️ Editing customer ID: ${customerId}`);
-    
-    // Fetch customer data and populate edit modal
-    fetch(`${API_URL}/customers/${customerId}`)
-        .then(response => response.json())
-        .then(customer => {
-            const modalContent = `
-                <div class="modal-header">
-                    <h3>Edit Customer</h3>
-                    <button class="close-btn" onclick="closeModal('edit-modal')">×</button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit-customer-form">
-                        <input type="hidden" id="edit-customer-id" value="${customer.id}">
-                        <div class="form-group">
-                            <label>Name *</label>
-                            <input type="text" id="edit-customer-name" value="${customer.name || ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="edit-customer-email" value="${customer.email || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" id="edit-customer-phone" value="${customer.phone || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Address</label>
-                            <input type="text" id="edit-customer-address" value="${customer.address || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea id="edit-customer-notes" rows="3">${customer.notes || ''}</textarea>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
-                            <button type="submit" class="btn-primary">Update Customer</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            
-            // Create modal if it doesn't exist
-            if (!document.getElementById('edit-modal')) {
-                const modal = document.createElement('div');
-                modal.id = 'edit-modal';
-                modal.className = 'modal';
-                modal.innerHTML = modalContent;
-                document.body.appendChild(modal);
-            } else {
-                document.getElementById('edit-modal').innerHTML = modalContent;
-            }
-            
-            // Add form handler
-            document.getElementById('edit-customer-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const formData = {
-                    name: document.getElementById('edit-customer-name').value,
-                    email: document.getElementById('edit-customer-email').value,
-                    phone: document.getElementById('edit-customer-phone').value,
-                    address: document.getElementById('edit-customer-address').value,
-                    notes: document.getElementById('edit-customer-notes').value
-                };
-                
-                try {
-                    const response = await fetch(`${API_URL}/customers/${customerId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(formData)
-                    });
-                    
-                    if (response.ok) {
-                        showNotification('Customer updated successfully!', 'success');
-                        closeModal('edit-modal');
-                        if (currentSection === 'customers') loadCustomers();
-                    } else {
-                        const error = await response.json();
-                        showNotification(`Failed to update customer: ${error.error}`, 'error');
-                    }
-                } catch (error) {
-                    console.error('Error updating customer:', error);
-                    showNotification('Error updating customer', 'error');
-                }
-            });
-            
-            showModal('edit-modal');
-        })
-        .catch(error => {
-            console.error('Error loading customer for edit:', error);
-            showNotification('Failed to load customer details', 'error');
-        });
-}
-
-function editJob(jobId) {
-    console.log(`✏️ Editing job ID: ${jobId}`);
-    
-    fetch(`${API_URL}/jobs/${jobId}`)
-        .then(response => response.json())
-        .then(job => {
-            const modalContent = `
-                <div class="modal-header">
-                    <h3>Edit Job</h3>
-                    <button class="close-btn" onclick="closeModal('edit-modal')">×</button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit-job-form">
-                        <input type="hidden" id="edit-job-id" value="${job.id}">
-                        <div class="form-group">
-                            <label>Customer *</label>
-                            <select id="edit-job-customer" required>
-                                <option value="">Select Customer</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Service *</label>
-                            <select id="edit-job-service" required>
-                                <option value="">Select Service</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Staff</label>
-                            <select id="edit-job-staff">
-                                <option value="">Select Staff</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Date *</label>
-                            <input type="date" id="edit-job-date" value="${job.job_date}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Time</label>
-                            <input type="time" id="edit-job-time" value="${job.job_time || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Location</label>
-                            <input type="text" id="edit-job-location" value="${job.location || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="edit-job-status">
-                                <option value="Scheduled" ${job.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
-                                <option value="In Progress" ${job.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Completed" ${job.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                <option value="Cancelled" ${job.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea id="edit-job-notes" rows="3">${job.notes || ''}</textarea>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
-                            <button type="submit" class="btn-primary">Update Job</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            
-            // Create modal if it doesn't exist
-            if (!document.getElementById('edit-modal')) {
-                const modal = document.createElement('div');
-                modal.id = 'edit-modal';
-                modal.className = 'modal';
-                modal.innerHTML = modalContent;
-                document.body.appendChild(modal);
-            } else {
-                document.getElementById('edit-modal').innerHTML = modalContent;
-            }
-            
-            // Load form options
-            loadJobFormOptions('edit');
-            
-            // Set current values
-            setTimeout(() => {
-                document.getElementById('edit-job-customer').value = job.customer_id || '';
-                document.getElementById('edit-job-service').value = job.service_id || '';
-                document.getElementById('edit-job-staff').value = job.assigned_to || '';
-            }, 500);
-            
-            // Add form handler
-            document.getElementById('edit-job-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const formData = {
-                    customer_id: parseInt(document.getElementById('edit-job-customer').value),
-                    service_id: parseInt(document.getElementById('edit-job-service').value),
-                    assigned_to: parseInt(document.getElementById('edit-job-staff').value) || null,
-                    job_date: document.getElementById('edit-job-date').value,
-                    job_time: document.getElementById('edit-job-time').value,
-                    location: document.getElementById('edit-job-location').value,
-                    status: document.getElementById('edit-job-status').value,
-                    notes: document.getElementById('edit-job-notes').value
-                };
-                
-                try {
-                    const response = await fetch(`${API_URL}/jobs/${jobId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(formData)
-                    });
-                    
-                    if (response.ok) {
-                        showNotification('Job updated successfully!', 'success');
-                        closeModal('edit-modal');
-                        if (currentSection === 'jobs') loadJobs();
-                        if (currentSection === 'dashboard') loadDashboard();
-                    } else {
-                        const error = await response.json();
-                        showNotification(`Failed to update job: ${error.error}`, 'error');
-                    }
-                } catch (error) {
-                    console.error('Error updating job:', error);
-                    showNotification('Error updating job', 'error');
-                }
-            });
-            
-            showModal('edit-modal');
-        })
-        .catch(error => {
-            console.error('Error loading job for edit:', error);
-            showNotification('Failed to load job details', 'error');
-        });
-}
-
-function editStaff(staffId) {
-    console.log(`✏️ Editing staff ID: ${staffId}`);
-    
-    fetch(`${API_URL}/staff/${staffId}`)
-        .then(response => response.json())
-        .then(staff => {
-            const modalContent = `
-                <div class="modal-header">
-                    <h3>Edit Staff Member</h3>
-                    <button class="close-btn" onclick="closeModal('edit-modal')">×</button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit-staff-form">
-                        <input type="hidden" id="edit-staff-id" value="${staff.id}">
-                        <div class="form-group">
-                            <label>Name *</label>
-                            <input type="text" id="edit-staff-name" value="${staff.name || ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" id="edit-staff-email" value="${staff.email || ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" id="edit-staff-phone" value="${staff.phone || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Role</label>
-                            <select id="edit-staff-role">
-                                <option value="staff" ${staff.role === 'staff' ? 'selected' : ''}>Staff</option>
-                                <option value="manager" ${staff.role === 'manager' ? 'selected' : ''}>Manager</option>
-                                <option value="admin" ${staff.role === 'admin' ? 'selected' : ''}>Admin</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="edit-staff-status">
-                                <option value="1" ${staff.is_active ? 'selected' : ''}>Active</option>
-                                <option value="0" ${!staff.is_active ? 'selected' : ''}>Inactive</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea id="edit-staff-notes" rows="3">${staff.notes || ''}</textarea>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
-                            <button type="submit" class="btn-primary">Update Staff</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            
-            // Create modal if it doesn't exist
-            if (!document.getElementById('edit-modal')) {
-                const modal = document.createElement('div');
-                modal.id = 'edit-modal';
-                modal.className = 'modal';
-                modal.innerHTML = modalContent;
-                document.body.appendChild(modal);
-            } else {
-                document.getElementById('edit-modal').innerHTML = modalContent;
-            }
-            
-            // Add form handler
-            document.getElementById('edit-staff-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const formData = {
-                    name: document.getElementById('edit-staff-name').value,
-                    email: document.getElementById('edit-staff-email').value,
-                    phone: document.getElementById('edit-staff-phone').value,
-                    role: document.getElementById('edit-staff-role').value,
-                    is_active: document.getElementById('edit-staff-status').value === '1',
-                    notes: document.getElementById('edit-staff-notes').value
-                };
-                
-                try {
-                    const response = await fetch(`${API_URL}/staff/${staffId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(formData)
-                    });
-                    
-                    if (response.ok) {
-                        showNotification('Staff updated successfully!', 'success');
-                        closeModal('edit-modal');
-                        if (currentSection === 'staff') loadStaff();
-                    } else {
-                        const error = await response.json();
-                        showNotification(`Failed to update staff: ${error.error}`, 'error');
-                    }
-                } catch (error) {
-                    console.error('Error updating staff:', error);
-                    showNotification('Error updating staff', 'error');
-                }
-            });
-            
-            showModal('edit-modal');
-        })
-        .catch(error => {
-            console.error('Error loading staff for edit:', error);
-            showNotification('Failed to load staff details', 'error');
-        });
-}
-
-function editInvoice(invoiceId) {
-    console.log(`✏️ Editing invoice ID: ${invoiceId}`);
-    showNotification('Invoice editing coming soon', 'info');
-}
-
-// Action Functions
-function markJobCompleted(jobId) {
-    if (!confirm('Mark this job as completed?')) return;
-    
-    fetch(`${API_URL}/jobs/${jobId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Completed' })
-    })
-    .then(response => response.json())
-    .then(data => {
-        showNotification('Job marked as completed!', 'success');
-        closeModal('view-details-modal');
-        if (currentSection === 'jobs') loadJobs();
-        if (currentSection === 'dashboard') loadDashboard();
-    })
-    .catch(error => {
-        console.error('Error marking job as completed:', error);
-        showNotification('Error marking job as completed', 'error');
-    });
-}
-
-function markJobCancelled(jobId) {
-    if (!confirm('Cancel this job?')) return;
-    
-    fetch(`${API_URL}/jobs/${jobId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Cancelled' })
-    })
-    .then(response => response.json())
-    .then(data => {
-        showNotification('Job cancelled!', 'success');
-        closeModal('view-details-modal');
-        if (currentSection === 'jobs') loadJobs();
-        if (currentSection === 'dashboard') loadDashboard();
-    })
-    .catch(error => {
-        console.error('Error cancelling job:', error);
-        showNotification('Error cancelling job', 'error');
-    });
-}
-
-function toggleStaffStatus(staffId) {
-    const action = event.target.textContent;
-    if (!confirm(`${action} this staff member?`)) return;
-    
-    // Get current staff status and toggle it
-    fetch(`${API_URL}/staff/${staffId}`)
-        .then(response => response.json())
-        .then(staff => {
-            const newStatus = !staff.is_active;
-            
-            return fetch(`${API_URL}/staff/${staffId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ is_active: newStatus })
-            });
-        })
-        .then(response => response.json())
-        .then(data => {
-            showNotification(`Staff ${newStatus ? 'activated' : 'deactivated'}!`, 'success');
-            closeModal('view-details-modal');
-            if (currentSection === 'staff') loadStaff();
-        })
-        .catch(error => {
-            console.error('Error toggling staff status:', error);
-            showNotification('Error updating staff status', 'error');
-        });
-}
-
-// Automations Management
+// ============================================
+// AUTOMATIONS
+// ============================================
 async function loadAutomations() {
     try {
+        console.log('🔄 Loading automations...');
         showLoading('automations-list');
-        const res = await fetch(`${API_URL}/automations`, {
-            headers: getAuthHeaders()
-        });
         
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
+        const res = await fetch(`${API_URL}/automations`, { headers: getAuthHeaders() });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const automations = await res.json();
         const list = document.getElementById('automations-list');
+        if (!list) return;
+        
+        if (automations.length === 0) {
+            list.innerHTML = '<div class="no-data">No automations found</div>';
+            return;
+        }
         
         list.innerHTML = automations.map(automation => `
             <div class="automation-card">
                 <h3>${automation.trigger_event}</h3>
                 <p><strong>Channel:</strong> ${automation.channel}</p>
                 <p><strong>Message:</strong> ${automation.message_template.substring(0, 100)}...</p>
-                <p><strong>Status:</strong> <span class="status-badge ${automation.enabled ? 'status-completed' : 'status-cancelled'}">${automation.enabled ? 'Enabled' : 'Disabled'}</span></p>
+                <p><strong>Status:</strong> <span class="status-badge ${automation.enabled ? 'status-active' : 'status-inactive'}">${automation.enabled ? 'Enabled' : 'Disabled'}</span></p>
                 <div style="margin-top: 1rem;">
                     <button class="btn-small" onclick="editAutomation(${automation.id})">Edit</button>
-                    <button class="btn-small" onclick="toggleAutomation(${automation.id})">${automation.enabled ? 'Disable' : 'Enable'}</button>
                 </div>
             </div>
         `).join('');
         
-        hideLoading('automations');
+        hideLoading('automations-list');
     } catch (error) {
-        console.error('Error loading automations:', error);
-        showError('automations', 'Failed to load automations');
+        console.error('❌ Error loading automations:', error);
+        const list = document.getElementById('automations-list');
+        if (list) list.innerHTML = `<div class="error-message">Failed to load automations</div>`;
     }
 }
 
-// Settings
+// ============================================
+// SETTINGS
+// ============================================
 function loadSettings() {
-    // Settings are loaded from the HTML
-    console.log('Settings loaded');
+    console.log('✓ Settings loaded');
 }
 
-// Modal Functions
-function showCreateJobModal() {
-    showModal('create-job-modal');
-    loadJobFormOptions();
-}
-
-function showAddCustomerModal() {
-    showModal('add-customer-modal');
-}
-
-function showModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-    document.getElementById('modal-overlay').classList.add('active');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-    document.getElementById('modal-overlay').classList.remove('active');
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.classList.remove('active');
-    });
-    document.getElementById('modal-overlay').classList.remove('active');
-}
-
-// Form Handlers
+// ============================================
+// FORM HANDLERS
+// ============================================
 document.getElementById('create-job-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const formData = {
-        customer_id: document.getElementById('job-customer').value,
-        service_id: document.getElementById('job-service').value,
-        assigned_to: document.getElementById('job-staff').value,
+        customer_id: parseInt(document.getElementById('job-customer').value),
+        service_id: parseInt(document.getElementById('job-service').value),
+        assigned_to: parseInt(document.getElementById('job-staff').value) || null,
         job_date: document.getElementById('job-date').value,
         job_time: document.getElementById('job-time').value,
         location: document.getElementById('job-location').value,
@@ -1657,7 +649,7 @@ document.getElementById('create-job-form')?.addEventListener('submit', async (e)
     try {
         const res = await fetch(`${API_URL}/jobs`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(formData)
         });
         
@@ -1689,7 +681,7 @@ document.getElementById('add-customer-form')?.addEventListener('submit', async (
     try {
         const res = await fetch(`${API_URL}/customers`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(formData)
         });
         
@@ -1706,36 +698,182 @@ document.getElementById('add-customer-form')?.addEventListener('submit', async (
     }
 });
 
-// Load form options
-async function loadJobFormOptions() {
+document.getElementById('add-staff-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('staff-name').value,
+        email: document.getElementById('staff-email').value,
+        phone: document.getElementById('staff-phone').value,
+        role: document.getElementById('staff-role').value,
+        password: document.getElementById('staff-password').value
+    };
+    
     try {
-        // Load customers
-        const customersRes = await fetch(`${API_URL}/customers`);
-        const customers = await customersRes.json();
-        const customerSelect = document.getElementById('job-customer');
-        customerSelect.innerHTML = '<option value="">Select Customer</option>' + 
-            customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        const res = await fetch(`${API_URL}/staff`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(formData)
+        });
         
-        // Load services
-        const servicesRes = await fetch(`${API_URL}/booking/services`);
-        const services = await servicesRes.json();
-        const serviceSelect = document.getElementById('job-service');
-        serviceSelect.innerHTML = '<option value="">Select Service</option>' + 
-            services.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        
-        // Load staff
-        const staffRes = await fetch(`${API_URL}/staff`);
-        const staff = await staffRes.json();
-        const staffSelect = document.getElementById('job-staff');
-        staffSelect.innerHTML = '<option value="">Unassigned</option>' + 
-            staff.map(s => `<option value="${s.id}">${s.full_name || s.name}</option>`).join('');
-        
+        if (res.ok) {
+            showNotification('Staff member added successfully!', 'success');
+            closeModal('add-staff-modal');
+            if (currentSection === 'staff') loadStaff();
+        } else {
+            const error = await res.json();
+            showNotification(`Failed: ${error.error}`, 'error');
+        }
     } catch (error) {
-        console.error('Error loading form options:', error);
+        console.error('Error adding staff:', error);
+        showNotification('Error adding staff', 'error');
+    }
+});
+
+document.getElementById('create-invoice-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+        job_id: document.getElementById('invoice-job').value,
+        amount: parseFloat(document.getElementById('invoice-amount').value),
+        notes: document.getElementById('invoice-notes').value
+    };
+    
+    try {
+        const res = await fetch(`${API_URL}/invoices/create`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(formData)
+        });
+        
+        if (res.ok) {
+            showNotification('Invoice created successfully!', 'success');
+            closeModal('create-invoice-modal');
+            loadInvoices();
+        } else {
+            const error = await res.json();
+            showNotification(`Failed: ${error.error}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Error creating invoice', 'error');
+    }
+});
+
+document.getElementById('add-automation-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+        trigger_event: document.getElementById('automation-trigger').value,
+        channel: document.getElementById('automation-channel').value,
+        message_template: document.getElementById('automation-message').value,
+        enabled: document.getElementById('automation-enabled').checked
+    };
+    
+    try {
+        const res = await fetch(`${API_URL}/automations`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(formData)
+        });
+        
+        if (res.ok) {
+            showNotification('Automation added successfully!', 'success');
+            closeModal('add-automation-modal');
+            if (currentSection === 'automations') loadAutomations();
+        } else {
+            const error = await res.json();
+            showNotification(`Failed: ${error.error}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error adding automation:', error);
+        showNotification('Error adding automation', 'error');
+    }
+});
+
+// ============================================
+// ACTION HANDLERS
+// ============================================
+async function markAsPaid(invoiceId) {
+    if (!confirm('Mark this invoice as paid?')) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/invoices/${invoiceId}/pay`, {
+            method: 'PATCH',
+            headers: getAuthHeaders()
+        });
+        
+        if (res.ok) {
+            showNotification('Invoice marked as paid!', 'success');
+            loadInvoices();
+        } else {
+            showNotification('Failed to mark invoice as paid', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error marking invoice as paid', 'error');
     }
 }
 
-// Utility Functions
+async function markJobCompleted(jobId) {
+    if (!confirm('Mark this job as completed?')) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/jobs/${jobId}/status`, {
+            method: 'PATCH',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ status: 'Completed' })
+        });
+        
+        if (res.ok) {
+            showNotification('Job marked as completed!', 'success');
+            closeModal('view-details-modal');
+            if (currentSection === 'jobs') loadJobs();
+            if (currentSection === 'dashboard') loadDashboard();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error marking job as completed', 'error');
+    }
+}
+
+function markJobCancelled(jobId) {
+    if (!confirm('Cancel this job?')) return;
+    
+    fetch(`${API_URL}/jobs/${jobId}/status`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status: 'Cancelled' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showNotification('Job cancelled!', 'success');
+        closeModal('view-details-modal');
+        if (currentSection === 'jobs') loadJobs();
+    })
+    .catch(error => showNotification('Error cancelling job', 'error'));
+}
+
+async function downloadInvoice(invoiceId) {
+    window.open(`${API_URL}/invoices/${invoiceId}/pdf`, '_blank');
+}
+
+// ============================================
+// MODAL FUNCTIONS
+// ============================================
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('active');
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 function getStatusColor(status) {
     const colors = {
         'Scheduled': '#2563eb',
@@ -1758,45 +896,21 @@ function getStatusIcon(status) {
 
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-    });
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatTime(dateString) {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    });
+    return new Date(dateString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-// UI Helper Functions
 function showLoading(section) {
     const element = document.getElementById(section);
-    if (!element) {
-        console.warn(`⚠️ Cannot show loading for missing element: ${section}`);
-        return;
-    }
-    element.innerHTML = '<div class="loading">Loading...</div>';
+    if (element) element.innerHTML = '<div class="loading">Loading...</div>';
 }
 
 function hideLoading(section) {
-    // Loading will be replaced by actual content - no action needed
-    console.log(`🔄 Loading completed for: ${section}`);
-}
-
-function showError(section, message) {
-    const element = document.getElementById(section);
-    if (!element) {
-        console.warn(`⚠️ Cannot show error for missing element: ${section}`);
-        return;
-    }
-    element.innerHTML = `<div class="error-message">${message}</div>`;
+    console.log(`✓ Loading completed: ${section}`);
 }
 
 function showNotification(message, type = 'info') {
@@ -1816,137 +930,61 @@ function showNotification(message, type = 'info') {
     `;
     
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
 }
 
-// Action Functions
-function refreshDashboard() {
-    showNotification('Refreshing dashboard...', 'info');
-    loadDashboard();
-}
-
-function openSchedulingPlugin() {
-  window.open('/booking.html', '_blank');
-}
-
-function showAddStaffModal() {
-    showModal('add-staff-modal');
-}
-
-function showAddAutomationModal() {
-    showModal('add-automation-modal');
-}
-
-function showNotifications() {
-    showNotification('Notifications coming soon', 'info');
+function calcTrend(current, previous) {
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
+    const pct = Math.round(((current - previous) / previous) * 100);
+    return (pct >= 0 ? '+' : '') + pct + '%';
 }
 
 function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  window.location.href = '/admin/login.html';
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/admin/login.html';
 }
 
-function saveBusinessSettings() {
-  const settings = {
-    business_name: document.getElementById('business-name').value,
-    business_phone: document.getElementById('business-phone').value,
-    business_email: document.getElementById('business-email').value,
-  };
-  fetch(`${API_URL}/settings`, {
-    method: 'PUT', headers: authHeaders(), body: JSON.stringify(settings)
-  }).then(res => {
-    showNotification(res.ok ? 'Settings saved!' : 'Failed to save settings', res.ok ? 'success' : 'error');
-  });
-}
+// ============================================
+// PLACEHOLDER FUNCTIONS (implement as needed)
+// ============================================
+function viewCustomerDetails(id) { console.log('View customer:', id); }
+function viewJobDetails(id) { console.log('View job:', id); }
+function viewStaffDetails(id) { console.log('View staff:', id); }
+function viewInvoiceDetails(id) { console.log('View invoice:', id); }
+function editCustomer(id) { console.log('Edit customer:', id); }
+function editJob(id) { console.log('Edit job:', id); }
+function editStaff(id) { console.log('Edit staff:', id); }
+function editAutomation(id) { console.log('Edit automation:', id); }
+function showCreateJobModal() { showModal('create-job-modal'); }
+function showAddCustomerModal() { showModal('add-customer-modal'); }
+function showAddStaffModal() { showModal('add-staff-modal'); }
+function showAddAutomationModal() { showModal('add-automation-modal'); }
+function refreshDashboard() { loadDashboard(); }
 
-async function loadSettings() {
-  const res = await fetch(`${API_URL}/settings`, { headers: authHeaders() });
-  if (!res.ok) return;
-  const s = await res.json();
-  if (s.business_name)  document.getElementById('business-name').value  = s.business_name;
-  if (s.business_phone) document.getElementById('business-phone').value = s.business_phone;
-  if (s.business_email) document.getElementById('business-email').value = s.business_email;
-}
-
-function saveLabelSettings() {
-    showNotification('Label settings applied!', 'success');
-}
-
-function downloadInvoice(invoiceId) {
-  window.open(`${API_URL}/invoices/${invoiceId}/pdf`, '_blank');
-}
-
-function editService(element) {
-    showNotification('Edit service functionality coming soon', 'info');
-}
-
-function addNewService() {
-    showNotification('Add service functionality coming soon', 'info');
-}
-
-// Auth guard - redirect to login if not authenticated
-(function() {
-  const token = localStorage.getItem('token');
-  if (!token) { window.location.href = '/admin/login.html'; }
-})();
-
-// API helper functions
-function authHeaders() {
-  const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': 'Bearer ' + token } : {})
-  };
-}
-
-// Trend calculation helper
-function calcTrend(current, previous) {
-  if (previous === 0) return current > 0 ? '+100%' : '0%';
-  const pct = Math.round(((current - previous) / previous) * 100);
-  return (pct >= 0 ? '+' : '') + pct + '%';
-}
-
-// Initialize everything when DOM is loaded
+// ============================================
+// INITIALIZATION
+// ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM loaded, initializing Stilt Heights Operations...');
+    console.log('🚀 Initializing admin dashboard...');
     
-    // Load settings first
-    loadSettings();
-    
-    // Verify all required elements exist
-    const requiredElements = [
-        'dashboard', 'customers-list', 'jobs-list', 'staff-management-list', 
-        'invoices-list', 'automations-list', 'activity-feed',
-        'today-jobs-count', 'pending-jobs-count', 'completed-jobs-count', 'revenue-count'
-    ];
-    
-    const missingElements = requiredElements.filter(id => !document.getElementById(id));
-    if (missingElements.length > 0) {
-        console.error('❌ Missing DOM elements:', missingElements);
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/admin/login.html';
         return;
     }
     
-    console.log('✅ All required DOM elements found');
-    
-    // Initialize Socket.IO
     initializeSocket();
-    
-    // Load initial dashboard
     loadDashboard();
     
-    // Set today's date as default for job creation
-    const today = new Date().toISOString().split('T')[0];
     const jobDateInput = document.getElementById('job-date');
     if (jobDateInput) {
+        const today = new Date().toISOString().split('T')[0];
         jobDateInput.value = today;
         jobDateInput.min = today;
     }
     
-    console.log('🎯 Stilt Heights Operations System initialization complete');
+    console.log('✅ Admin dashboard initialized');
 });
 
 // Auto-refresh dashboard every 30 seconds
@@ -1955,486 +993,3 @@ setInterval(() => {
         loadDashboard();
     }
 }, 30000);
-
-// AI Automation Functions
-let authToken = localStorage.getItem('authToken');
-
-// AI Quick Actions
-function showFollowUpModal() {
-    showAIFollowUpModal();
-}
-
-function showStaffNotificationModal() {
-    showAIStaffNotificationModal();
-}
-
-function showCustomAIModal() {
-    showAICustomMessageModal();
-}
-
-function showAITemplates() {
-    showAITemplatesModal();
-}
-
-function showAIDashboard() {
-    // Open the standalone AI dashboard in a new tab
-    window.open('/admin-ai', '_blank');
-}
-
-// AI Follow-up Modal
-function showAIFollowUpModal() {
-    const modal = createAIModal('AI Follow-up', `
-        <form id="aiFollowUpForm">
-            <div class="form-group">
-                <label for="aiCustomerSelect">Customer *</label>
-                <select id="aiCustomerSelect" required>
-                    <option value="">Select customer...</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="aiServiceName">Service Name</label>
-                <input type="text" id="aiServiceName" placeholder="e.g., Standard Cleaning">
-            </div>
-            <div class="form-group">
-                <label for="aiStaffName">Staff Name</label>
-                <input type="text" id="aiStaffName" placeholder="e.g., John Smith">
-            </div>
-            <div class="form-group">
-                <label>AI Message Preview</label>
-                <div class="ai-message-preview" id="aiFollowUpPreview">
-                    <div class="text-muted">Generate preview by clicking "Preview AI Message"</div>
-                </div>
-            </div>
-        </form>
-    `, [
-        { text: 'Cancel', class: 'btn-secondary', action: () => closeModal('aiModal') },
-        { text: 'Preview AI Message', class: 'btn-primary', action: previewAIFollowUp },
-        { text: 'Send Follow-up', class: 'btn-success', action: sendAIFollowUp }
-    ]);
-    
-    loadAICustomers();
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
-}
-
-// AI Staff Notification Modal
-function showAIStaffNotificationModal() {
-    const modal = createAIModal('AI Staff Notification', `
-        <form id="aiStaffNotificationForm">
-            <div class="form-group">
-                <label for="aiStaffSelect">Staff Member *</label>
-                <select id="aiStaffSelect" required>
-                    <option value="">Select staff...</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="aiCustomerName">Customer Name *</label>
-                <input type="text" id="aiCustomerName" required>
-            </div>
-            <div class="form-group">
-                <label for="aiServiceType">Service *</label>
-                <input type="text" id="aiServiceType" required>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="aiJobDate">Date</label>
-                    <input type="date" id="aiJobDate">
-                </div>
-                <div class="form-group">
-                    <label for="aiJobTime">Time</label>
-                    <input type="time" id="aiJobTime">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="aiJobLocation">Location</label>
-                <input type="text" id="aiJobLocation" placeholder="Customer address">
-            </div>
-            <div class="form-group">
-                <label>AI Message Preview</label>
-                <div class="ai-message-preview" id="aiStaffNotificationPreview">
-                    <div class="text-muted">Generate preview by clicking "Preview AI Message"</div>
-                </div>
-            </div>
-        </form>
-    `, [
-        { text: 'Cancel', class: 'btn-secondary', action: () => closeModal('aiModal') },
-        { text: 'Preview AI Message', class: 'btn-primary', action: previewAIStaffNotification },
-        { text: 'Send Notification', class: 'btn-success', action: sendAIStaffNotification }
-    ]);
-    
-    loadAIStaff();
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
-}
-
-// AI Custom Message Modal
-function showAICustomMessageModal() {
-    const modal = createAIModal('AI Custom Message', `
-        <form id="aiCustomMessageForm">
-            <div class="form-group">
-                <label for="aiTemplateType">Template Type *</label>
-                <select id="aiTemplateType" required>
-                    <option value="">Select template...</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="aiMessageData">Message Data (JSON) *</label>
-                <textarea id="aiMessageData" rows="6" placeholder='{"name": "John Doe", "service": "Cleaning", ...}' required></textarea>
-            </div>
-            <div class="form-group">
-                <label>AI Generated Message</label>
-                <div class="ai-message-preview" id="aiCustomMessagePreview">
-                    <div class="text-muted">Generate message by clicking "Generate AI Message"</div>
-                </div>
-            </div>
-        </form>
-    `, [
-        { text: 'Cancel', class: 'btn-secondary', action: () => closeModal('aiModal') },
-        { text: 'Generate AI Message', class: 'btn-primary', action: generateAICustomMessage },
-        { text: 'Copy Message', class: 'btn-success', action: copyAICustomMessage }
-    ]);
-    
-    loadAITemplateTypes();
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
-}
-
-// AI Templates Modal
-function showAITemplatesModal() {
-    fetch(`${API_URL}/ai-automations/templates`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            let templatesHtml = '';
-            Object.entries(result.templates).forEach(([key, template]) => {
-                templatesHtml += `
-                    <div class="template-item">
-                        <h4>${template.name}</h4>
-                        <p>${template.description}</p>
-                        <span class="template-function">${template.function}</span>
-                    </div>
-                `;
-            });
-            
-            const modal = createAIModal('AI Message Templates', `
-                <div class="templates-grid">
-                    ${templatesHtml}
-                </div>
-            `, [
-                { text: 'Close', class: 'btn-secondary', action: () => closeModal('aiModal') }
-            ]);
-            
-            document.body.appendChild(modal);
-            modal.style.display = 'flex';
-        }
-    })
-    .catch(error => {
-        console.error('Failed to load AI templates:', error);
-        showNotification('Failed to load AI templates', 'error');
-    });
-}
-
-// Helper Functions
-function createAIModal(title, content, buttons) {
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.id = 'aiModal';
-    
-    const buttonsHtml = buttons.map(btn => 
-        `<button type="button" class="${btn.class}" onclick="${btn.action.name}()">${btn.text}</button>`
-    ).join('');
-    
-    modal.innerHTML = `
-        <div class="modal ai-modal">
-            <div class="ai-modal-header">
-                <h3>${title}</h3>
-                <button type="button" class="btn-close" onclick="closeModal('aiModal')">&times;</button>
-            </div>
-            <div class="ai-modal-body">
-                ${content}
-            </div>
-            <div class="modal-actions">
-                ${buttonsHtml}
-            </div>
-        </div>
-    `;
-    
-    return modal;
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// Load Functions
-async function loadAICustomers() {
-    try {
-        const response = await fetch(`${API_URL}/customers?page=1&limit=100`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-            const select = document.getElementById('aiCustomerSelect');
-            if (select) {
-                select.innerHTML = '<option value="">Select customer...</option>';
-                result.data.forEach(customer => {
-                    select.innerHTML += `<option value="${customer.id}">${customer.name} - ${customer.email}</option>`;
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load customers:', error);
-    }
-}
-
-async function loadAIStaff() {
-    try {
-        const response = await fetch(`${API_URL}/staff?page=1&limit=100`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-            const select = document.getElementById('aiStaffSelect');
-            if (select) {
-                select.innerHTML = '<option value="">Select staff...</option>';
-                result.data.forEach(staff => {
-                    select.innerHTML += `<option value="${staff.id}">${staff.name} - ${staff.email}</option>`;
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load staff:', error);
-    }
-}
-
-async function loadAITemplateTypes() {
-    try {
-        const response = await fetch(`${API_URL}/ai-automations/templates`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        const result = await response.json();
-        
-        if (result.success) {
-            const select = document.getElementById('aiTemplateType');
-            if (select) {
-                select.innerHTML = '<option value="">Select template...</option>';
-                Object.entries(result.templates).forEach(([key, template]) => {
-                    select.innerHTML += `<option value="${key}">${template.name}</option>`;
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load template types:', error);
-    }
-}
-
-// AI Action Functions
-async function previewAIFollowUp() {
-    const serviceName = document.getElementById('aiServiceName').value;
-    const staffName = document.getElementById('aiStaffName').value;
-    
-    try {
-        const response = await fetch(`${API_URL}/ai-automations/custom`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                template_type: 'customer_follow_up',
-                data: {
-                    customer_name: 'Sample Customer',
-                    customer_email: 'customer@example.com',
-                    service_name: serviceName || 'Our Service',
-                    staff_name: staffName || 'Our Team'
-                }
-            })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            document.getElementById('aiFollowUpPreview').innerHTML = `<pre>${result.message}</pre>`;
-        }
-    } catch (error) {
-        console.error('Failed to preview follow-up:', error);
-    }
-}
-
-async function sendAIFollowUp() {
-    const customerId = document.getElementById('aiCustomerSelect').value;
-    const serviceName = document.getElementById('aiServiceName').value;
-    const staffName = document.getElementById('aiStaffName').value;
-    
-    if (!customerId) {
-        showNotification('Please select a customer', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/ai-automations/follow-up`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                customer_id: customerId,
-                service_name: serviceName,
-                staff_name: staffName
-            })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            showNotification('AI follow-up sent successfully!', 'success');
-            closeModal('aiModal');
-        } else {
-            showNotification('Failed to send follow-up: ' + result.error, 'error');
-        }
-    } catch (error) {
-        console.error('Failed to send follow-up:', error);
-        showNotification('Failed to send follow-up', 'error');
-    }
-}
-
-async function previewAIStaffNotification() {
-    const customerName = document.getElementById('aiCustomerName').value;
-    const serviceType = document.getElementById('aiServiceType').value;
-    const jobDate = document.getElementById('aiJobDate').value;
-    const jobTime = document.getElementById('aiJobTime').value;
-    const jobLocation = document.getElementById('aiJobLocation').value;
-    
-    if (!customerName || !serviceType) {
-        showNotification('Please fill in required fields', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/ai-automations/custom`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                template_type: 'staff_assignment',
-                data: {
-                    customer_name: customerName,
-                    service_name: serviceType,
-                    job_date: jobDate || 'Tomorrow',
-                    job_time: jobTime || '10:00 AM',
-                    location: jobLocation || 'Customer location'
-                }
-            })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            document.getElementById('aiStaffNotificationPreview').innerHTML = `<pre>${result.message}</pre>`;
-        }
-    } catch (error) {
-        console.error('Failed to preview staff notification:', error);
-    }
-}
-
-async function sendAIStaffNotification() {
-    const staffId = document.getElementById('aiStaffSelect').value;
-    const customerName = document.getElementById('aiCustomerName').value;
-    const serviceType = document.getElementById('aiServiceType').value;
-    const jobDate = document.getElementById('aiJobDate').value;
-    const jobTime = document.getElementById('aiJobTime').value;
-    const jobLocation = document.getElementById('aiJobLocation').value;
-    
-    if (!staffId || !customerName || !serviceType) {
-        showNotification('Please fill in required fields', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/ai-automations/staff-notification`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                staff_id: staffId,
-                customer_name: customerName,
-                service_name: serviceType,
-                job_date: jobDate,
-                job_time: jobTime,
-                location: jobLocation
-            })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            showNotification('AI staff notification sent successfully!', 'success');
-            closeModal('aiModal');
-        } else {
-            showNotification('Failed to send notification: ' + result.error, 'error');
-        }
-    } catch (error) {
-        console.error('Failed to send staff notification:', error);
-        showNotification('Failed to send staff notification', 'error');
-    }
-}
-
-async function generateAICustomMessage() {
-    const templateType = document.getElementById('aiTemplateType').value;
-    const messageData = document.getElementById('aiMessageData').value;
-    
-    if (!templateType || !messageData) {
-        showNotification('Please select template type and provide message data', 'error');
-        return;
-    }
-    
-    let data;
-    try {
-        data = JSON.parse(messageData);
-    } catch (error) {
-        showNotification('Invalid JSON format in message data', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/ai-automations/custom`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                template_type: templateType,
-                data: data
-            })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            document.getElementById('aiCustomMessagePreview').innerHTML = `<pre>${result.message}</pre>`;
-        } else {
-            showNotification('Failed to generate message: ' + result.error, 'error');
-        }
-    } catch (error) {
-        console.error('Failed to generate custom message:', error);
-        showNotification('Failed to generate custom message', 'error');
-    }
-}
-
-function copyAICustomMessage() {
-    const preview = document.querySelector('#aiCustomMessagePreview pre');
-    if (preview) {
-        navigator.clipboard.writeText(preview.textContent).then(() => {
-            showNotification('Message copied to clipboard!', 'success');
-        });
-    }
-}
-
