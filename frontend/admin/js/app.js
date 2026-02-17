@@ -460,7 +460,9 @@ function filterJobs(filter) {
     if (!window.allJobs) {
         window.allJobs = [];
         // Load all jobs if not already stored
-        fetch(`${API_URL}/jobs`)
+        fetch(`${API_URL}/jobs`, {
+            headers: getAuthHeaders()
+        })
             .then(res => res.json())
             .then(data => {
                 window.allJobs = Array.isArray(data) ? data : [];
@@ -526,7 +528,7 @@ function applyJobFilter(filter) {
 async function loadStaff() {
     try {
         console.log('🔄 Loading staff...');
-        showLoading('staff-list');
+        showLoading('staff-management-list');
         
         const res = await fetch(`${API_URL}/staff`, {
             headers: getAuthHeaders()
@@ -656,7 +658,9 @@ function filterInvoices(filter) {
     if (!window.allInvoices) {
         window.allInvoices = [];
         // Load all invoices if not already stored
-        fetch(`${API_URL}/invoices`)
+        fetch(`${API_URL}/invoices`, {
+            headers: getAuthHeaders()
+        })
             .then(res => res.json())
             .then(data => {
                 window.allInvoices = Array.isArray(data) ? data : (data.invoices || []);
@@ -722,11 +726,25 @@ function showCreateInvoiceModal() {
 async function loadInvoiceFormOptions() {
     try {
         // Load completed jobs that don't have invoices yet
-        const jobsRes = await fetch(`${API_URL}/jobs`);
+        const jobsRes = await fetch(`${API_URL}/jobs`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (!jobsRes.ok) {
+            throw new Error(`HTTP ${jobsRes.status}: ${jobsRes.statusText}`);
+        }
+        
         const jobs = await jobsRes.json();
         
         // Get existing invoices to exclude jobs that already have invoices
-        const invoicesRes = await fetch(`${API_URL}/invoices`);
+        const invoicesRes = await fetch(`${API_URL}/invoices`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (!invoicesRes.ok) {
+            throw new Error(`HTTP ${invoicesRes.status}: ${invoicesRes.statusText}`);
+        }
+        
         const invoices = await invoicesRes.json();
         const invoicedJobIds = invoices.map(inv => inv.job_id);
         
@@ -775,7 +793,7 @@ document.getElementById('add-staff-form')?.addEventListener('submit', async (e) 
     try {
         const res = await fetch(`${API_URL}/staff`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(formData)
         });
         
@@ -807,7 +825,7 @@ document.getElementById('add-automation-form')?.addEventListener('submit', async
     try {
         const res = await fetch(`${API_URL}/automations`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(formData)
         });
         
@@ -838,7 +856,7 @@ document.getElementById('create-invoice-form')?.addEventListener('submit', async
     try {
         const res = await fetch(`${API_URL}/invoices/create`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(formData)
         });
         
@@ -863,7 +881,7 @@ async function markAsPaid(invoiceId) {
     try {
         const res = await fetch(`${API_URL}/invoices/${invoiceId}/pay`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' }
+            headers: getAuthHeaders()
         });
         
         if (res.ok) {
@@ -1558,7 +1576,14 @@ function toggleStaffStatus(staffId) {
 async function loadAutomations() {
     try {
         showLoading('automations-list');
-        const res = await fetch(`${API_URL}/automations`);
+        const res = await fetch(`${API_URL}/automations`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
         const automations = await res.json();
         const list = document.getElementById('automations-list');
         
@@ -1894,7 +1919,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Verify all required elements exist
     const requiredElements = [
-        'dashboard', 'customers-list', 'jobs-list', 'staff-list', 
+        'dashboard', 'customers-list', 'jobs-list', 'staff-management-list', 
         'invoices-list', 'automations-list', 'activity-feed',
         'today-jobs-count', 'pending-jobs-count', 'completed-jobs-count', 'revenue-count'
     ];
