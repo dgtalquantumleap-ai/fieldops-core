@@ -2,6 +2,36 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { paginate } = require('../utils/dbHelper');
+const { body, validationResult } = require('express-validator');
+
+// Validation middleware for customer creation
+const validateCustomer = [
+    body('name')
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage('Name must be between 2 and 100 characters'),
+    body('phone')
+        .trim()
+        .matches(/^[\d\s\-\(\)\+]+$/)
+        .withMessage('Invalid phone number format')
+        .custom(value => {
+            const digits = value.replace(/\D/g, '');
+            if (digits.length < 10) {
+                throw new Error('Phone must be at least 10 digits');
+            }
+            return true;
+        }),
+    body('email')
+        .optional()
+        .trim()
+        .isEmail()
+        .withMessage('Invalid email format'),
+    body('address')
+        .optional()
+        .trim()
+        .isLength({ max: 200 })
+        .withMessage('Address must not exceed 200 characters')
+];
 
 router.get('/', async (req, res) => {
     try {
@@ -26,7 +56,17 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', validateCustomer, async (req, res) => {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            error: 'Validation failed',
+            details: errors.array().map(err => ({ field: err.path, message: err.msg }))
+        });
+    }
+
     try {
         const { name, phone, email, address, notes } = req.body;
         const stmt = db.prepare(

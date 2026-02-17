@@ -8,6 +8,11 @@ const { sendEmail } = require('../utils/notifications');
 
 // Middleware to check if user is admin
 const requireAdmin = (req, res, next) => {
+  if (!process.env.JWT_SECRET) {
+    console.error('❌ CRITICAL: JWT_SECRET not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+  
   const token = req.headers.authorization?.replace('Bearer ', '');
   console.log('🔍 Staff Management Auth Debug:');
   console.log('  Token received:', token ? 'Yes' : 'No');
@@ -16,10 +21,10 @@ const requireAdmin = (req, res, next) => {
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
   
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('  Token decoded:', decoded);
     
-    const user = db.prepare('SELECT * FROM users WHERE id = ? AND status = ?').get(decoded.id, 'active');
+    const user = db.prepare('SELECT * FROM users WHERE id = ? AND (status = ? OR is_active = 1)').get(decoded.id, 'active');
     console.log('  User found:', user ? 'Yes' : 'No');
     console.log('  User role:', user ? user.role : 'N/A');
     console.log('  User status:', user ? user.status : 'N/A');
@@ -65,11 +70,20 @@ router.post('/onboard', requireAdmin, async (req, res) => {
     // Hash password
     const password_hash = bcrypt.hashSync(password, 10);
     
-    // Insert new staff member
-    const result = db.prepare(`
-      INSERT INTO users (name, email, phone, role, password, status, created_at, created_by)
-      VALUES (?, ?, ?, ?, ?, 'active', datetime('now'), ?)
-    `).run(name, email, phone, role, password_hash, req.user.id);
+    // Insert new staff member (supports both old and new schema)
+    let result;
+    try {
+      result = db.prepare(`
+        INSERT INTO users (name, email, phone, role, password, is_active, created_at, created_by)
+        VALUES (?, ?, ?, ?, ?, 1, datetime('now'), ?)
+      `).run(name, email, phone, role, password_hash, req.user.id);
+    } catch (e) {
+      // Fallback for old schema
+      result = db.prepare(`
+        INSERT INTO users (name, email, phone, role, password, status, created_at, created_by)
+        VALUES (?, ?, ?, ?, ?, 'active', datetime('now'), ?)
+      `).run(name, email, phone, role, password_hash, req.user.id);
+    }
     
     // Log the onboarding
     logActivity(
@@ -86,6 +100,7 @@ router.post('/onboard', requireAdmin, async (req, res) => {
     
     // Send onboarding email
     try {
+      const baseUrl = process.env.APP_URL || process.env.BASE_URL || 'http://localhost:3000';
       await sendEmail({
         to: newStaff.email,
         subject: 'Welcome to Stilt Heights - Your Account Details',
@@ -96,7 +111,7 @@ router.post('/onboard', requireAdmin, async (req, res) => {
           <p><strong>Email:</strong> ${newStaff.email}<br>
           <strong>Temporary Password:</strong> ${password}</p>
           <p>Please log in and change your password as soon as possible.</p>
-          <p><a href="${process.env.BASE_URL || 'http://localhost:3000'}/staff/login.html">Login Here</a></p>
+          <p><a href="${baseUrl}/staff/login.html">Login Here</a></p>
           <p>Best regards,<br>Stilt Heights Team</p>
         `
       });
@@ -331,7 +346,7 @@ router.post('/:id/reactivate', requireAdmin, async (req, res) => {
           <p>Your Stilt Heights staff account has been reactivated.</p>
           <p><strong>Reason:</strong> ${reason || 'Reactivated by admin'}</p>
           <p>You can now log back into your account.</p>
-          <p><a href="${process.env.BASE_URL || 'http://localhost:3000'}/staff/login.html">Login Here</a></p>
+          <p><a href="${process.env.APP_URL || process.env.APP_URL || process.env.BASE_URL || 'http://localhost:3000'}/staff/login.html">Login Here</a></p>
           <p>Best regards,<br>Stilt Heights Team</p>
         `
       });

@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Mobile-first operations system for cleaning businesses",
   "main": "backend/server.js",
+  "engines": {
+    "node": "18.x || 20.x",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "nodemon backend/server.js",
     "start": "node backend/config/setupDb.js && node backend/server.js",

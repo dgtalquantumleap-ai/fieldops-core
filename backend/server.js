@@ -16,6 +16,12 @@ if (missing.length) {
   process.exit(1);
 }
 
+// Validate JWT_SECRET is strong enough
+if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+  console.warn('\n⚠️  WARNING: JWT_SECRET is less than 32 characters.');
+  console.warn('   Recommended: Use a 64+ character random string.\n');
+}
+
 // Configure allowed origins for CORS
 const getAllowedOrigins = () => {
   const allowed = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://fieldops-core-production.up.railway.app';
@@ -25,15 +31,9 @@ const getAllowedOrigins = () => {
 const allowedOrigins = getAllowedOrigins();
 
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:8080',
-    'https://fieldops-production-6b97.up.railway.app',
-    'https://fieldops-production-6b97.up.railway.app',
-    'https://fieldops-production-6b97.up.railway.app/admin'
-  ],
+  origin: allowedOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['X-Total-Count', 'X-Request-ID']
 };
@@ -106,9 +106,9 @@ app.use('/uploads', express.static('uploads'));
 const { requestTracking } = require('./middleware/logging');
 app.use(requestTracking);
 
-// Apply rate limiting
-app.use('/api/booking/book', bookingLimiter);
+// Apply rate limiting (specific routes take precedence over general limiter)
 app.use('/api/auth/login', authLimiter);
+app.use('/api/booking/book', bookingLimiter);
 app.use('/api/', generalLimiter);
 
 // Store io instance for real-time updates
@@ -180,12 +180,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ FieldOps Core running on port ${PORT}`);
-    console.log(`🌐 External access: http://10.0.0.104:${PORT}`);
-    console.log(`🏠 Stilt Heights Website: http://localhost:${PORT}/stiltheights`);
-    console.log(`📊 Admin Dashboard: http://localhost:${PORT}/admin`);
-    console.log(`📱 Staff App: http://localhost:${PORT}/staff`);
-    console.log(`📝 Customer Booking: http://localhost:${PORT}/booking.html`);
-    console.log(` Real-time updates enabled`);
+    console.log(`🌐 Server URL: ${APP_URL}`);
+    console.log(`🏠 Stilt Heights Website: ${APP_URL}/stiltheights`);
+    console.log(`📊 Admin Dashboard: ${APP_URL}/admin`);
+    console.log(`📱 Staff App: ${APP_URL}/staff`);
+    console.log(`📝 Customer Booking: ${APP_URL}/booking.html`);
+    console.log(`⚡ Real-time updates enabled`);
 });

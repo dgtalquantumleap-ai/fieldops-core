@@ -95,25 +95,32 @@ router.post('/', validateJob, async (req, res) => {
         }
         
         try {
-            const result = db.prepare(`
-                INSERT INTO jobs (customer_id, service_id, assigned_to, job_date, job_time, location, notes, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled', datetime('now'), datetime('now'))
-            `).run(customer_id, service_id, assigned_to || null, job_date, job_time, location, notes);
+            // Use transaction to ensure atomic operation
+            const insertJob = db.transaction(() => {
+                const result = db.prepare(`
+                    INSERT INTO jobs (customer_id, service_id, assigned_to, job_date, job_time, location, notes, status, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled', datetime('now'), datetime('now'))
+                `).run(customer_id, service_id, assigned_to || null, job_date, job_time, location, notes);
+                
+                const newJob = db.prepare(`
+                    SELECT j.*, 
+                           c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
+                           u.name as staff_name, u.email as staff_email,
+                           s.name as service_name, s.price as service_price, s.description as service_description
+                    FROM jobs j
+                    LEFT JOIN customers c ON j.customer_id = c.id
+                    LEFT JOIN users u ON j.assigned_to = u.id
+                    LEFT JOIN services s ON j.service_id = s.id
+                    WHERE j.id = ?
+                `).get(result.lastInsertRowid);
+                
+                return newJob;
+            });
             
-            const newJob = db.prepare(`
-                SELECT j.*, 
-                       c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
-                       u.name as staff_name, u.email as staff_email,
-                       s.name as service_name, s.price as service_price, s.description as service_description
-                FROM jobs j
-                LEFT JOIN customers c ON j.customer_id = c.id
-                LEFT JOIN users u ON j.assigned_to = u.id
-                LEFT JOIN services s ON j.service_id = s.id
-                WHERE j.id = ?
-            `).get(result.lastInsertRowid);
+            const newJob = insertJob();
             
             log.success(req.id, 'Job created', {
-                jobId: result.lastInsertRowid,
+                jobId: newJob.id,
                 customer: customer_id,
                 service: service_id,
                 date: job_date

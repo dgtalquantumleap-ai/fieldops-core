@@ -78,7 +78,7 @@ router.post('/book', validateBooking, async (req, res) => {
             // Send confirmation to customer
             if (email) {
                 // Send professional HTML email asynchronously (non-blocking)
-                setImmediate(async () => {
+                (async () => {
                     try {
                         const { sendBookingConfirmation } = require('../utils/emailTemplates');
                         
@@ -99,9 +99,10 @@ router.post('/book', validateBooking, async (req, res) => {
                         
                         console.log('✅ Professional booking confirmation email sent to:', email);
                     } catch (emailError) {
-                        console.log('❌ Failed to send booking email:', emailError.message);
+                        console.error('❌ Failed to send booking email:', emailError.message);
+                        // Don't throw - email failure shouldn't break the booking
                     }
-                });
+                })().catch(err => console.error('Async email error:', err));
             }
             
             // Notify admin

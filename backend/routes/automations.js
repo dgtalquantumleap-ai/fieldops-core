@@ -16,40 +16,8 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Add automation (direct POST)
-router.post('/', async (req, res) => {
-    try {
-        const { trigger_event, message_template, channel, enabled } = req.body;
-        
-        if (!trigger_event || !message_template) {
-            return res.status(400).json({ error: 'trigger_event and message_template are required' });
-        }
-        
-        const insertAutomation = db.prepare(`
-            INSERT INTO automations (trigger_event, message_template, channel, enabled, created_at)
-            VALUES (?, ?, ?, ?, datetime('now'))
-        `);
-        
-        const result = insertAutomation.run(trigger_event, message_template, channel || 'email', enabled ? 1 : 0);
-        
-        const newAutomation = db.prepare('SELECT * FROM automations WHERE id = ?').get(result.lastInsertRowid);
-        
-        console.log(`🤖 New automation created: ${trigger_event} via ${channel}`);
-        
-        res.json({
-            success: true,
-            automation: newAutomation,
-            message: 'Automation created successfully'
-        });
-        
-    } catch (error) {
-        console.error('Add automation error:', error);
-        res.status(500).json({ error: 'Failed to create automation' });
-    }
-});
-
 // Create automation
-router.post('/create', async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { trigger_event, message_template, channel, enabled } = req.body;
         
@@ -91,7 +59,7 @@ router.patch('/:id', async (req, res) => {
         const { id } = req.params;
         const { trigger_event, message_template, channel, enabled } = req.body;
         
-        const updateFields = [];
+        const updateFields = ['updated_at = CURRENT_TIMESTAMP'];
         const values = [];
         
         if (trigger_event) {
@@ -111,11 +79,10 @@ router.patch('/:id', async (req, res) => {
             values.push(enabled);
         }
         
-        if (updateFields.length === 0) {
+        if (updateFields.length === 1) {
             return res.status(400).json({ error: 'No fields to update' });
         }
         
-        updateFields.push('updated_at = CURRENT_TIMESTAMP');
         values.push(id);
         
         const updateAutomation = db.prepare(`

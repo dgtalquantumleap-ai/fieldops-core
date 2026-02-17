@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { requireAdmin } = require('../middleware/auth');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS settings (
@@ -10,14 +11,14 @@ db.exec(`
   )
 `);
 
-router.get('/', (req, res) => {
+router.get('/', requireAdmin, (req, res) => {
   const rows = db.prepare('SELECT key, value FROM settings').all();
   const settings = {};
   rows.forEach(r => { settings[r.key] = r.value; });
   res.json(settings);
 });
 
-router.put('/', (req, res) => {
+router.put('/', requireAdmin, (req, res) => {
   const upsert = db.prepare(`
     INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at

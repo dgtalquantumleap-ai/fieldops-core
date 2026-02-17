@@ -84,19 +84,20 @@ const initializeAdminUser = () => {
     const tempPassword = Math.random().toString(36).slice(-8) + 
                          Math.random().toString(36).slice(-4);
     const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+    const adminPhone = process.env.ADMIN_PHONE || null;
     
     // Try to insert with new schema first, fallback to old schema
     try {
       db.prepare(`
         INSERT INTO users (name, email, password, role, phone, is_active, created_at)
         VALUES (?, ?, ?, 'admin', ?, 1, datetime('now'))
-      `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
+      `).run('System Administrator', adminEmail, hashedPassword, adminPhone);
     } catch (e) {
       // Fallback for old schema
       db.prepare(`
         INSERT INTO users (name, email, password, role, phone, created_at)
         VALUES (?, ?, ?, 'admin', ?, datetime('now'))
-      `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
+      `).run('System Administrator', adminEmail, hashedPassword, adminPhone);
     }
     
     console.log('\n🔐 ADMIN USER CREATED:');
