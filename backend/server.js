@@ -137,6 +137,18 @@ try {
 }
 
 // ============================================
+// FAVICON HANDLER - Prevent 404 errors
+// ============================================
+app.get('/favicon.ico', (req, res) => {
+    res.status(200).set('Content-Type', 'image/svg+xml').send(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+            <rect width="32" height="32" fill="#3b82f6"/>
+            <text x="16" y="22" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="white">🏠</text>
+        </svg>
+    `);
+});
+
+// ============================================
 // STATIC FILE SERVING - SPECIFIC BEFORE GENERAL
 // ============================================
 app.use('/uploads', express.static('uploads'));
