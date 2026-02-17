@@ -150,20 +150,26 @@
         
         <div class="qr-section">
             <div class="qr-card">
+                <h3><span class="icon">�</span>Booking Form <span class="badge">Client Access</span></h3>
+                <div class="qrcode" id="booking-qr"></div>
+                <div class="url">https://fieldops-production-6b97.up.railway.app/booking.html</div>
+                <p><strong>For:</strong> Client Bookings</p>
+                <button class="download-btn" onclick="downloadQR('booking')">📥 Download QR</button>
+            </div>
+            
+            <div class="qr-card">
                 <h3><span class="icon">👨‍💼</span>Admin Dashboard</h3>
                 <div class="qrcode" id="admin-qr"></div>
-                <div class="url">https://fieldops-core-production.up.railway.app/admin</div>
-                <p><strong>Login:</strong> admin@fieldops.com</p>
-                <p><strong>Password:</strong> secret</p>
+                <div class="url">https://fieldops-production-6b97.up.railway.app/admin</div>
+                <p><strong>Login:</strong> dgtalquantumleap@gmail.com</p>
                 <button class="download-btn" onclick="downloadQR('admin')">📥 Download QR</button>
             </div>
             
             <div class="qr-card">
-                <h3><span class="icon">👷</span>Staff Portal <span class="badge">Most Used</span></h3>
+                <h3><span class="icon">👷</span>Staff Portal <span class="badge">Staff Access</span></h3>
                 <div class="qrcode" id="staff-qr"></div>
-                <div class="url">https://fieldops-core-production.up.railway.app/staff</div>
-                <p><strong>Login:</strong> john@fieldops.com</p>
-                <p><strong>Password:</strong> secret</p>
+                <div class="url">https://fieldops-production-6b97.up.railway.app/staff</div>
+                <p><strong>For:</strong> Staff Members</p>
                 <button class="download-btn" onclick="downloadQR('staff')">📥 Download QR</button>
             </div>
         </div>
@@ -207,9 +213,9 @@
         <div class="instructions">
             <h3>🔗 Quick Links</h3>
             <div class="quick-links">
-                <a href="https://fieldops-core-production.up.railway.app/staff" target="_blank" rel="noopener noreferrer" class="btn btn-staff">📱 Open Staff App</a>
-                <a href="https://fieldops-core-production.up.railway.app/admin" target="_blank" rel="noopener noreferrer" class="btn btn-admin">👨‍💼 Open Admin</a>
-                <a href="https://fieldops-core-production.up.railway.app/booking.html" target="_blank" rel="noopener noreferrer" class="btn btn-booking">📝 Booking Form</a>
+                <a href="https://fieldops-production-6b97.up.railway.app/booking.html" target="_blank" rel="noopener noreferrer" class="btn btn-booking">� Booking Form</a>
+                <a href="https://fieldops-production-6b97.up.railway.app/staff" target="_blank" rel="noopener noreferrer" class="btn btn-staff">� Staff Portal</a>
+                <a href="https://fieldops-production-6b97.up.railway.app/admin" target="_blank" rel="noopener noreferrer" class="btn btn-admin">👨‍� Admin Dashboard</a>
             </div>
         </div>
     </div>
@@ -217,9 +223,19 @@
     <script>
         // Generate QR codes when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Booking QR Code
+            new QRCode(document.getElementById("booking-qr"), {
+                text: "https://fieldops-production-6b97.up.railway.app/booking.html",
+                width: 180,
+                height: 180,
+                colorDark: "#2d3748",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
             // Admin QR Code
             new QRCode(document.getElementById("admin-qr"), {
-                text: "https://fieldops-core-production.up.railway.app/admin",
+                text: "https://fieldops-production-6b97.up.railway.app/admin",
                 width: 180,
                 height: 180,
                 colorDark: "#2d3748",
@@ -229,7 +245,7 @@
 
             // Staff QR Code
             new QRCode(document.getElementById("staff-qr"), {
-                text: "https://fieldops-core-production.up.railway.app/staff",
+                text: "https://fieldops-production-6b97.up.railway.app/staff",
                 width: 180,
                 height: 180,
                 colorDark: "#2d3748",

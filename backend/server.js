@@ -136,6 +136,11 @@ app.get('/admin', (req, res) => {
 // Admin static files
 app.use('/admin', express.static(path.join(__dirname, '../frontend/admin')));
 
+// Mobile Access Page
+app.get('/mobile', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/mobile-access.html'));
+});
+
 // AI Dashboard
 app.get('/admin-ai', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/admin-ai-dashboard.html'));
