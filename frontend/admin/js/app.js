@@ -90,9 +90,9 @@ async function loadDashboard() {
         // Load all data in parallel
         console.log('📡 Fetching dashboard data...');
         const [jobsRes, invoicesRes, customersRes] = await Promise.all([
-            fetch(`${API_URL}/jobs`),
-            fetch(`${API_URL}/invoices`),
-            fetch(`${API_URL}/customers`)
+            fetch(`${API_URL}/jobs`, { headers: getAuthHeaders() }),
+            fetch(`${API_URL}/invoices`, { headers: getAuthHeaders() }),
+            fetch(`${API_URL}/customers`, { headers: getAuthHeaders() })
         ]);
         
         console.log('📊 Jobs API status:', jobsRes.status);
@@ -338,7 +338,9 @@ async function loadCustomers() {
         console.log('🔄 Loading customers...');
         showLoading('customers-list');
         
-        const res = await fetch(`${API_URL}/customers`);
+        const res = await fetch(`${API_URL}/customers`, {
+            headers: getAuthHeaders()
+        });
         console.log('📡 Customers API status:', res.status);
         
         if (!res.ok) {
@@ -394,7 +396,9 @@ async function loadJobs() {
         console.log('🔄 Loading jobs from:', `${API_URL}/jobs`);
         showLoading('jobs-list');
         
-        const res = await fetch(`${API_URL}/jobs`);
+        const res = await fetch(`${API_URL}/jobs`, {
+            headers: getAuthHeaders()
+        });
         console.log('📡 Jobs API response status:', res.status);
         
         if (!res.ok) {
@@ -524,7 +528,9 @@ async function loadStaff() {
         console.log('🔄 Loading staff...');
         showLoading('staff-list');
         
-        const res = await fetch(`${API_URL}/staff`);
+        const res = await fetch(`${API_URL}/staff`, {
+            headers: getAuthHeaders()
+        });
         console.log('📡 Staff API status:', res.status);
         
         if (!res.ok) {
@@ -580,7 +586,9 @@ async function loadInvoices() {
         console.log('🔄 Loading invoices...');
         showLoading('invoices-list');
         
-        const res = await fetch(`${API_URL}/invoices`);
+        const res = await fetch(`${API_URL}/invoices`, {
+            headers: getAuthHeaders()
+        });
         console.log('📡 Invoices API status:', res.status);
         
         if (!res.ok) {
