@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
 
 // Serve static files
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/admin.html'));
+    res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });
 
 // AI Dashboard
