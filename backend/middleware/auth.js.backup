@@ -1,0 +1,159 @@
+const jwt = require('jsonwebtoken');
+
+/**
+ * ============================================
+ * AUTHENTICATION MIDDLEWARE
+ * ============================================
+ * Validates JWT tokens and enforces role-based access control
+ */
+
+/**
+ * Verify JWT token and attach user to request
+ * Usage: router.use(requireAuth)
+ */
+const requireAuth = (req, res, next) => {
+  // Generate requestId if not already present (from logging middleware)
+  if (!req.id) {
+    req.id = 'auth-' + Math.random().toString(36).substr(2, 9);
+  }
+
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ 
+      success: false,
+      error: 'Authentication required',
+      code: 'AUTH_REQUIRED',
+      requestId: req.id
+    });
+  }
+  
+  const token = authHeader.replace('Bearer ', '');
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    const code = err.name === 'TokenExpiredError' ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN';
+    console.warn(`⚠️  Authentication failed: ${code} - ${err.message}`);
+    
+    return res.status(401).json({ 
+      success: false,
+      error: 'Invalid or expired token',
+      code,
+      requestId: req.id
+    });
+  }
+};
+
+/**
+ * Ensure user has admin role
+ * Usage: router.use(requireAdmin)
+ */
+const requireAdmin = (req, res, next) => {
+  // First ensure authenticated
+  requireAuth(req, res, () => {
+    // Normalize role to lowercase for consistent comparison
+    const userRole = req.user.role ? req.user.role.toLowerCase() : '';
+    
+    if (userRole !== 'admin') {
+      console.warn(`⚠️  Admin access denied for user: ${req.user.email || req.user.id}`);
+      
+      return res.status(403).json({ 
+        success: false,
+        error: 'Admin access required',
+        code: 'ADMIN_REQUIRED',
+        requestId: req.id
+      });
+    }
+    next();
+  });
+};
+
+/**
+ * Flexible role-based access control
+ * Usage: router.use(requireRole(['admin', 'manager']))
+ * Usage: router.use(requireRole('admin'))
+ */
+const requireRole = (allowedRoles) => {
+  return (req, res, next) => {
+    // First ensure authenticated
+    requireAuth(req, res, () => {
+      const userRole = req.user.role ? req.user.role.toLowerCase() : '';
+      const normalizedAllowedRoles = Array.isArray(allowedRoles) 
+        ? allowedRoles.map(role => role.toLowerCase())
+        : [allowedRoles.toLowerCase()];
+      
+      if (!normalizedAllowedRoles.includes(userRole)) {
+        console.warn(`⚠️  Role check failed: ${userRole} not in [${normalizedAllowedRoles.join(', ')}]`);
+        
+        return res.status(403).json({ 
+          success: false,
+          error: 'Insufficient permissions',
+          code: 'INSUFFICIENT_PERMISSIONS',
+          required: normalizedAllowedRoles,
+          current: userRole,
+          requestId: req.id
+        });
+      }
+      next();
+    });
+  };
+};
+
+/**
+ * Ensure user account is active (not deactivated)
+ * MUST be used after requireAuth
+ * Usage: router.use(requireAuth, requireActiveUser)
+ */
+const requireActiveUser = (req, res, next) => {
+  // First ensure authenticated
+  requireAuth(req, res, () => {
+    // More defensive check: explicitly check for active status
+    // Allow: 1 (int) or true (boolean)
+    // Deny: 0, false, null, undefined, anything else
+    const isActive = req.user.is_active === 1 || req.user.is_active === true;
+    
+    if (!isActive) {
+      console.warn(`⚠️  Deactivated user attempted access: ${req.user.email || req.user.id}`);
+      
+      return res.status(403).json({ 
+        success: false,
+        error: 'Account is deactivated',
+        code: 'ACCOUNT_DEACTIVATED',
+        requestId: req.id
+      });
+    }
+    next();
+  });
+};
+
+/**
+ * Composite middleware for common pattern:
+ * Require auth + user must be active
+ * Usage: router.use(requireAuthAndActive)
+ */
+const requireAuthAndActive = (req, res, next) => {
+  requireAuth(req, res, () => {
+    const isActive = req.user.is_active === 1 || req.user.is_active === true;
+    
+    if (!isActive) {
+      return res.status(403).json({ 
+        success: false,
+        error: 'Account is deactivated',
+        code: 'ACCOUNT_DEACTIVATED',
+        requestId: req.id
+      });
+    }
+    next();
+  });
+};
+
+module.exports = { 
+  requireAuth, 
+  requireAdmin, 
+  requireRole,
+  requireActiveUser,
+  requireAuthAndActive
+};
