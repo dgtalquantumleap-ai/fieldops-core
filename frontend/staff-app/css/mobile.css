@@ -1,0 +1,737 @@
+/* FieldOps Staff App - Mobile & Touch Optimizations */
+
+/* ==================== TOUCH TARGETS ==================== */
+/* All touch targets minimum 44x44px */
+button,
+.btn,
+.job-card,
+.modal-action,
+.photo-thumbnail,
+.tab-item {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+    touch-action: manipulation;
+}
+
+/* Remove tap highlight */
+button,
+a,
+.clickable {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Better touch feedback */
+button:active,
+.btn:active,
+.job-card:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+}
+
+/* ==================== APP LAYOUT ==================== */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: #f8fafc;
+}
+
+/* ==================== HEADER ==================== */
+.staff-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.staff-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    margin-bottom: 4px;
+}
+
+.header-subtitle {
+    font-size: 0.875rem;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.btn-logout {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==================== MAIN CONTENT ==================== */
+.jobs-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.jobs-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.jobs-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.jobs-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+/* ==================== JOB CARDS ==================== */
+.job-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.job-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #3b82f6;
+}
+
+.job-card.active::before {
+    background: #10b981;
+}
+
+.job-card.completed::before {
+    background: #64748b;
+}
+
+.job-card:active {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.job-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.job-status {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #dbeafe;
+    color: #0c4a6e;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.job-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.job-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+.job-detail-icon {
+    width: 20px;
+    text-align: center;
+    color: #3b82f6;
+}
+
+.job-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 10px 12px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 8px;
+    color: #3b82f6;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.action-btn:active {
+    background: #e2e8f0;
+}
+
+.action-btn.primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.action-btn.primary:active {
+    background: #2563eb;
+}
+
+/* ==================== MODALS ==================== */
+.job-detail-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 110;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    overflow: hidden;
+}
+
+.job-detail-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content-enhanced {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transition: bottom 0.3s ease;
+    z-index: 111;
+}
+
+.job-detail-modal.active .modal-content-enhanced {
+    bottom: 0;
+}
+
+/* Drag handle */
+.modal-content-enhanced::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    margin: 8px auto 16px;
+}
+
+.modal-header-enhanced {
+    padding: 16px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.modal-title-section h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+}
+
+.job-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.modal-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-header-action {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 18px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-header-action:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==================== FORMS ==================== */
+input,
+textarea,
+select {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    width: 100%;
+    font-family: inherit;
+    touch-action: manipulation;
+    background: white;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.form-group.required label::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+/* ==================== BUTTONS ==================== */
+button {
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn {
+    padding: 14px 16px;
+    min-height: 48px;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:active:not(:disabled) {
+    background: #2563eb;
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    width: 100%;
+}
+
+.btn-secondary:active:not(:disabled) {
+    background: #e2e8f0;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== PHOTO UPLOAD ==================== */
+.photo-upload-area {
+    border: 2px dashed #3b82f6;
+    border-radius: 12px;
+    padding: 24px 16px;
+    text-align: center;
+    background: #eff6ff;
+    margin-bottom: 16px;
+}
+
+.photo-upload-input {
+    display: none;
+}
+
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #3b82f6;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.upload-btn:active {
+    background: #2563eb;
+}
+
+.photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.photo-thumbnail {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    cursor: pointer;
+}
+
+.photo-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.photo-thumbnail:active .photo-overlay {
+    opacity: 1;
+}
+
+.delete-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* ==================== NOTIFICATIONS ==================== */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    z-index: 120;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.notification.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.notification.success {
+    background: #dcfce7;
+    color: #166534;
+    border-left: 4px solid #10b981;
+}
+
+.notification.info {
+    background: #dbeafe;
+    color: #0c4a6e;
+    border-left: 4px solid #3b82f6;
+}
+
+/* ==================== LOADING STATE ==================== */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #3b82f6;
+}
+
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ==================== EMPTY STATE ==================== */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-state-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #1e293b;
+}
+
+/* ==================== MEDIA QUERIES ==================== */
+
+/* Tablet (768px and up) */
+@media (min-width: 768px) {
+    .jobs-container {
+        padding: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .job-card {
+        padding: 20px;
+    }
+
+    .photo-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .modal-content-enhanced {
+        position: absolute;
+        bottom: auto;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        right: auto;
+        width: 90%;
+        max-width: 600px;
+        border-radius: 12px;
+    }
+
+    .job-detail-modal.active .modal-content-enhanced {
+        bottom: auto;
+    }
+
+    .modal-content-enhanced::before {
+        display: none;
+    }
+
+    .modal-header-enhanced {
+        border-radius: 12px 12px 0 0;
+    }
+}
+
+/* Desktop (1024px and up) */
+@media (min-width: 1024px) {
+    .jobs-container {
+        padding: 32px;
+    }
+
+    .job-card {
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .job-card::before {
+        height: 4px;
+        width: 100%;
+        top: 0;
+        left: 0;
+    }
+
+    .job-header {
+        flex: 1;
+        margin-bottom: 0;
+    }
+
+    .job-actions {
+        gap: 12px;
+        padding-top: 0;
+        padding-left: 24px;
+        border-top: none;
+        border-left: 1px solid #e2e8f0;
+    }
+
+    .action-btn {
+        flex: 0 1 auto;
+        min-width: 120px;
+    }
+
+    .photo-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+/* ==================== LANDSCAPE MODE ==================== */
+@media (orientation: landscape) and (max-height: 500px) {
+    .staff-header {
+        padding: 8px 16px;
+    }
+
+    .modal-content-enhanced {
+        max-height: 100vh;
+    }
+}
+
+/* ==================== HIGH DPI SCREENS ==================== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    button,
+    input,
+    textarea,
+    select {
+        border-width: 0.5px;
+    }
+}
+
+/* ==================== REDUCED MOTION ==================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==================== DARK MODE ==================== */
+@media (prefers-color-scheme: dark) {
+    .app-container {
+        background: #0f172a;
+    }
+
+    .job-card,
+    .modal-content-enhanced,
+    input,
+    textarea,
+    select,
+    .notification {
+        background: #1e293b;
+        border-color: #334155;
+        color: #f1f5f9;
+    }
+
+    .job-card .job-detail-item {
+        color: #cbd5e1;
+    }
+
+    .action-btn {
+        background: #334155;
+        color: #3b82f6;
+    }
+
+    button:not(.btn-logout) {
+        color: #f1f5f9;
+    }
+
+    .modal-header-enhanced {
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+    }
+}
+
+/* ==================== HIGH CONTRAST MODE ==================== */
+@media (prefers-contrast: more) {
+    button,
+    .btn {
+        border: 2px solid currentColor;
+    }
+
+    .job-card {
+        border-width: 2px;
+    }
+}

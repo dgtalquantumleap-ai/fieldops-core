@@ -42,13 +42,29 @@ function initializeSocket() {
 
 // Load staff jobs
 async function loadJobs() {
+    const jobsList = document.getElementById('jobs-list');
+    if (!jobsList) return;
+    
     try {
-        const response = await fetch('/api/staff/jobs');
+        jobsList.innerHTML = '<div style="text-align:center; padding:2rem;"><p>Loading jobs...</p></div>';
+        
+        const response = await fetch('/api/staff/jobs', {
+            headers: staffAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/staff/login.html';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         jobs = await response.json();
         renderJobs();
     } catch (error) {
         console.error('Error loading jobs:', error);
-        document.getElementById('jobs-list').innerHTML = '<p class="error">Error loading jobs</p>';
+        jobsList.innerHTML = `<div style="text-align:center; padding:2rem; color:#ef4444;"><p>❌ Error loading jobs</p><p style="font-size:0.9rem; margin-top:0.5rem;">${error.message}</p><button onclick="loadJobs()" style="margin-top:1rem; padding:0.5rem 1rem; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer;">Retry</button></div>`;
     }
 }
 
@@ -118,25 +134,44 @@ function createJobCard(job) {
 
 // Open job detail
 async function openJobDetail(jobId) {
+    if (!jobId) return;
+    
     try {
-        const response = await fetch(`/api/jobs/${jobId}`);
+        const response = await fetch(`/api/jobs/${jobId}`, {
+            headers: staffAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/staff/login.html';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         currentJob = await response.json();
         
-        // Update modal content
-        document.getElementById('modal-service-name').textContent = currentJob.service_name;
-        document.getElementById('modal-customer-name').textContent = currentJob.customer_name;
-        document.getElementById('modal-job-date').textContent = formatDate(currentJob.job_date);
-        document.getElementById('modal-job-time').textContent = currentJob.job_time || 'TBD';
-        document.getElementById('modal-job-location').textContent = currentJob.location;
+        // Update modal content with safe text content
+        const updateElement = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value || '');
+        };
+        
+        updateElement('modal-service-name', currentJob.service_name);
+        updateElement('modal-customer-name', currentJob.customer_name);
+        updateElement('modal-job-date', formatDate(currentJob.job_date));
+        updateElement('modal-job-time', currentJob.job_time || 'TBD');
+        updateElement('modal-job-location', currentJob.location);
         
         updateJobDetail();
-        loadJobPhotos();
+        await loadJobPhotos();
         
         // Show modal
-        document.getElementById('job-detail-modal').style.display = 'flex';
+        const modal = document.getElementById('job-detail-modal');
+        if (modal) modal.style.display = 'flex';
     } catch (error) {
         console.error('Error loading job details:', error);
-        showNotification('Error loading job details', 'error');
+        showNotification('Error loading job details: ' + error.message, 'error');
     }
 }
 
@@ -156,14 +191,28 @@ function updateJobDetail() {
 
 // Load job photos
 async function loadJobPhotos() {
+    if (!currentJob || !currentJob.id) return;
+    
     try {
-        const response = await fetch(`/api/media/job/${currentJob.id}/grouped`);
+        const response = await fetch(`/api/media/job/${currentJob.id}/grouped`, {
+            headers: staffAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/staff/login.html';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         const photos = await response.json();
         
         updatePhotoTabs(photos);
         renderPhotos(photos[currentPhotoTab] || []);
     } catch (error) {
         console.error('Error loading photos:', error);
+        showNotification('Error loading photos: ' + error.message, 'error');
     }
 }
 
@@ -208,14 +257,19 @@ function renderPhotos(photos) {
 }
 
 // Switch photo tab
-function switchPhotoTab(tab) {
+function switchPhotoTab(tab, event) {
+    if (!tab) return;
+    
     currentPhotoTab = tab;
     
     // Update tab styling
     document.querySelectorAll('.photo-tab').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.classList.add('active');
+    
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     
     // Reload photos for new tab
     loadJobPhotos();
@@ -235,6 +289,11 @@ function takePhoto(type) {
 
 // Upload photo
 async function uploadPhoto(file, type) {
+    if (!file || !currentJob || !currentJob.id || !type) {
+        showNotification('Invalid photo upload data', 'error');
+        return;
+    }
+    
     const formData = new FormData();
     formData.append('photo', file);
     formData.append('job_id', currentJob.id);
@@ -244,61 +303,95 @@ async function uploadPhoto(file, type) {
     try {
         const response = await fetch('/api/media/upload', {
             method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('staffToken') },
             body: formData
         });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/staff/login.html';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
         
         const result = await response.json();
         
         if (result.success) {
             showNotification('Photo uploaded successfully', 'success');
-            loadJobPhotos(); // Refresh photos
+            await loadJobPhotos(); // Refresh photos
             
-            // Emit real-time update
-            socket.emit('photo-uploaded', {
-                job_id: currentJob.id,
-                media_type: type,
-                file_url: result.media.file_url
-            });
+            // Emit real-time update if socket is connected
+            if (socket && socket.connected) {
+                socket.emit('photo-uploaded', {
+                    job_id: currentJob.id,
+                    media_type: type,
+                    file_url: result.media.file_url
+                });
+            }
         } else {
-            showNotification('Failed to upload photo', 'error');
+            showNotification('Failed to upload photo: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error uploading photo:', error);
-        showNotification('Error uploading photo', 'error');
+        showNotification('Error uploading photo: ' + error.message, 'error');
     }
 }
 
 // Delete photo
 async function deletePhoto(photoId) {
+    if (!photoId) return;
     if (!confirm('Delete this photo?')) return;
     
     try {
         const response = await fetch(`/api/media/${photoId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: staffAuthHeaders()
         });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/staff/login.html';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
         
         const result = await response.json();
         
         if (result.success) {
             showNotification('Photo deleted', 'success');
-            loadJobPhotos(); // Refresh photos
+            await loadJobPhotos(); // Refresh photos
         } else {
-            showNotification('Failed to delete photo', 'error');
+            showNotification('Failed to delete photo: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error deleting photo:', error);
-        showNotification('Error deleting photo', 'error');
+        showNotification('Error deleting photo: ' + error.message, 'error');
     }
 }
 
 // Start job
 async function startJob() {
+    if (!currentJob || !currentJob.id) return;
+    
     try {
         const response = await fetch(`/api/jobs/${currentJob.id}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                ...Object.fromEntries(Object.entries(staffAuthHeaders()).filter(([k]) => k !== 'Content-Type'))
+            },
             body: JSON.stringify({ status: 'In Progress' })
         });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/staff/login.html';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
         
         const result = await response.json();
         
@@ -307,26 +400,41 @@ async function startJob() {
             updateJobDetail();
             showNotification('Job started', 'success');
             
-            // Emit real-time update
-            socket.emit('job-status-changed', {
-                job_id: currentJob.id,
-                status: 'In Progress'
-            });
+            // Emit real-time update if socket is connected
+            if (socket && socket.connected) {
+                socket.emit('job-status-changed', {
+                    job_id: currentJob.id,
+                    status: 'In Progress'
+                });
+            }
         }
     } catch (error) {
         console.error('Error starting job:', error);
-        showNotification('Error starting job', 'error');
+        showNotification('Error starting job: ' + error.message, 'error');
     }
 }
 
 // Complete job
 async function completeJob() {
+    if (!currentJob || !currentJob.id) return;
+    
     try {
         const response = await fetch(`/api/jobs/${currentJob.id}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                ...Object.fromEntries(Object.entries(staffAuthHeaders()).filter(([k]) => k !== 'Content-Type'))
+            },
             body: JSON.stringify({ status: 'Completed' })
         });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/staff/login.html';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
         
         const result = await response.json();
         
@@ -335,22 +443,24 @@ async function completeJob() {
             updateJobDetail();
             showNotification('Job completed!', 'success');
             
-            // Emit real-time update
-            socket.emit('job-status-changed', {
-                job_id: currentJob.id,
-                status: 'Completed'
-            });
-            
-            // Trigger automations
-            socket.emit('job-completed', {
-                job_id: currentJob.id,
-                customer_name: currentJob.customer_name,
-                service_name: currentJob.service_name
-            });
+            // Emit real-time updates if socket is connected
+            if (socket && socket.connected) {
+                socket.emit('job-status-changed', {
+                    job_id: currentJob.id,
+                    status: 'Completed'
+                });
+                
+                // Trigger automations
+                socket.emit('job-completed', {
+                    job_id: currentJob.id,
+                    customer_name: currentJob.customer_name,
+                    service_name: currentJob.service_name
+                });
+            }
         }
     } catch (error) {
         console.error('Error completing job:', error);
-        showNotification('Error completing job', 'error');
+        showNotification('Error completing job: ' + error.message, 'error');
     }
 }
 

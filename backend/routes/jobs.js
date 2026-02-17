@@ -99,7 +99,7 @@ router.post('/', validateJob, async (req, res) => {
             const insertJob = db.transaction(() => {
                 const result = db.prepare(`
                     INSERT INTO jobs (customer_id, service_id, assigned_to, job_date, job_time, location, notes, status, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled', datetime('now'), datetime('now'))
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'Scheduled', datetime('now'), datetime('now'))
                 `).run(customer_id, service_id, assigned_to || null, job_date, job_time, location, notes);
                 
                 const newJob = db.prepare(`
@@ -270,8 +270,8 @@ router.patch('/:id', validateJob, async (req, res) => {
         }
         
         if (status !== undefined) {
-            const validStatuses = ['scheduled', 'in-progress', 'completed', 'cancelled'];
-            if (!validStatuses.includes(status.toLowerCase())) {
+            const validStatuses = ['Scheduled', 'In Progress', 'Completed', 'Cancelled'];
+            if (!validStatuses.includes(status)) {
                 return res.status(400).json({
                     success: false,
                     error: 'Invalid job status',
@@ -355,8 +355,8 @@ router.patch('/:id/status', async (req, res) => {
             });
         }
         
-        const validStatuses = ['scheduled', 'in-progress', 'completed', 'cancelled'];
-        if (!validStatuses.includes(status.toLowerCase())) {
+        const validStatuses = ['Scheduled', 'In Progress', 'Completed', 'Cancelled'];
+        if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 success: false,
                 error: 'Invalid job status',
@@ -381,7 +381,7 @@ router.patch('/:id/status', async (req, res) => {
             const updatedJob = db.prepare('SELECT * FROM jobs WHERE id = ?').get(req.params.id);
             
             // If job is completed, send AI-generated summary
-            if (status.toLowerCase() === 'completed') {
+            if (status === 'Completed') {
                 try {
                     // Get job details for AI (simplified query to avoid schema issues)
                     const jobDetails = db.prepare(`

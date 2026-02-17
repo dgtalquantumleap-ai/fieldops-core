@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Stilt Heights - Professional Operations Dashboard</title>
+    <link rel="manifest" href="/admin/manifest.json">
     <link rel="stylesheet" href="/admin/css/styles.css">
+    <link rel="stylesheet" href="/admin/css/mobile.css">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Operations">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
@@ -768,7 +774,44 @@
         </div>
     </div>
 
-    <script src="/admin/js/app.js"></script>
-    <script src="/admin/js/staff-management-functions.js"></script>
+    <!-- Error Boundary (load first) -->
+    <script src="/admin/js/services/error-boundary.js"></script>
+    
+    <!-- Service Layer Scripts (must load in order) -->
+    <script src="/admin/js/services/logger.js"></script>
+    <script src="/admin/js/services/state.js"></script>
+    <script src="/admin/js/services/utils.js"></script>
+    <script src="/admin/js/services/ui.js"></script>
+    <script src="/admin/js/services/api.js"></script>
+    <script src="/admin/js/services/security.js"></script>
+    <script src="/admin/js/services/performance.js"></script>
+    <script src="/admin/js/services/forms.js"></script>
+    
+    <!-- Application -->
+    <script src="/admin/js/app-refactored.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/admin/service-worker.js')
+                .then(registration => {
+                    console.log('✅ Service Worker registered:', registration);
+                    // Check for updates periodically
+                    setInterval(() => registration.update(), 60000);
+                })
+                .catch(error => console.warn('Service Worker registration failed:', error));
+        });
+    }
+    
+    // Handle offline/online events
+    window.addEventListener('offline', () => {
+        console.log('⚠️ Connection lost - running in offline mode');
+    });
+    
+    window.addEventListener('online', () => {
+        console.log('✅ Connection restored - syncing data');
+    });
+    </script>
 </body>
 </html>

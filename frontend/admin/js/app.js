@@ -882,6 +882,10 @@ function showCreateJobModal() { showModal('create-job-modal'); }
 function showAddCustomerModal() { showModal('add-customer-modal'); }
 function showAddStaffModal() { showModal('add-staff-modal'); }
 function showAddAutomationModal() { showModal('add-automation-modal'); }
+function showCreateInvoiceModal() { showModal('create-invoice-modal'); }
+function openSchedulingPlugin() { showNotification('Scheduling plugin coming soon!', 'info'); }
+function showNotifications() { showNotification('No new notifications', 'info'); }
+function loadStaffManagement() { loadStaff(); }
 function refreshDashboard() { loadDashboard(); }
 
 // ============================================

@@ -554,7 +554,10 @@
         async function loadServices() {
             console.log('📥 Loading services from API...');
             try {
-                const response = await fetch('/api/booking/services');
+                const response = await fetch('/api/booking/services', {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -566,37 +569,61 @@
                 const container = document.getElementById('serviceCards');
 
                 if (!services || services.length === 0) {
-                    container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No services available. Please call us at 825-994-6606</p>';
+                    container.textContent = 'No services available. Please call us at 825-994-6606';
                     return;
                 }
 
                 container.innerHTML = services.map((service) => {
+                    // Sanitize service name for safe HTML attribute
+                    const safeName = (service.name || '').replace(/['"<>]/g, '');
                     const price = service.price ? `$${service.price}` : 'Contact for price';
+                    
                     return `
                         <div class="service-card" 
-                             data-service="${service.name}" 
+                             data-service="${safeName}" 
                              data-price="${service.price || 0}" 
                              role="radio" 
                              aria-checked="false"
                              tabindex="0"
-                             onclick="selectService('${service.name}', ${service.price || 0})"
-                             onkeypress="handleServiceKeypress(event, '${service.name}', ${service.price || 0})">
-                            <div class="service-name">${service.name}</div>
-                            <div class="service-price">${price}</div>
+                             onclick="selectService('${safeName}', ${service.price || 0})"
+                             onkeypress="handleServiceKeypress(event, '${safeName}', ${service.price || 0})">
+                            <div class="service-name">${escapeHtml(service.name)}</div>
+                            <div class="service-price">${escapeHtml(price)}</div>
                             <div class="service-description">Professional service</div>
                         </div>
                     `;
                 }).join('');
             } catch (error) {
                 console.error('❌ Error loading services:', error);
-                document.getElementById('serviceCards').innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #c53030;">Unable to load services. Please refresh or call us.</p>';
+                const container = document.getElementById('serviceCards');
+                container.textContent = 'Unable to load services. Please refresh or call us.';
+                container.style.color = '#c53030';
             }
+        }
+
+        // ==========================================
+        // HTML ESCAPE FUNCTION (XSS PREVENTION)
+        // ==========================================
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
         // ==========================================
         // SELECT SERVICE
         // ==========================================
         function selectService(serviceName, price) {
+            if (!serviceName || typeof price !== 'number') {
+                console.warn('Invalid service selection');
+                return;
+            }
+            
             console.log(`🎯 Selected: ${serviceName} ($${price})`);
             
             document.querySelectorAll('.service-card').forEach(card => {
@@ -604,7 +631,8 @@
                 card.setAttribute('aria-checked', 'false');
             });
 
-            const selectedCard = event.target.closest('.service-card');
+            // Find and select the clicked card safely
+            const selectedCard = event?.target?.closest('.service-card');
             if (selectedCard) {
                 selectedCard.classList.add('selected');
                 selectedCard.setAttribute('aria-checked', 'true');
@@ -696,6 +724,33 @@
         }
 
         // ==========================================
+        // FORM VALIDATION
+        // ==========================================
+        function validateForm(formData) {
+            const errors = [];
+            
+            const name = formData.get('name')?.trim();
+            const phone = formData.get('phone')?.trim();
+            const address = formData.get('address')?.trim();
+            const date = formData.get('date');
+            const time = formData.get('time');
+
+            if (!selectedService) errors.push('Please select a service');
+            if (!name) errors.push('Name is required');
+            if (!phone) errors.push('Phone is required');
+            if (!address) errors.push('Address is required');
+            if (!date) errors.push('Date is required');
+            if (!time) errors.push('Time is required');
+
+            // Validate phone format (basic)
+            if (phone && !/^\d{3}-\d{3}-\d{4}$/.test(phone)) {
+                errors.push('Phone must be in format XXX-XXX-XXXX');
+            }
+
+            return errors;
+        }
+
+        // ==========================================
         // FORM SUBMISSION
         // ==========================================
         document.getElementById('bookingForm').addEventListener('submit', async (e) => {
@@ -711,6 +766,7 @@
 
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
+            const originalBtnText = btnText.textContent;
 
             submitBtn.disabled = true;
             btnText.innerHTML = '<div class="loading-spinner"></div> Processing...';
@@ -721,13 +777,18 @@
                 const data = {
                     name: formData.get('name').trim(),
                     phone: formData.get('phone').trim(),
-                    email: formData.get('email').trim() || null,
+                    email: formData.get('email')?.trim() || null,
                     address: formData.get('address').trim(),
                     service: selectedService,
                     date: formData.get('date'),
                     time: formData.get('time'),
                     notes: formData.get('notes')?.trim() || ''
                 };
+
+                // Validate data
+                if (!data.name || !data.phone || !data.address || !data.service || !data.date || !data.time) {
+                    throw new Error('Missing required fields');
+                }
 
                 console.log('📋 Booking data:', data);
 
@@ -752,16 +813,16 @@
                     
                     setTimeout(() => {
                         submitBtn.disabled = false;
-                        btnText.textContent = 'Book Now - Get Free Quote';
+                        btnText.textContent = originalBtnText;
                     }, 3000);
                 } else {
                     throw new Error(result.error || 'Booking failed');
                 }
             } catch (error) {
                 console.error('❌ Error:', error);
-                showError(`❌ ${error.message}`);
+                showError(`❌ ${error.message || 'Failed to submit booking'}`);
                 submitBtn.disabled = false;
-                btnText.textContent = 'Book Now - Get Free Quote';
+                btnText.textContent = originalBtnText;
             }
         });
 

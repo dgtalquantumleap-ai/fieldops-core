@@ -2,14 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Stilt Heights - Staff App</title>
+    <link rel="manifest" href="/staff/manifest.json">
     <link rel="stylesheet" href="css/staff.css">
     <link rel="stylesheet" href="css/job-details-enhanced.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Staff Jobs">
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
@@ -249,5 +252,41 @@
     <!-- Scripts -->
     <script src="js/staff-app.js"></script>
     <script src="js/job-details-enhanced.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/staff/service-worker.js')
+                .then(registration => {
+                    console.log('✅ Service Worker registered:', registration);
+                    // Check for updates periodically
+                    setInterval(() => registration.update(), 60000);
+                })
+                .catch(error => console.warn('Service Worker registration failed:', error));
+        });
+    }
+    
+    // Handle offline/online events
+    window.addEventListener('offline', () => {
+        console.log('⚠️ Connection lost - running in offline mode');
+        showNotification('Connection lost - working offline', 'warning');
+    });
+    
+    window.addEventListener('online', () => {
+        console.log('✅ Connection restored - syncing photos');
+        showNotification('Connection restored - syncing photos', 'success');
+    });
+    
+    // Install PWA prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show custom install button
+        const installBtn = document.querySelector('.install-btn');
+        if (installBtn) installBtn.style.display = 'block';
+    });
+    </script>
 </body>
 </html>

@@ -179,19 +179,17 @@ router.post('/book', validateBooking, async (req, res) => {
         if (!customer) {
             console.log(`👤 Creating new customer: ${name} (${phone})`);
             
+            // Note: customers table doesn't have created_at/updated_at columns in current schema
             const insertCustomer = db.prepare(
-                'INSERT INTO customers (name, phone, email, address, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                'INSERT INTO customers (name, phone, email, address, notes) VALUES (?, ?, ?, ?, ?)'
             );
             
-            const now = new Date().toISOString();
             const result = insertCustomer.run(
                 name.trim(),
                 phone.trim(),
                 email ? email.trim() : null,
                 address.trim(),
-                'Online booking',
-                now,
-                now
+                'Online booking'
             );
             
             customer = { 
