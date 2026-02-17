@@ -25,17 +25,13 @@ const getAllowedOrigins = () => {
 const allowedOrigins = getAllowedOrigins();
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn('🚫 CORS blocked request from:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'https://fieldops-production-6b97.up.railway.app',
+    'https://fieldops-production-6b97.up.railway.app',
+    'https://fieldops-production-6b97.up.railway.app/admin'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
