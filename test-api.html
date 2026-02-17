@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FieldOps API Test</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .input-field { width: 300px; padding: 5px; margin: 5px; }
+        button { padding: 10px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .btn-primary { padding: 10px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <h1>FieldOps API Communication Test</h1>
+    
+    <div class="test-section">
+        <h3>Step 1: Login</h3>
+        <input type="email" id="email" placeholder="Email" value="dgtalquantumleap@gmail.com" class="input-field">
+        <input type="password" id="password" placeholder="Password" value="r3di6cod9jis" class="input-field">
+        <button onclick="testLogin()" class="btn-primary">Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 2: Create Customer</h3>
+        <input type="text" id="customerName" placeholder="Customer Name" value="Test Customer" class="input-field">
+        <input type="tel" id="customerPhone" placeholder="Phone" value="555-1234" class="input-field">
+        <button onclick="testCreateCustomer()" class="btn-primary">Create Customer</button>
+        <div id="customerResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 3: Create Job</h3>
+        <input type="number" id="customerId" placeholder="Customer ID" value="1" class="input-field">
+        <input type="number" id="serviceId" placeholder="Service ID" value="1" class="input-field">
+        <button onclick="testCreateJob()" class="btn-primary">Create Job</button>
+        <div id="jobResult" class="result"></div>
+    </div>
+
+    <script>
+        let authToken = '';
+        
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            resultDiv.innerHTML = 'Testing login...';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Login successful! Token: ${data.token.substring(0, 20)}...`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Login failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Network error: ${error.message}`;
+            }
+        }
+        
+        async function testCreateCustomer() {
+            if (!authToken) {
+                alert('Please login first!');
+                return;
+            }
+            
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const resultDiv = document.getElementById('customerResult');
+            
+            resultDiv.innerHTML = 'Creating customer...';
+            
+            try {
+                const response = await fetch('/api/customers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify({ name, phone })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Customer created! ID: ${data.id}, Name: ${data.name}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Network error: ${error.message}`;
+            }
+        }
+        
+        async function testCreateJob() {
+            if (!authToken) {
+                alert('Please login first!');
+                return;
+            }
+            
+            const customer_id = parseInt(document.getElementById('customerId').value);
+            const service_id = parseInt(document.getElementById('serviceId').value);
+            const resultDiv = document.getElementById('jobResult');
+            
+            resultDiv.innerHTML = 'Creating job...';
+            
+            try {
+                const response = await fetch('/api/jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify({ 
+                        customer_id, 
+                        service_id, 
+                        job_date: new Date().toISOString().split('T')[0],
+                        location: 'Test Location'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Job created! ID: ${data.data?.id || 'unknown'}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Network error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

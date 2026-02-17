@@ -6,7 +6,9 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-// Validate required environment variables
+// ============================================
+// VALIDATE ENVIRONMENT VARIABLES
+// ============================================
 const REQUIRED_ENV = ['JWT_SECRET', 'EMAIL_USER', 'EMAIL_PASS', 'ADMIN_EMAIL'];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missing.length) {
@@ -22,7 +24,9 @@ if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
   console.warn('   Recommended: Use a 64+ character random string.\n');
 }
 
-// Configure allowed origins for CORS
+// ============================================
+// CORS CONFIGURATION
+// ============================================
 const getAllowedOrigins = () => {
   const allowed = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://fieldops-core-production.up.railway.app';
   return allowed.split(',').map(origin => origin.trim());
@@ -38,7 +42,9 @@ const corsOptions = {
   exposedHeaders: ['X-Total-Count', 'X-Request-ID']
 };
 
-// Rate limiting configuration
+// ============================================
+// RATE LIMITING CONFIGURATION
+// ============================================
 const createRateLimiter = (windowMs, max, message) => rateLimit({
   windowMs,
   max,
@@ -59,7 +65,6 @@ const createRateLimiter = (windowMs, max, message) => rateLimit({
   }
 });
 
-// Different rate limits for different endpoints
 const bookingLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
   5, // 5 bookings per 15 minutes
@@ -78,17 +83,18 @@ const generalLimiter = createRateLimiter(
   'Too many requests. Please slow down.'
 );
 
-const strictLimiter = createRateLimiter(
-  60 * 60 * 1000, // 1 hour
-  1000, // 1000 requests per hour
-  'Rate limit exceeded for this hour.'
-);
-
+// ============================================
+// EXPRESS & HTTP SERVER SETUP
+// ============================================
 const app = express();
 const server = http.createServer(app);
 
 // Trust proxy for Railway deployment
 app.set('trust proxy', 1);
+
+// ============================================
+// SOCKET.IO SETUP
+// ============================================
 const io = socketIo(server, {
     cors: {
         origin: allowedOrigins,
@@ -96,23 +102,6 @@ const io = socketIo(server, {
         credentials: true
     }
 });
-
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads'));
-
-// Add request tracking middleware
-const { requestTracking } = require('./middleware/logging');
-app.use(requestTracking);
-
-// Apply rate limiting (specific routes take precedence over general limiter)
-app.use('/api/auth/login', authLimiter);
-app.use('/api/booking/book', bookingLimiter);
-app.use('/api/', generalLimiter);
-
-// Store io instance for real-time updates
-app.set('io', io);
 
 // WebSocket connection for real-time updates
 io.on('connection', (socket) => {
@@ -128,66 +117,154 @@ io.on('connection', (socket) => {
     });
 });
 
-// Serve static files
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
-});
+// Store io instance for real-time updates
+app.set('io', io);
 
-// Admin static files
+// ============================================
+// MIDDLEWARE SETUP - ORDER MATTERS!
+// ============================================
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request tracking middleware
+try {
+  const { requestTracking } = require('./middleware/logging');
+  app.use(requestTracking);
+  console.log('✅ Request tracking middleware loaded');
+} catch (err) {
+  console.warn('⚠️  Request tracking middleware not found, continuing without it');
+}
+
+// ============================================
+// STATIC FILE SERVING - SPECIFIC BEFORE GENERAL
+// ============================================
+app.use('/uploads', express.static('uploads'));
 app.use('/admin', express.static(path.join(__dirname, '../frontend/admin')));
-
-// Mobile Access Page
-app.get('/mobile', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/mobile-access.html'));
-});
-
-// AI Dashboard
-app.get('/admin-ai', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/admin-ai-dashboard.html'));
-});
-
-// Static file serving for specific directories
 app.use('/staff', express.static(path.join(__dirname, '../frontend/staff-app')));
 app.use('/stiltheights', express.static(path.join(__dirname, '../frontend/stiltheights')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// API Routes
+// ============================================
+// STATIC PAGE ROUTES - AFTER STATIC MIDDLEWARE
+// ============================================
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
+});
+
+app.get('/mobile', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/mobile-access.html'));
+});
+
+app.get('/admin-ai', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/admin-ai-dashboard.html'));
+});
+
+// ============================================
+// RATE LIMITING - APPLIED BEFORE ROUTES
+// ============================================
+app.use('/api/auth/login', authLimiter);
+app.use('/api/booking/book', bookingLimiter);
+app.use('/api/', generalLimiter);
+
+// ============================================
+// API ROUTES - WITH PROPER AUTHENTICATION
+// ============================================
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 
-app.use('/api/auth',             require('./routes/auth'));           // public
-app.use('/api/booking',          require('./routes/booking'));        // public
+// Public routes (no auth required)
+app.use('/api/auth',             require('./routes/auth'));
+app.use('/api/booking',          require('./routes/booking'));
+app.use('/api/ai-test',          require('./routes/ai-test'));
+
+// Protected routes (auth required)
 app.use('/api/customers',        requireAuth,  require('./routes/customers'));
 app.use('/api/jobs',             requireAuth,  require('./routes/jobs'));
 app.use('/api/staff',            requireAuth,  require('./routes/staff'));
-app.use('/api/staff-management', requireAdmin, require('./routes/staff-management'));
 app.use('/api/invoices',         requireAuth,  require('./routes/invoices'));
 app.use('/api/dashboard',        requireAuth,  require('./routes/dashboard'));
-app.use('/api/settings',          requireAdmin, require('./routes/settings'));
-app.use('/api/onboarding',       requireAdmin, require('./routes/onboarding'));
 app.use('/api/media',            requireAuth,  require('./routes/media'));
-app.use('/api/automations',      requireAdmin, require('./routes/automations'));
-app.use('/api/ai-automations',    requireAuth, require('./routes/ai-automations'));
-app.use('/api/ai-test',           require('./routes/ai-test'));           // AI testing endpoint
-app.use('/api/wp',               requireAuth, require('./routes/wordpress'));
+app.use('/api/automations',      requireAuth,  require('./routes/automations'));
+app.use('/api/ai-automations',   requireAuth,  require('./routes/ai-automations'));
+app.use('/api/wp',               requireAuth,  require('./routes/wordpress'));
 
-// Root redirect to Stilt Heights website
+// Admin-only routes
+app.use('/api/staff-management', requireAdmin, require('./routes/staff-management'));
+app.use('/api/settings',         requireAdmin, require('./routes/settings'));
+app.use('/api/onboarding',       requireAdmin, require('./routes/onboarding'));
+
+// ============================================
+// ROOT REDIRECT
+// ============================================
 app.get('/', (req, res) => res.redirect('/stiltheights'));
 
-// Error handling
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
+// ============================================
+// CATCH-ALL 404 HANDLER
+// ============================================
+app.use((req, res) => {
+    console.warn(`⚠️  404 Not Found: ${req.method} ${req.path}`);
+    res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: `The requested endpoint does not exist: ${req.method} ${req.path}`
+    });
 });
 
+// ============================================
+// ERROR HANDLING MIDDLEWARE
+// ============================================
+app.use((err, req, res, next) => {
+    console.error('❌ Error occurred:', {
+        message: err.message,
+        path: req.path,
+        method: req.method,
+        stack: err.stack
+    });
+    
+    res.status(err.status || 500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    });
+});
+
+// ============================================
+// SERVER STARTUP
+// ============================================
 const PORT = process.env.PORT || 3000;
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ FieldOps Core running on port ${PORT}`);
-    console.log(`🌐 Server URL: ${APP_URL}`);
-    console.log(`🏠 Stilt Heights Website: ${APP_URL}/stiltheights`);
-    console.log(`📊 Admin Dashboard: ${APP_URL}/admin`);
-    console.log(`📱 Staff App: ${APP_URL}/staff`);
-    console.log(`📝 Customer Booking: ${APP_URL}/booking.html`);
-    console.log(`⚡ Real-time updates enabled`);
+    console.log('\n╔════════════════════════════════════════════════════════╗');
+    console.log('║     ✅ FieldOps Core - Operations System Ready         ║');
+    console.log('╚════════════════════════════════════════════════════════╝\n');
+    
+    console.log('🚀 Server Information:');
+    console.log(`   Port: ${PORT}`);
+    console.log(`   URL: ${APP_URL}`);
+    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    console.log('\n📍 Access Points:');
+    console.log(`   🏠 Website: ${APP_URL}/stiltheights`);
+    console.log(`   📊 Admin: ${APP_URL}/admin`);
+    console.log(`   📱 Staff: ${APP_URL}/staff`);
+    console.log(`   📝 Booking: ${APP_URL}/booking.html`);
+    
+    console.log('\n🔧 Features:');
+    console.log('   ⚡ Real-time updates (Socket.io)');
+    console.log('   🔒 Authentication & Authorization');
+    console.log('   🚫 Rate limiting enabled');
+    console.log('   🌐 CORS configured');
+    console.log(`   📡 Allowed Origins: ${allowedOrigins.join(', ')}`);
+    
+    console.log('\n');
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('\n⚠️  SIGTERM received, shutting down gracefully...');
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+    });
 });

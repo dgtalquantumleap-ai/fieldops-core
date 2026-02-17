@@ -4,58 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Book professional cleaning services with Stilt Heights. Easy online booking, competitive prices, and exceptional service.">
-    <meta name="keywords" content="cleaning services, professional cleaning, house cleaning, office cleaning, booking">
     <title>Book Professional Cleaning Services - Stilt Heights</title>
     
-    <!-- Favicon and app icons -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
-    
-    <!-- Open Graph for social sharing -->
     <meta property="og:title" content="Book Professional Cleaning - Stilt Heights">
     <meta property="og:description" content="Professional cleaning services for your home or office. Book online in minutes!">
-    <meta property="og:type" content="website">
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+        /* ==========================================
+           RESET & BASE
+           ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             line-height: 1.6;
             color: #2d3748;
         }
-        
-        .booking-container { 
-            max-width: 800px; 
-            margin: 40px auto; 
-            padding: 20px; 
+
+        /* ==========================================
+           ANIMATIONS
+           ========================================== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ==========================================
+           CONTAINER
+           ========================================== */
+        .booking-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* ==========================================
+           TRUST BADGES
+           ========================================== */
         .trust-badges {
-            background: rgba(255,255,255,0.95);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
             text-align: center;
-            backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
         }
-        
+
         .trust-badges h3 {
             font-size: 18px;
             margin-bottom: 15px;
             color: #2d3748;
         }
-        
+
         .badges {
             display: flex;
             justify-content: center;
             gap: 30px;
             flex-wrap: wrap;
         }
-        
+
         .badge {
             display: flex;
             align-items: center;
@@ -63,32 +95,34 @@
             font-size: 14px;
             color: #4a5568;
         }
-        
-        .booking-header { 
-            background: rgba(255,255,255,0.95); 
-            color: #1a202c; 
-            padding: 40px 30px; 
-            border-radius: 20px 20px 0 0; 
-            text-align: center; 
-            backdrop-filter: blur(10px);
+
+        /* ==========================================
+           HEADER
+           ========================================== */
+        .booking-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px 30px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
             -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
-        .booking-header h1 { 
-            font-size: 32px; 
-            margin-bottom: 10px; 
+
+        .booking-header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
-        .booking-header p { 
-            color: #4a5568; 
+
+        .booking-header p {
+            color: #4a5568;
             font-size: 16px;
         }
-        
+
         .rating {
             margin-top: 15px;
             display: flex;
@@ -96,21 +130,27 @@
             justify-content: center;
             gap: 10px;
         }
-        
+
         .stars {
             color: #fbbf24;
             font-size: 18px;
         }
-        
-        .booking-form { 
-            background: rgba(255,255,255,0.95); 
-            padding: 40px; 
-            border-radius: 0 0 20px 20px; 
-            backdrop-filter: blur(10px);
+
+        /* ==========================================
+           FORM SECTION
+           ========================================== */
+        .booking-form {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 0 0 20px 20px;
             -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
+
+        /* ==========================================
+           PROGRESS BAR
+           ========================================== */
         .progress-bar {
             width: 100%;
             height: 6px;
@@ -119,7 +159,7 @@
             margin-bottom: 30px;
             overflow: hidden;
         }
-        
+
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #667eea, #764ba2);
@@ -127,45 +167,52 @@
             transition: width 0.3s ease;
             border-radius: 3px;
         }
-        
-        .error-message, .success-message {
+
+        /* ==========================================
+           MESSAGES
+           ========================================== */
+        .error-message,
+        .success-message {
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
             font-weight: 500;
         }
-        
+
         .error-message {
             background: #fee;
             color: #c53030;
             border: 1px solid #fed7d7;
         }
-        
+
         .success-message {
             background: #f0fdf4;
             color: #16a34a;
             border: 1px solid #bbf7d0;
         }
-        
+
+        /* ==========================================
+           SERVICES
+           ========================================== */
         .services-section {
             margin-bottom: 30px;
         }
-        
+
         .services-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
             color: #2d3748;
         }
-        
+
         .service-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
         }
-        
+
         .service-card {
             background: #f8fafc;
             border: 2px solid #e2e8f0;
@@ -175,57 +222,60 @@
             transition: all 0.3s ease;
             text-align: center;
         }
-        
+
         .service-card:hover {
             border-color: #667eea;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
         }
-        
+
         .service-card.selected {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: #667eea;
         }
-        
+
         .service-name {
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 8px;
         }
-        
+
         .service-price {
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 8px;
             color: #667eea;
         }
-        
+
         .service-card.selected .service-price {
             color: white;
         }
-        
+
         .service-description {
             font-size: 14px;
             color: #64748b;
             line-height: 1.4;
         }
-        
+
         .service-card.selected .service-description {
-            color: rgba(255,255,255,0.9);
+            color: rgba(255, 255, 255, 0.9);
         }
-        
+
+        /* ==========================================
+           FORM GROUPS
+           ========================================== */
         .form-group {
             margin-bottom: 25px;
         }
-        
+
         .form-group label {
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
             color: #374151;
         }
-        
+
         .form-group input,
         .form-group select,
         .form-group textarea {
@@ -236,8 +286,9 @@
             font-size: 16px;
             transition: border-color 0.3s ease;
             background: white;
+            font-family: inherit;
         }
-        
+
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
@@ -245,19 +296,16 @@
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
-        .form-group input:invalid,
-        .form-group select:invalid,
-        .form-group textarea:invalid {
-            border-color: #ef4444;
-        }
-        
+
         .form-hint {
             font-size: 14px;
             color: #6b7280;
             margin-top: 5px;
         }
-        
+
+        /* ==========================================
+           BUTTONS
+           ========================================== */
         .btn-submit {
             width: 100%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -271,143 +319,129 @@
             transition: all 0.3s ease;
             position: relative;
         }
-        
+
         .btn-submit:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
         }
-        
+
         .btn-submit:disabled {
             opacity: 0.7;
             cursor: not-allowed;
         }
-        
+
         .loading-spinner {
             display: inline-block;
             width: 16px;
             height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: white;
             animation: spin 1s ease-in-out infinite;
             margin-right: 8px;
         }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
+
+        /* ==========================================
+           CONTACT INFO
+           ========================================== */
         .contact-info {
-            background: rgba(255,255,255,0.95);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 30px;
             text-align: center;
             margin-top: 20px;
-            backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
+
         .contact-info h3 {
             font-size: 20px;
             margin-bottom: 15px;
             color: #2d3748;
         }
-        
+
         .contact-info p {
             margin-bottom: 10px;
             color: #4a5568;
         }
-        
-        .contact-info a { 
-            color: #3b82f6; 
-            text-decoration: none; 
+
+        .contact-info a {
+            color: #667eea;
+            text-decoration: none;
             font-weight: 600;
         }
-        
+
         .contact-info a:hover {
-            color: #667eea;
             text-decoration: underline;
         }
-        
-        /* Accessibility improvements */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0,0,0,0);
-            white-space: nowrap;
-            border: 0;
-        }
-        
-        /* Focus indicators for keyboard navigation */
+
+        /* ==========================================
+           ACCESSIBILITY
+           ========================================== */
         *:focus-visible {
             outline: 2px solid #667eea;
             outline-offset: 2px;
         }
-        
+
+        /* ==========================================
+           RESPONSIVE
+           ========================================== */
         @media (max-width: 768px) {
-            .booking-container { 
-                margin: 20px auto; 
-                padding: 15px; 
+            .booking-container {
+                margin: 20px auto;
+                padding: 15px;
             }
-            
-            .booking-header, .booking-form { 
-                padding: 25px; 
+
+            .booking-header,
+            .booking-form {
+                padding: 25px;
             }
-            
+
             .service-cards {
                 grid-template-columns: 1fr;
             }
-            
+
             .badges {
                 flex-direction: column;
                 gap: 15px;
             }
-            
+
             .booking-header h1 {
                 font-size: 28px;
             }
         }
-        
+
         @media (max-width: 480px) {
-            .booking-header, .booking-form {
+            .booking-header,
+            .booking-form {
                 padding: 20px;
             }
-            
+
             .booking-header h1 {
                 font-size: 24px;
+            }
+
+            .booking-header p {
+                font-size: 14px;
             }
         }
     </style>
 </head>
 <body>
     <div class="booking-container">
-        <!-- Trust Badges Section -->
+        <!-- Trust Badges -->
         <div class="trust-badges">
-            <h3>Trusted by Local Families & Businesses</h3>
+            <h3>✓ Trusted by Local Families & Businesses</h3>
             <div class="badges">
-                <div class="badge">
-                    <span>✓</span>
-                    <span>Insured & Bonded</span>
-                </div>
-                <div class="badge">
-                    <span>✓</span>
-                    <span>Background Checked</span>
-                </div>
-                <div class="badge">
-                    <span>✓</span>
-                    <span>Satisfaction Guaranteed</span>
-                </div>
-                <div class="badge">
-                    <span>⭐</span>
-                    <span>4.9/5 Rating</span>
-                </div>
+                <div class="badge"><span>✓</span><span>Insured & Bonded</span></div>
+                <div class="badge"><span>✓</span><span>Background Checked</span></div>
+                <div class="badge"><span>✓</span><span>Satisfaction Guaranteed</span></div>
+                <div class="badge"><span>⭐</span><span>4.9/5 Rating</span></div>
             </div>
         </div>
-        
+
+        <!-- Header -->
         <div class="booking-header">
             <h1>Book Professional Cleaning</h1>
             <p>Expert cleaning services for your home or office</p>
@@ -415,301 +449,68 @@
                 <span class="stars">★★★★★</span>
                 <span>4.9 out of 5 (127 reviews)</span>
             </div>
-        </div> 
-            border-radius: 0 0 20px 20px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-        
-        .progress-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            margin-bottom: 25px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #1e3a8a);
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 2px;
-        }
-        
-        .services-section { margin-bottom: 30px; }
-        
-        .services-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 15px;
-        }
-        
-        .service-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .service-card {
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-        }
-        
-        .service-card:hover {
-            border-color: #3b82f6;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-        }
-        
-        .service-card.selected {
-            border-color: #3b82f6;
-            background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
-            color: white;
-        }
-        
-        .service-name {
-            font-weight: 600;
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-        
-        .service-price {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-bottom: 8px;
-        }
-        
-        .service-description {
-            font-size: 12px;
-            opacity: 0.7;
-            line-height: 1.4;
-        }
-        
-        .form-group { 
-            margin-bottom: 25px; 
-        }
-        
-        .form-group label { 
-            display: block; 
-            margin-bottom: 8px; 
-            color: #2d3748; 
-            font-weight: 600; 
-        }
-        
-        .form-group input, .form-group select, .form-group textarea { 
-            width: 100%; 
-            padding: 14px; 
-            border: 2px solid #e2e8f0; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            transition: all 0.3s ease;
-        }
-        
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
-            outline: none; 
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        .form-hint {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 5px;
-            font-style: italic;
-        }
-        
-        .btn-submit { 
-            width: 100%; 
-            padding: 18px; 
-            background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%); 
-            color: white; 
-            border: none; 
-            border-radius: 12px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-submit:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
-        }
-        
-        .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 8px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .error-message, .success-message {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .error-message {
-            background: #fee;
-            color: #c53030;
-            border: 1px solid #fed7d7;
-        }
-        
-        .success-message {
-            background: #f0fff4;
-            color: #22543d;
-            border: 1px solid #c6f6d5;
-        }
-        
-        .error-message div:first-child {
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-        
-        .success-message div:first-child {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        
-        .contact-info { 
-            text-align: center; 
-            margin-top: 30px; 
-            color: white;
-            background: rgba(255,255,255,0.1);
-            padding: 25px;
-            border-radius: 12px;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-        }
-        
-        .contact-info a { 
-            color: #3b82f6; 
-            text-decoration: none; 
-            font-weight: 600;
-        }
-        
-        .contact-info a:hover {
-            color: #667eea;
-            text-decoration: underline;
-        }
-        
-        @media (max-width: 768px) {
-            .booking-container { 
-                margin: 20px auto; 
-                padding: 15px; 
-            }
-            
-            .booking-header, .booking-form { 
-                padding: 25px; 
-            }
-            
-            .service-cards {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .booking-container {
-            animation: fadeInUp 0.6s ease-out;
-        }
-    </style>
-</head>
-<body>
-    <div class="booking-container">
-        <div class="booking-header">
-            <h1>Book a Cleaning</h1>
-            <p>Professional cleaning services for your home or office</p>
-            <div class="rating">
-                <span class="stars">★★★★★</span>
-                <span>4.9 out of 5 (127 reviews)</span>
-            </div>
         </div>
-        
+
+        <!-- Booking Form -->
         <div class="booking-form">
+            <!-- Progress Bar -->
             <div class="progress-bar">
-                <div class="progress-fill" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-fill" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Form completion progress"></div>
             </div>
-            
+
+            <!-- Messages -->
             <div id="error-msg" class="error-message" role="alert"></div>
             <div id="success-msg" class="success-message" role="status"></div>
-            
+
+            <!-- Form -->
             <form id="bookingForm" novalidate>
+                <!-- Services Section -->
                 <div class="services-section">
                     <div class="services-title">Select Service Type *</div>
                     <div class="service-cards" id="serviceCards" role="radiogroup" aria-required="true">
-                        <!-- Services will be loaded here -->
+                        <p style="grid-column: 1 / -1; text-align: center; color: #999;">Loading services...</p>
                     </div>
                 </div>
-                
+
+                <!-- Customer Name -->
                 <div class="form-group">
                     <label for="name">Full Name *</label>
-                    <input type="text" id="name" name="name" required autocomplete="name" aria-required="true">
-                    <div class="form-hint">Please provide your full legal name</div>
+                    <input type="text" id="name" name="name" required autocomplete="name" placeholder="John Doe">
+                    <div class="form-hint">Please provide your full name</div>
                 </div>
-                
+
+                <!-- Phone Number -->
                 <div class="form-group">
                     <label for="phone">Phone Number *</label>
-                    <input type="tel" id="phone" name="phone" required autocomplete="tel" aria-required="true" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="555-123-4567">
-                    <div class="form-hint">We'll only contact you about your booking</div>
+                    <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="555-123-4567">
+                    <div class="form-hint">Format: 555-123-4567</div>
                 </div>
-                
+
+                <!-- Email -->
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" autocomplete="email" placeholder="your@email.com">
-                    <div class="form-hint">Optional - for booking confirmation and updates</div>
+                    <div class="form-hint">Optional - for booking confirmation</div>
                 </div>
-                
+
+                <!-- Address -->
                 <div class="form-group">
                     <label for="address">Service Address *</label>
-                    <textarea id="address" name="address" rows="3" required aria-required="true" placeholder="123 Main St, City, State 12345"></textarea>
+                    <textarea id="address" name="address" rows="3" required placeholder="123 Main St, City, State 12345"></textarea>
                     <div class="form-hint">Include apartment/unit number if applicable</div>
                 </div>
-                
+
+                <!-- Date -->
                 <div class="form-group">
                     <label for="date">Preferred Date *</label>
-                    <input type="date" id="date" name="date" required aria-required="true">
+                    <input type="date" id="date" name="date" required>
                     <div class="form-hint">We'll confirm availability via phone</div>
                 </div>
-                
+
+                <!-- Time -->
                 <div class="form-group">
                     <label for="time">Preferred Time *</label>
-                    <select id="time" name="time" required aria-required="true">
+                    <select id="time" name="time" required>
                         <option value="">Select a time window</option>
                         <option value="9:00 AM - 11:00 AM">9:00 AM - 11:00 AM</option>
                         <option value="11:00 AM - 1:00 PM">11:00 AM - 1:00 PM</option>
@@ -718,13 +519,21 @@
                     </select>
                     <div class="form-hint">2-hour time windows for better service</div>
                 </div>
-                
-                <button type="submit" class="btn-submit" id="submitBtn" aria-label="Submit booking request">
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label for="notes">Additional Notes</label>
+                    <textarea id="notes" name="notes" rows="2" placeholder="Any special requests..."></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-submit" id="submitBtn">
                     <span id="btnText">Book Now - Get Free Quote</span>
                 </button>
             </form>
         </div>
-        
+
+        <!-- Contact Info -->
         <div class="contact-info">
             <h3>Need Help? We're Here For You</h3>
             <p>📞 Call us at <a href="tel:825-994-6606">825-994-6606</a></p>
@@ -734,26 +543,33 @@
         </div>
     </div>
 
+    <!-- JavaScript -->
     <script>
         let selectedService = '';
         let selectedServicePrice = 0;
 
-        // Load services from API
+        // ==========================================
+        // LOAD SERVICES
+        // ==========================================
         async function loadServices() {
+            console.log('📥 Loading services from API...');
             try {
-                const response = await fetch('/api/services');
+                const response = await fetch('/api/booking/services');
                 if (!response.ok) {
-                    throw new Error('Failed to load services');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
                 const services = await response.json();
-                
+                console.log('✅ Services loaded:', services);
+
                 const container = document.getElementById('serviceCards');
-                if (services.length === 0) {
-                    container.innerHTML = '<p>No services available at the moment. Please call us.</p>';
+
+                if (!services || services.length === 0) {
+                    container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No services available. Please call us at 825-994-6606</p>';
                     return;
                 }
-                
-                container.innerHTML = services.map((service, index) => {
+
+                container.innerHTML = services.map((service) => {
                     const price = service.price ? `$${service.price}` : 'Contact for price';
                     return `
                         <div class="service-card" 
@@ -766,18 +582,41 @@
                              onkeypress="handleServiceKeypress(event, '${service.name}', ${service.price || 0})">
                             <div class="service-name">${service.name}</div>
                             <div class="service-price">${price}</div>
-                            <div class="service-description">Professional ${service.name.toLowerCase()} service for your home or office</div>
+                            <div class="service-description">Professional service</div>
                         </div>
                     `;
                 }).join('');
             } catch (error) {
-                console.error('Error loading services:', error);
-                document.getElementById('serviceCards').innerHTML = 
-                    '<p>Unable to load services. Please refresh the page or call us directly.</p>';
+                console.error('❌ Error loading services:', error);
+                document.getElementById('serviceCards').innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #c53030;">Unable to load services. Please refresh or call us.</p>';
             }
         }
 
-        // Handle keyboard navigation for service cards
+        // ==========================================
+        // SELECT SERVICE
+        // ==========================================
+        function selectService(serviceName, price) {
+            console.log(`🎯 Selected: ${serviceName} ($${price})`);
+            
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('selected');
+                card.setAttribute('aria-checked', 'false');
+            });
+
+            const selectedCard = event.target.closest('.service-card');
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                selectedCard.setAttribute('aria-checked', 'true');
+            }
+
+            selectedService = serviceName;
+            selectedServicePrice = price;
+            updateProgress();
+        }
+
+        // ==========================================
+        // KEYBOARD SUPPORT
+        // ==========================================
         function handleServiceKeypress(event, serviceName, price) {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
@@ -785,183 +624,150 @@
             }
         }
 
-        // Select service
-        function selectService(serviceName, price) {
-            // Remove previous selection
-            document.querySelectorAll('.service-card').forEach(card => {
-                card.classList.remove('selected');
-                card.setAttribute('aria-checked', 'false');
-            });
-            
-            // Add selection to clicked card
-            const selectedCard = event.target.closest('.service-card');
-            if (selectedCard) {
-                selectedCard.classList.add('selected');
-                selectedCard.setAttribute('aria-checked', 'true');
-            }
-            
-            selectedService = serviceName;
-            selectedServicePrice = price;
-            
-            updateProgress();
-        }
-
-        // Update progress bar
+        // ==========================================
+        // PROGRESS BAR
+        // ==========================================
         function updateProgress() {
             const form = document.getElementById('bookingForm');
             const formData = new FormData(form);
             const progressBar = document.getElementById('progressBar');
-            
+
             let completed = 0;
-            const total = 6; // service, name, phone, address, date, time (email is optional)
-            
-            // Check service selection
+            const total = 6;
+
             if (selectedService) completed++;
-            
-            // Check form fields
             if (formData.get('name')) completed++;
             if (formData.get('phone')) completed++;
             if (formData.get('address')) completed++;
             if (formData.get('date')) completed++;
             if (formData.get('time')) completed++;
-            
+
             const progress = (completed / total) * 100;
             progressBar.style.width = `${progress}%`;
             progressBar.setAttribute('aria-valuenow', Math.round(progress));
         }
 
-        // Enhanced form validation
+        // ==========================================
+        // FORM VALIDATION
+        // ==========================================
         function validateForm(formData) {
             const errors = [];
-            
-            if (!selectedService) errors.push('Please select a service type');
-            if (!formData.get('name')) errors.push('Please provide your full name');
-            if (!formData.get('phone')) errors.push('Please provide your phone number');
-            if (!formData.get('address')) errors.push('Please provide your service address');
-            if (!formData.get('date')) errors.push('Please select a preferred date');
-            if (!formData.get('time')) errors.push('Please select a preferred time');
-            
-            // Phone format validation
+
+            if (!selectedService) errors.push('Please select a service');
+            if (!formData.get('name')?.trim()) errors.push('Please provide your name');
+            if (!formData.get('phone')?.trim()) errors.push('Please provide your phone');
+            if (!formData.get('address')?.trim()) errors.push('Please provide your address');
+            if (!formData.get('date')) errors.push('Please select a date');
+            if (!formData.get('time')) errors.push('Please select a time');
+
             const phone = formData.get('phone');
             if (phone && !/^\d{3}-\d{3}-\d{4}$/.test(phone)) {
-                errors.push('Please enter phone number in format: 555-123-4567');
+                errors.push('Phone format: 555-123-4567');
             }
-            
-            // Email validation if provided
+
             const email = formData.get('email');
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                errors.push('Please enter a valid email address');
+                errors.push('Invalid email format');
             }
-            
+
             return errors;
         }
 
-        // Handle form submission
-        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const validationErrors = validateForm(formData);
-            
-            if (validationErrors.length > 0) {
-                showError(validationErrors.join('. '));
-                return;
-            }
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            const errorMsg = document.getElementById('error-msg');
-            const successMsg = document.getElementById('success-msg');
-            
-            // Disable button and show loading
-            submitBtn.disabled = true;
-            submitBtn.setAttribute('aria-busy', 'true');
-            btnText.innerHTML = '<div class="loading-spinner" aria-hidden="true"></div> Processing...';
-            
-            try {
-                const data = {
-                    customer_name: formData.get('name').trim(),
-                    customer_phone: formData.get('phone').trim(),
-                    customer_email: formData.get('email').trim() || null,
-                    service_address: formData.get('address').trim(),
-                    service_type: selectedService,
-                    job_date: formData.get('date'),
-                    preferred_time: formData.get('time'),
-                    price: selectedServicePrice,
-                    notes: 'Online booking via website'
-                };
-                
-                const res = await fetch('/api/bookings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await res.json();
-                console.log('Booking result:', result);
-                
-                if (result.success) {
-                    successMsg.textContent = result.message || '🎉 Booking request received! We\'ll call you within 24 hours to confirm your appointment and provide a final quote.';
-                    successMsg.style.display = 'block';
-                    errorMsg.style.display = 'none';
-                    e.target.reset();
-                    
-                    // Reset service selection
-                    selectedService = '';
-                    selectedServicePrice = 0;
-                    document.querySelectorAll('.service-card').forEach(card => {
-                        card.classList.remove('selected');
-                        card.setAttribute('aria-checked', 'false');
-                    });
-                    
-                    // Reset progress
-                    updateProgress();
-                    
-                    // Scroll to top
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    
-                    // Reset button after delay
-                    setTimeout(() => {
-                        submitBtn.disabled = false;
-                        submitBtn.setAttribute('aria-busy', 'false');
-                        btnText.textContent = 'Book Now - Get Free Quote';
-                    }, 3000);
-                } else {
-                    throw new Error(result.error || 'Booking failed');
-                }
-            } catch (error) {
-                console.error('Booking error:', error);
-                showError(`❌ ${error.message || 'Failed to create booking. Please call us at 825-994-6606 for immediate assistance.'}`);
-                submitBtn.disabled = false;
-                submitBtn.setAttribute('aria-busy', 'false');
-                btnText.textContent = 'Book Now - Get Free Quote';
-            }
-        });
-        
-        // Helper function to show errors
+        // ==========================================
+        // SHOW MESSAGES
+        // ==========================================
         function showError(message) {
             const errorMsg = document.getElementById('error-msg');
             const successMsg = document.getElementById('success-msg');
             errorMsg.textContent = message;
             errorMsg.style.display = 'block';
             successMsg.style.display = 'none';
-            
-            // Scroll to error message
             errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        
-        // Set minimum date to today and maximum to 3 months from now
-        const dateInput = document.querySelector('input[type="date"]');
-        const today = new Date();
-        const maxDate = new Date();
-        maxDate.setMonth(maxDate.getMonth() + 3);
-        
-        dateInput.min = today.toISOString().split('T')[0];
-        dateInput.max = maxDate.toISOString().split('T')[0];
-        dateInput.value = today.toISOString().split('T')[0];
-        
-        // Phone number formatting
-        document.getElementById('phone').addEventListener('input', function(e) {
+
+        function showSuccess(message) {
+            const successMsg = document.getElementById('success-msg');
+            const errorMsg = document.getElementById('error-msg');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+            successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // ==========================================
+        // FORM SUBMISSION
+        // ==========================================
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const errors = validateForm(formData);
+
+            if (errors.length > 0) {
+                showError('❌ ' + errors.join('. '));
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+
+            submitBtn.disabled = true;
+            btnText.innerHTML = '<div class="loading-spinner"></div> Processing...';
+
+            try {
+                console.log('📤 Submitting booking...');
+
+                const data = {
+                    name: formData.get('name').trim(),
+                    phone: formData.get('phone').trim(),
+                    email: formData.get('email').trim() || null,
+                    address: formData.get('address').trim(),
+                    service: selectedService,
+                    date: formData.get('date'),
+                    time: formData.get('time'),
+                    notes: formData.get('notes')?.trim() || ''
+                };
+
+                console.log('📋 Booking data:', data);
+
+                const res = await fetch('/api/booking/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                console.log('✅ Response:', result);
+
+                if (result.success) {
+                    showSuccess('🎉 Booking received! We\'ll call you within 24 hours to confirm.');
+                    e.target.reset();
+                    selectedService = '';
+                    selectedServicePrice = 0;
+                    document.querySelectorAll('.service-card').forEach(card => {
+                        card.classList.remove('selected');
+                    });
+                    updateProgress();
+                    
+                    setTimeout(() => {
+                        submitBtn.disabled = false;
+                        btnText.textContent = 'Book Now - Get Free Quote';
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || 'Booking failed');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showError(`❌ ${error.message}`);
+                submitBtn.disabled = false;
+                btnText.textContent = 'Book Now - Get Free Quote';
+            }
+        });
+
+        // ==========================================
+        // PHONE FORMATTING
+        // ==========================================
+        document.getElementById('phone').addEventListener('input', function (e) {
             let value = e.target.value.replace(/\D/g, '');
             if (value.length >= 6) {
                 value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6, 10);
@@ -970,10 +776,30 @@
             }
             e.target.value = value;
         });
-        
-        // Load services on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('Page loaded, fetching services...');
+
+        // ==========================================
+        // DATE CONSTRAINTS
+        // ==========================================
+        const dateInput = document.querySelector('input[type="date"]');
+        const today = new Date();
+        const maxDate = new Date();
+        maxDate.setMonth(maxDate.getMonth() + 3);
+
+        dateInput.min = today.toISOString().split('T')[0];
+        dateInput.max = maxDate.toISOString().split('T')[0];
+        dateInput.value = today.toISOString().split('T')[0];
+
+        // ==========================================
+        // UPDATE PROGRESS ON INPUT
+        // ==========================================
+        document.getElementById('bookingForm').addEventListener('change', updateProgress);
+        document.getElementById('bookingForm').addEventListener('input', updateProgress);
+
+        // ==========================================
+        // INITIALIZE
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Page loaded. Loading services...');
             loadServices();
         });
     </script>
