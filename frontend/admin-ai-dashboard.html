@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Automation Dashboard - FieldOps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .ai-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .ai-card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .ai-card:hover {
+            transform: translateY(-2px);
+        }
+        .ai-badge {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        .template-card {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .template-card:hover {
+            background-color: #f8f9fa;
+            border-color: #667eea;
+        }
+        .message-preview {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .loading-spinner {
+            display: none;
+        }
+        .ai-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .ai-status.active {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="ai-header text-center">
+            <h1><i class="fas fa-robot"></i> AI Automation Dashboard</h1>
+            <p class="lead">Manage AI-powered communications and automations</p>
+            <div class="mt-3">
+                <span class="ai-status active"></span>
+                <span>AI Service Active</span>
+                <span class="ms-3 ai-badge">Hugging Face Integration</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card ai-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-envelope fa-3x text-primary mb-3"></i>
+                        <h5>Send Follow-up</h5>
+                        <p class="text-muted">AI-powered customer follow-up</p>
+                        <button class="btn btn-primary" onclick="showFollowUpModal()">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card ai-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-tie fa-3x text-success mb-3"></i>
+                        <h5>Staff Notification</h5>
+                        <p class="text-muted">AI job assignment alerts</p>
+                        <button class="btn btn-success" onclick="showStaffNotificationModal()">
+                            <i class="fas fa-bell"></i> Notify
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card ai-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-magic fa-3x text-warning mb-3"></i>
+                        <h5>Custom Message</h5>
+                        <p class="text-muted">Generate custom AI message</p>
+                        <button class="btn btn-warning" onclick="showCustomMessageModal()">
+                            <i class="fas fa-wand-magic-sparkles"></i> Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card ai-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                        <h5>AI Analytics</h5>
+                        <p class="text-muted">View AI usage stats</p>
+                        <button class="btn btn-info" onclick="showAnalytics()">
+                            <i class="fas fa-chart-bar"></i> View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Templates -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-layer-group"></i> AI Message Templates</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="templatesContainer">
+                            <!-- Templates will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent AI Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-history"></i> Recent AI Activity</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Type</th>
+                                        <th>Recipient</th>
+                                        <th>Template</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="aiActivityTable">
+                                    <!-- Activity will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Follow-up Modal -->
+    <div class="modal fade" id="followUpModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send AI Follow-up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close follow-up dialog"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="followUpForm">
+                        <div class="mb-3">
+                            <label for="customerSelect" class="form-label">Customer</label>
+                            <select class="form-select" id="customerSelect" aria-label="Select customer for follow-up" required>
+                                <option value="">Select customer...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceName" class="form-label">Service Name</label>
+                            <input type="text" class="form-control" id="serviceName" placeholder="e.g., Standard Cleaning" aria-label="Service name for follow-up">
+                        </div>
+                        <div class="mb-3">
+                            <label for="staffName" class="form-label">Staff Name</label>
+                            <input type="text" class="form-control" id="staffName" placeholder="e.g., John Smith" aria-label="Staff name for follow-up">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">AI Message Preview</label>
+                            <div class="message-preview" id="followUpPreview">
+                                <div class="text-muted">Generate preview by clicking "Preview AI Message"</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancel follow-up">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="previewFollowUp()" aria-label="Preview AI follow-up message">Preview AI Message</button>
+                    <button type="button" class="btn btn-success" onclick="sendFollowUp()" aria-label="Send AI follow-up message">
+                        <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                        Send Follow-up
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Notification Modal -->
+    <div class="modal fade" id="staffNotificationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Staff Notification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close staff notification dialog"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="staffNotificationForm">
+                        <div class="mb-3">
+                            <label for="staffSelect" class="form-label">Staff Member</label>
+                            <select class="form-select" id="staffSelect" aria-label="Select staff member for notification" required>
+                                <option value="">Select staff...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">Customer Name</label>
+                            <input type="text" class="form-control" id="customerName" required aria-label="Customer name for notification">
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceType" class="form-label">Service</label>
+                            <input type="text" class="form-control" id="serviceType" required aria-label="Service type for notification">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="jobDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="jobDate" aria-label="Job date for notification">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="jobTime" class="form-label">Time</label>
+                                <input type="time" class="form-control" id="jobTime" aria-label="Job time for notification">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jobLocation" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="jobLocation" placeholder="Customer address" aria-label="Job location for notification">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">AI Message Preview</label>
+                            <div class="message-preview" id="staffNotificationPreview">
+                                <div class="text-muted">Generate preview by clicking "Preview AI Message"</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancel staff notification">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="previewStaffNotification()" aria-label="Preview AI staff notification">Preview AI Message</button>
+                    <button type="button" class="btn btn-success" onclick="sendStaffNotification()" aria-label="Send AI staff notification">
+                        <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                        Send Notification
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Message Modal -->
+    <div class="modal fade" id="customMessageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generate Custom AI Message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close custom message dialog"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="customMessageForm">
+                        <div class="mb-3">
+                            <label for="templateType" class="form-label">Template Type</label>
+                            <select class="form-select" id="templateType" aria-label="Select AI message template" required>
+                                <option value="">Select template...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="messageData" class="form-label">Message Data (JSON)</label>
+                            <textarea class="form-control" id="messageData" rows="6" placeholder='{"name": "John Doe", "service": "Cleaning", ...}' aria-label="JSON data for custom AI message"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">AI Generated Message</label>
+                            <div class="message-preview" id="customMessagePreview">
+                                <div class="text-muted">Generate message by clicking "Generate AI Message"</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancel custom message">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="generateCustomMessage()" aria-label="Generate custom AI message">
+                        <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                        Generate AI Message
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="copyCustomMessage()" aria-label="Copy custom AI message to clipboard">
+                        <i class="fas fa-copy"></i> Copy Message
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let authToken = localStorage.getItem('authToken');
+        const API_BASE = '/api';
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTemplates();
+            loadCustomers();
+            loadStaff();
+            loadRecentActivity();
+        });
+
+        // Load AI templates
+        async function loadTemplates() {
+            try {
+                const response = await fetch(`${API_BASE}/ai-automations/templates`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    const container = document.getElementById('templatesContainer');
+                    container.innerHTML = '';
+                    
+                    Object.entries(result.templates).forEach(([key, template]) => {
+                        const templateCard = `
+                            <div class="col-md-4 mb-3">
+                                <div class="card template-card" onclick="selectTemplate('${key}')">
+                                    <div class="card-body">
+                                        <h6><i class="fas fa-file-alt"></i> ${template.name}</h6>
+                                        <p class="text-muted small">${template.description}</p>
+                                        <span class="badge bg-primary">${template.function}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += templateCard;
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load templates:', error);
+            }
+        }
+
+        // Load customers for dropdown
+        async function loadCustomers() {
+            try {
+                const response = await fetch(`${API_BASE}/customers?page=1&limit=100`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const select = document.getElementById('customerSelect');
+                    select.innerHTML = '<option value="">Select customer...</option>';
+                    
+                    result.data.forEach(customer => {
+                        select.innerHTML += `<option value="${customer.id}">${customer.name} - ${customer.email}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load customers:', error);
+            }
+        }
+
+        // Load staff for dropdown
+        async function loadStaff() {
+            try {
+                const response = await fetch(`${API_BASE}/staff?page=1&limit=100`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const select = document.getElementById('staffSelect');
+                    select.innerHTML = '<option value="">Select staff...</option>';
+                    
+                    result.data.forEach(staff => {
+                        select.innerHTML += `<option value="${staff.id}">${staff.name} - ${staff.email}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load staff:', error);
+            }
+        }
+
+        // Load recent AI activity
+        async function loadRecentActivity() {
+            // This would typically come from a database
+            // For now, show sample data
+            const activityTable = document.getElementById('aiActivityTable');
+            activityTable.innerHTML = `
+                <tr>
+                    <td>2 mins ago</td>
+                    <td>Booking Confirmation</td>
+                    <td>sarah@example.com</td>
+                    <td>generateBookingEmail</td>
+                    <td><span class="badge bg-success">Sent</span></td>
+                    <td><button class="btn btn-sm btn-outline-primary">View</button></td>
+                </tr>
+                <tr>
+                    <td>15 mins ago</td>
+                    <td>Job Completion</td>
+                    <td>john@example.com</td>
+                    <td>generateJobSummary</td>
+                    <td><span class="badge bg-success">Sent</span></td>
+                    <td><button class="btn btn-sm btn-outline-primary">View</button></td>
+                </tr>
+            `;
+        }
+
+        // Modal functions
+        function showFollowUpModal() {
+            const modal = new bootstrap.Modal(document.getElementById('followUpModal'));
+            modal.show();
+        }
+
+        function showStaffNotificationModal() {
+            const modal = new bootstrap.Modal(document.getElementById('staffNotificationModal'));
+            modal.show();
+        }
+
+        function showCustomMessageModal() {
+            const modal = new bootstrap.Modal(document.getElementById('customMessageModal'));
+            modal.show();
+            loadTemplateTypes();
+        }
+
+        // Load template types for custom message
+        async function loadTemplateTypes() {
+            try {
+                const response = await fetch(`${API_BASE}/ai-automations/templates`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('templateType');
+                    select.innerHTML = '<option value="">Select template...</option>';
+                    
+                    Object.entries(result.templates).forEach(([key, template]) => {
+                        select.innerHTML += `<option value="${key}">${template.name}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load template types:', error);
+            }
+        }
+
+        // Preview follow-up message
+        async function previewFollowUp() {
+            const customerId = document.getElementById('customerSelect').value;
+            const serviceName = document.getElementById('serviceName').value;
+            const staffName = document.getElementById('staffName').value;
+            
+            if (!customerId) {
+                alert('Please select a customer');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-automations/custom`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        template_type: 'customer_follow_up',
+                        data: {
+                            customer_name: 'Sample Customer',
+                            customer_email: 'customer@example.com',
+                            service_name: serviceName || 'Our Service',
+                            staff_name: staffName || 'Our Team'
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('followUpPreview').innerHTML = `
+                        <pre class="mb-0">${result.message}</pre>
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to preview follow-up:', error);
+            }
+        }
+
+        // Send follow-up
+        async function sendFollowUp() {
+            const customerId = document.getElementById('customerSelect').value;
+            const serviceName = document.getElementById('serviceName').value;
+            const staffName = document.getElementById('staffName').value;
+            
+            if (!customerId) {
+                alert('Please select a customer');
+                return;
+            }
+            
+            const loadingSpinner = document.querySelector('#followUpModal .loading-spinner');
+            loadingSpinner.style.display = 'inline-block';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-automations/follow-up`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        service_name: serviceName,
+                        staff_name: staffName
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('AI follow-up sent successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('followUpModal')).hide();
+                    loadRecentActivity();
+                } else {
+                    alert('Failed to send follow-up: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Failed to send follow-up:', error);
+                alert('Failed to send follow-up');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // Preview staff notification
+        async function previewStaffNotification() {
+            const staffId = document.getElementById('staffSelect').value;
+            const customerName = document.getElementById('customerName').value;
+            const serviceType = document.getElementById('serviceType').value;
+            const jobDate = document.getElementById('jobDate').value;
+            const jobTime = document.getElementById('jobTime').value;
+            const jobLocation = document.getElementById('jobLocation').value;
+            
+            if (!staffId || !customerName || !serviceType) {
+                alert('Please fill in required fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-automations/custom`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        template_type: 'staff_assignment',
+                        data: {
+                            customer_name: customerName,
+                            service_name: serviceType,
+                            job_date: jobDate || 'Tomorrow',
+                            job_time: jobTime || '10:00 AM',
+                            location: jobLocation || 'Customer location'
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('staffNotificationPreview').innerHTML = `
+                        <pre class="mb-0">${result.message}</pre>
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to preview staff notification:', error);
+            }
+        }
+
+        // Send staff notification
+        async function sendStaffNotification() {
+            const staffId = document.getElementById('staffSelect').value;
+            const customerName = document.getElementById('customerName').value;
+            const serviceType = document.getElementById('serviceType').value;
+            const jobDate = document.getElementById('jobDate').value;
+            const jobTime = document.getElementById('jobTime').value;
+            const jobLocation = document.getElementById('jobLocation').value;
+            
+            if (!staffId || !customerName || !serviceType) {
+                alert('Please fill in required fields');
+                return;
+            }
+            
+            const loadingSpinner = document.querySelector('#staffNotificationModal .loading-spinner');
+            loadingSpinner.style.display = 'inline-block';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-automations/staff-notification`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        staff_id: staffId,
+                        customer_name: customerName,
+                        service_name: serviceType,
+                        job_date: jobDate,
+                        job_time: jobTime,
+                        location: jobLocation
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('AI staff notification sent successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('staffNotificationModal')).hide();
+                    loadRecentActivity();
+                } else {
+                    alert('Failed to send notification: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Failed to send staff notification:', error);
+                alert('Failed to send staff notification');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // Generate custom message
+        async function generateCustomMessage() {
+            const templateType = document.getElementById('templateType').value;
+            const messageData = document.getElementById('messageData').value;
+            
+            if (!templateType || !messageData) {
+                alert('Please select template type and provide message data');
+                return;
+            }
+            
+            let data;
+            try {
+                data = JSON.parse(messageData);
+            } catch (error) {
+                alert('Invalid JSON format in message data');
+                return;
+            }
+            
+            const loadingSpinner = document.querySelector('#customMessageModal .loading-spinner');
+            loadingSpinner.style.display = 'inline-block';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-automations/custom`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        template_type: templateType,
+                        data: data
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('customMessagePreview').innerHTML = `
+                        <pre class="mb-0">${result.message}</pre>
+                    `;
+                } else {
+                    alert('Failed to generate message: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Failed to generate custom message:', error);
+                alert('Failed to generate custom message');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // Copy custom message to clipboard
+        function copyCustomMessage() {
+            const preview = document.querySelector('#customMessagePreview pre');
+            if (preview) {
+                navigator.clipboard.writeText(preview.textContent).then(() => {
+                    alert('Message copied to clipboard!');
+                });
+            }
+        }
+
+        // Select template
+        function selectTemplate(templateKey) {
+            document.getElementById('templateType').value = templateKey;
+            showCustomMessageModal();
+        }
+
+        // Show analytics (placeholder)
+        function showAnalytics() {
+            alert('AI Analytics coming soon! Track message volume, response rates, and customer engagement.');
+        }
+    </script>
+</body>
+</html>

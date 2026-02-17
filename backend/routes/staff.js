@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { paginate } = require('../utils/dbHelper');
 
 // Get jobs assigned to staff (for mobile staff app)
 router.get('/jobs', async (req, res) => {
@@ -26,11 +27,24 @@ router.get('/jobs', async (req, res) => {
 // Get all staff members
 router.get('/', async (req, res) => {
     try {
-        const stmt = db.prepare("SELECT * FROM users WHERE role != 'admin' ORDER BY name");
-        const staff = stmt.all();
-        res.json(staff);
+        const { page, limit } = req.query;
+        
+        const baseQuery = "SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE role != 'admin' ORDER BY name";
+        const countQuery = "SELECT COUNT(*) as count FROM users WHERE role != 'admin'";
+        
+        const result = paginate(baseQuery, countQuery, page, limit);
+        
+        if (!result.success) {
+            return res.status(result.status || 500).json(result);
+        }
+        
+        res.json(result);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch staff',
+            code: 'FETCH_ERROR'
+        });
     }
 });
 
@@ -243,23 +257,22 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-// Delete staff member
+// Delete staff member (soft delete)
 router.delete('/:id', async (req, res) => {
     try {
         const staffId = req.params.id;
         
-        // Check if staff has assigned jobs
-        const assignedJobs = db.prepare('SELECT COUNT(*) as count FROM jobs WHERE assigned_to = ?').get(staffId);
-        if (assignedJobs.count > 0) {
-            return res.status(400).json({ error: 'Cannot delete staff member with assigned jobs' });
-        }
-        
-        // Delete staff member
-        const deleteStaff = db.prepare('DELETE FROM users WHERE id = ?');
-        const result = deleteStaff.run(staffId);
+        // Soft delete staff member (mark inactive)
+        const result = db.prepare(
+            "UPDATE users SET is_active = 0 WHERE id = ? AND role != 'admin'"
+        ).run(staffId);
         
         if (result.changes === 0) {
-            return res.status(404).json({ error: 'Staff member not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Staff member not found',
+                code: 'NOT_FOUND'
+            });
         }
         
         console.log(`👤 Staff member deleted: ID ${staffId}`);
@@ -271,7 +284,11 @@ router.delete('/:id', async (req, res) => {
         
     } catch (error) {
         console.error('Delete staff error:', error);
-        res.status(500).json({ error: 'Failed to delete staff member' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to delete staff member',
+            code: 'DELETE_ERROR'
+        });
     }
 });
 

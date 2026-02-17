@@ -147,8 +147,8 @@ router.post('/create', async (req, res) => {
             // Create invoice using transaction
             const transaction = db.transaction(() => {
                 const result = db.prepare(`
-                    INSERT INTO invoices (invoice_number, job_id, customer_id, amount, status, issued_at)
-                    VALUES (?, ?, ?, ?, 'unpaid', datetime('now'))
+                    INSERT INTO invoices (invoice_number, job_id, customer_id, amount, status, issued_at, created_at)
+                    VALUES (?, ?, ?, ?, 'unpaid', datetime('now'), datetime('now'))
                 `).run(invoiceNumber, job_id, job.customer_id, amount);
                 
                 return result.lastInsertRowid;
@@ -179,32 +179,9 @@ router.post('/create', async (req, res) => {
                     service_name: job.service_name
                 };
                 
-                // Send AI-generated invoice reminder
-                if (job.customer_email) {
-                    try {
-                        const aiAutomation = require('../utils/aiAutomation');
-                        const aiReminder = await aiAutomation.generateInvoiceReminder({
-                            customer_name: job.customer_name,
-                            invoice_number: invoiceNumber,
-                            amount: amount.toString(),
-                            due_date: invoiceData.due_date
-                        });
-                        
-                        await notifications.sendEmail({
-                            to: job.customer_email,
-                            subject: `Invoice ${invoiceNumber} - FieldOps`,
-                            body: aiReminder
-                        });
-                        
-                        console.log('✅ AI-generated invoice reminder sent to:', job.customer_email);
-                    } catch (aiError) {
-                        console.log('⚠️ AI invoice reminder failed (non-critical):', aiError.message);
-                        // Fallback to original notification
-                        notifications.sendInvoiceNotification(invoiceData).catch(err => {
-                            log.warn(req.id, 'Invoice notification failed (non-critical)', { error: err.message });
-                        });
-                    }
-                }
+                notifications.sendInvoiceNotification(invoiceData).catch(err => {
+                    log.warn(req.id, 'Invoice notification failed (non-critical)', { error: err.message });
+                });
             } catch (notifError) {
                 log.warn(req.id, 'Notification module not available', { error: notifError.message });
             }

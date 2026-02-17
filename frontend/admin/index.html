@@ -281,13 +281,62 @@
         <!-- Automations Section -->
         <section id="automations" class="content-section">
             <div class="section-header">
-                <h2>Automation Settings</h2>
+                <h2>🤖 AI Automation Center</h2>
                 <div class="header-actions">
                     <button class="btn-primary" onclick="showAddAutomationModal()">+ Add Automation</button>
+                    <button class="btn-secondary" onclick="showAIDashboard()">🤖 AI Tools</button>
                 </div>
             </div>
-            <div class="automations-list" id="automations-list">
-                <div class="loading">Loading automations...</div>
+            
+            <!-- AI Quick Actions -->
+            <div class="ai-quick-actions">
+                <h3>🚀 Quick AI Actions</h3>
+                <div class="quick-actions-grid">
+                    <div class="action-card" onclick="showFollowUpModal()">
+                        <div class="action-icon">📧</div>
+                        <h4>Send Follow-up</h4>
+                        <p>AI-powered customer follow-up</p>
+                    </div>
+                    <div class="action-card" onclick="showStaffNotificationModal()">
+                        <div class="action-icon">👨‍💼</div>
+                        <h4>Staff Notification</h4>
+                        <p>AI job assignment alerts</p>
+                    </div>
+                    <div class="action-card" onclick="showCustomAIModal()">
+                        <div class="action-icon">✨</div>
+                        <h4>Custom Message</h4>
+                        <p>Generate custom AI message</p>
+                    </div>
+                    <div class="action-card" onclick="showAITemplates()">
+                        <div class="action-icon">📋</div>
+                        <h4>AI Templates</h4>
+                        <p>View available templates</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Status -->
+            <div class="ai-status-bar">
+                <div class="status-item">
+                    <span class="status-indicator active"></span>
+                    <span>AI Service: Active</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-indicator active"></span>
+                    <span>Hugging Face: Connected</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-indicator active"></span>
+                    <span>5 Templates Available</span>
+                </div>
+            </div>
+            
+            <!-- Traditional Automations -->
+            <div class="traditional-automations">
+                <h3>📋 Traditional Automations</h3>
+                <div class="automations-list" id="automations-list">
+                    <div class="loading">Loading automations...</div>
+                </div>
             </div>
         </section>
 
@@ -341,16 +390,16 @@
                     <h3>Label Customization</h3>
                     <div class="setting-content">
                         <div class="form-group">
-                            <label>Jobs Label</label>
-                            <input type="text" value="Jobs" id="jobs-label">
+                            <label for="jobs-label">Jobs Label</label>
+                            <input type="text" value="Jobs" id="jobs-label" aria-label="Jobs label customization" title="Jobs label">
                         </div>
                         <div class="form-group">
-                            <label>Customers Label</label>
-                            <input type="text" value="Customers" id="customers-label">
+                            <label for="customers-label">Customers Label</label>
+                            <input type="text" value="Customers" id="customers-label" aria-label="Customers label customization" title="Customers label">
                         </div>
                         <div class="form-group">
-                            <label>Staff Label</label>
-                            <input type="text" value="Staff" id="staff-label">
+                            <label for="staff-label">Staff Label</label>
+                            <input type="text" value="Staff" id="staff-label" aria-label="Staff label customization" title="Staff label">
                         </div>
                         <button class="btn-primary" onclick="saveLabelSettings()">Apply Changes</button>
                     </div>
@@ -361,35 +410,35 @@
                     <div class="setting-content">
                         <div class="module-toggle">
                             <label class="toggle-switch">
-                                <input type="checkbox" checked>
+                                <input type="checkbox" checked aria-label="Enable Customer Management module">
                                 <span class="slider"></span>
                             </label>
                             <span>Customer Management</span>
                         </div>
                         <div class="module-toggle">
                             <label class="toggle-switch">
-                                <input type="checkbox" checked>
+                                <input type="checkbox" checked aria-label="Enable Job Management module">
                                 <span class="slider"></span>
                             </label>
                             <span>Job Management</span>
                         </div>
                         <div class="module-toggle">
                             <label class="toggle-switch">
-                                <input type="checkbox" checked>
+                                <input type="checkbox" checked aria-label="Enable Staff Management module">
                                 <span class="slider"></span>
                             </label>
                             <span>Staff Management</span>
                         </div>
                         <div class="module-toggle">
                             <label class="toggle-switch">
-                                <input type="checkbox" checked>
+                                <input type="checkbox" checked aria-label="Enable Invoicing module">
                                 <span class="slider"></span>
                             </label>
                             <span>Invoicing</span>
                         </div>
                         <div class="module-toggle">
                             <label class="toggle-switch">
-                                <input type="checkbox" checked>
+                                <input type="checkbox" checked aria-label="Enable Automations module">
                                 <span class="slider"></span>
                             </label>
                             <span>Automations</span>
@@ -683,8 +732,8 @@
             <div class="modal-body">
                 <form id="add-automation-form">
                     <div class="form-group">
-                        <label>Trigger Event *</label>
-                        <select id="automation-trigger" required>
+                        <label for="automation-trigger">Trigger Event *</label>
+                        <select id="automation-trigger" aria-label="Select automation trigger event" required>
                             <option value="">Select Trigger</option>
                             <option value="Job Created">Job Created</option>
                             <option value="Job Completed">Job Completed</option>
@@ -692,8 +741,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Channel *</label>
-                        <select id="automation-channel" required>
+                        <label for="automation-channel">Channel *</label>
+                        <select id="automation-channel" aria-label="Select automation communication channel" required>
                             <option value="">Select Channel</option>
                             <option value="WhatsApp">WhatsApp</option>
                             <option value="SMS">SMS</option>
@@ -701,8 +750,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Message Template *</label>
-                        <textarea id="automation-message" rows="4" required placeholder="Enter your message template. Use {customer_name}, {job_date}, {service_name} as placeholders."></textarea>
+                        <label for="automation-message">Message Template *</label>
+                        <textarea id="automation-message" rows="4" required placeholder="Enter your message template. Use {customer_name}, {job_date}, {service_name} as placeholders." aria-label="Automation message template"></textarea>
                     </div>
                     <div class="form-group">
                         <label>

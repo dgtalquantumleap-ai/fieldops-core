@@ -1923,3 +1923,485 @@ setInterval(() => {
     }
 }, 30000);
 
+// AI Automation Functions
+let authToken = localStorage.getItem('authToken');
+
+// AI Quick Actions
+function showFollowUpModal() {
+    showAIFollowUpModal();
+}
+
+function showStaffNotificationModal() {
+    showAIStaffNotificationModal();
+}
+
+function showCustomAIModal() {
+    showAICustomMessageModal();
+}
+
+function showAITemplates() {
+    showAITemplatesModal();
+}
+
+function showAIDashboard() {
+    // Open the standalone AI dashboard in a new tab
+    window.open('/admin-ai', '_blank');
+}
+
+// AI Follow-up Modal
+function showAIFollowUpModal() {
+    const modal = createAIModal('AI Follow-up', `
+        <form id="aiFollowUpForm">
+            <div class="form-group">
+                <label for="aiCustomerSelect">Customer *</label>
+                <select id="aiCustomerSelect" required>
+                    <option value="">Select customer...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="aiServiceName">Service Name</label>
+                <input type="text" id="aiServiceName" placeholder="e.g., Standard Cleaning">
+            </div>
+            <div class="form-group">
+                <label for="aiStaffName">Staff Name</label>
+                <input type="text" id="aiStaffName" placeholder="e.g., John Smith">
+            </div>
+            <div class="form-group">
+                <label>AI Message Preview</label>
+                <div class="ai-message-preview" id="aiFollowUpPreview">
+                    <div class="text-muted">Generate preview by clicking "Preview AI Message"</div>
+                </div>
+            </div>
+        </form>
+    `, [
+        { text: 'Cancel', class: 'btn-secondary', action: () => closeModal('aiModal') },
+        { text: 'Preview AI Message', class: 'btn-primary', action: previewAIFollowUp },
+        { text: 'Send Follow-up', class: 'btn-success', action: sendAIFollowUp }
+    ]);
+    
+    loadAICustomers();
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+// AI Staff Notification Modal
+function showAIStaffNotificationModal() {
+    const modal = createAIModal('AI Staff Notification', `
+        <form id="aiStaffNotificationForm">
+            <div class="form-group">
+                <label for="aiStaffSelect">Staff Member *</label>
+                <select id="aiStaffSelect" required>
+                    <option value="">Select staff...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="aiCustomerName">Customer Name *</label>
+                <input type="text" id="aiCustomerName" required>
+            </div>
+            <div class="form-group">
+                <label for="aiServiceType">Service *</label>
+                <input type="text" id="aiServiceType" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="aiJobDate">Date</label>
+                    <input type="date" id="aiJobDate">
+                </div>
+                <div class="form-group">
+                    <label for="aiJobTime">Time</label>
+                    <input type="time" id="aiJobTime">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="aiJobLocation">Location</label>
+                <input type="text" id="aiJobLocation" placeholder="Customer address">
+            </div>
+            <div class="form-group">
+                <label>AI Message Preview</label>
+                <div class="ai-message-preview" id="aiStaffNotificationPreview">
+                    <div class="text-muted">Generate preview by clicking "Preview AI Message"</div>
+                </div>
+            </div>
+        </form>
+    `, [
+        { text: 'Cancel', class: 'btn-secondary', action: () => closeModal('aiModal') },
+        { text: 'Preview AI Message', class: 'btn-primary', action: previewAIStaffNotification },
+        { text: 'Send Notification', class: 'btn-success', action: sendAIStaffNotification }
+    ]);
+    
+    loadAIStaff();
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+// AI Custom Message Modal
+function showAICustomMessageModal() {
+    const modal = createAIModal('AI Custom Message', `
+        <form id="aiCustomMessageForm">
+            <div class="form-group">
+                <label for="aiTemplateType">Template Type *</label>
+                <select id="aiTemplateType" required>
+                    <option value="">Select template...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="aiMessageData">Message Data (JSON) *</label>
+                <textarea id="aiMessageData" rows="6" placeholder='{"name": "John Doe", "service": "Cleaning", ...}' required></textarea>
+            </div>
+            <div class="form-group">
+                <label>AI Generated Message</label>
+                <div class="ai-message-preview" id="aiCustomMessagePreview">
+                    <div class="text-muted">Generate message by clicking "Generate AI Message"</div>
+                </div>
+            </div>
+        </form>
+    `, [
+        { text: 'Cancel', class: 'btn-secondary', action: () => closeModal('aiModal') },
+        { text: 'Generate AI Message', class: 'btn-primary', action: generateAICustomMessage },
+        { text: 'Copy Message', class: 'btn-success', action: copyAICustomMessage }
+    ]);
+    
+    loadAITemplateTypes();
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+// AI Templates Modal
+function showAITemplatesModal() {
+    fetch(`${API_URL}/ai-automations/templates`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            let templatesHtml = '';
+            Object.entries(result.templates).forEach(([key, template]) => {
+                templatesHtml += `
+                    <div class="template-item">
+                        <h4>${template.name}</h4>
+                        <p>${template.description}</p>
+                        <span class="template-function">${template.function}</span>
+                    </div>
+                `;
+            });
+            
+            const modal = createAIModal('AI Message Templates', `
+                <div class="templates-grid">
+                    ${templatesHtml}
+                </div>
+            `, [
+                { text: 'Close', class: 'btn-secondary', action: () => closeModal('aiModal') }
+            ]);
+            
+            document.body.appendChild(modal);
+            modal.style.display = 'flex';
+        }
+    })
+    .catch(error => {
+        console.error('Failed to load AI templates:', error);
+        showNotification('Failed to load AI templates', 'error');
+    });
+}
+
+// Helper Functions
+function createAIModal(title, content, buttons) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'aiModal';
+    
+    const buttonsHtml = buttons.map(btn => 
+        `<button type="button" class="${btn.class}" onclick="${btn.action.name}()">${btn.text}</button>`
+    ).join('');
+    
+    modal.innerHTML = `
+        <div class="modal ai-modal">
+            <div class="ai-modal-header">
+                <h3>${title}</h3>
+                <button type="button" class="btn-close" onclick="closeModal('aiModal')">&times;</button>
+            </div>
+            <div class="ai-modal-body">
+                ${content}
+            </div>
+            <div class="modal-actions">
+                ${buttonsHtml}
+            </div>
+        </div>
+    `;
+    
+    return modal;
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Load Functions
+async function loadAICustomers() {
+    try {
+        const response = await fetch(`${API_URL}/customers?page=1&limit=100`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const select = document.getElementById('aiCustomerSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Select customer...</option>';
+                result.data.forEach(customer => {
+                    select.innerHTML += `<option value="${customer.id}">${customer.name} - ${customer.email}</option>`;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load customers:', error);
+    }
+}
+
+async function loadAIStaff() {
+    try {
+        const response = await fetch(`${API_URL}/staff?page=1&limit=100`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const select = document.getElementById('aiStaffSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Select staff...</option>';
+                result.data.forEach(staff => {
+                    select.innerHTML += `<option value="${staff.id}">${staff.name} - ${staff.email}</option>`;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load staff:', error);
+    }
+}
+
+async function loadAITemplateTypes() {
+    try {
+        const response = await fetch(`${API_URL}/ai-automations/templates`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            const select = document.getElementById('aiTemplateType');
+            if (select) {
+                select.innerHTML = '<option value="">Select template...</option>';
+                Object.entries(result.templates).forEach(([key, template]) => {
+                    select.innerHTML += `<option value="${key}">${template.name}</option>`;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load template types:', error);
+    }
+}
+
+// AI Action Functions
+async function previewAIFollowUp() {
+    const serviceName = document.getElementById('aiServiceName').value;
+    const staffName = document.getElementById('aiStaffName').value;
+    
+    try {
+        const response = await fetch(`${API_URL}/ai-automations/custom`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                template_type: 'customer_follow_up',
+                data: {
+                    customer_name: 'Sample Customer',
+                    customer_email: 'customer@example.com',
+                    service_name: serviceName || 'Our Service',
+                    staff_name: staffName || 'Our Team'
+                }
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById('aiFollowUpPreview').innerHTML = `<pre>${result.message}</pre>`;
+        }
+    } catch (error) {
+        console.error('Failed to preview follow-up:', error);
+    }
+}
+
+async function sendAIFollowUp() {
+    const customerId = document.getElementById('aiCustomerSelect').value;
+    const serviceName = document.getElementById('aiServiceName').value;
+    const staffName = document.getElementById('aiStaffName').value;
+    
+    if (!customerId) {
+        showNotification('Please select a customer', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/ai-automations/follow-up`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                customer_id: customerId,
+                service_name: serviceName,
+                staff_name: staffName
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showNotification('AI follow-up sent successfully!', 'success');
+            closeModal('aiModal');
+        } else {
+            showNotification('Failed to send follow-up: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Failed to send follow-up:', error);
+        showNotification('Failed to send follow-up', 'error');
+    }
+}
+
+async function previewAIStaffNotification() {
+    const customerName = document.getElementById('aiCustomerName').value;
+    const serviceType = document.getElementById('aiServiceType').value;
+    const jobDate = document.getElementById('aiJobDate').value;
+    const jobTime = document.getElementById('aiJobTime').value;
+    const jobLocation = document.getElementById('aiJobLocation').value;
+    
+    if (!customerName || !serviceType) {
+        showNotification('Please fill in required fields', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/ai-automations/custom`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                template_type: 'staff_assignment',
+                data: {
+                    customer_name: customerName,
+                    service_name: serviceType,
+                    job_date: jobDate || 'Tomorrow',
+                    job_time: jobTime || '10:00 AM',
+                    location: jobLocation || 'Customer location'
+                }
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById('aiStaffNotificationPreview').innerHTML = `<pre>${result.message}</pre>`;
+        }
+    } catch (error) {
+        console.error('Failed to preview staff notification:', error);
+    }
+}
+
+async function sendAIStaffNotification() {
+    const staffId = document.getElementById('aiStaffSelect').value;
+    const customerName = document.getElementById('aiCustomerName').value;
+    const serviceType = document.getElementById('aiServiceType').value;
+    const jobDate = document.getElementById('aiJobDate').value;
+    const jobTime = document.getElementById('aiJobTime').value;
+    const jobLocation = document.getElementById('aiJobLocation').value;
+    
+    if (!staffId || !customerName || !serviceType) {
+        showNotification('Please fill in required fields', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/ai-automations/staff-notification`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                staff_id: staffId,
+                customer_name: customerName,
+                service_name: serviceType,
+                job_date: jobDate,
+                job_time: jobTime,
+                location: jobLocation
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showNotification('AI staff notification sent successfully!', 'success');
+            closeModal('aiModal');
+        } else {
+            showNotification('Failed to send notification: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Failed to send staff notification:', error);
+        showNotification('Failed to send staff notification', 'error');
+    }
+}
+
+async function generateAICustomMessage() {
+    const templateType = document.getElementById('aiTemplateType').value;
+    const messageData = document.getElementById('aiMessageData').value;
+    
+    if (!templateType || !messageData) {
+        showNotification('Please select template type and provide message data', 'error');
+        return;
+    }
+    
+    let data;
+    try {
+        data = JSON.parse(messageData);
+    } catch (error) {
+        showNotification('Invalid JSON format in message data', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/ai-automations/custom`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                template_type: templateType,
+                data: data
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById('aiCustomMessagePreview').innerHTML = `<pre>${result.message}</pre>`;
+        } else {
+            showNotification('Failed to generate message: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Failed to generate custom message:', error);
+        showNotification('Failed to generate custom message', 'error');
+    }
+}
+
+function copyAICustomMessage() {
+    const preview = document.querySelector('#aiCustomMessagePreview pre');
+    if (preview) {
+        navigator.clipboard.writeText(preview.textContent).then(() => {
+            showNotification('Message copied to clipboard!', 'success');
+        });
+    }
+}
+

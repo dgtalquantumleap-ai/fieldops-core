@@ -9,6 +9,7 @@
     "db:setup": "node backend/config/setupDb.js"
   },
   "dependencies": {
+    "@huggingface/inference": "^4.13.12",
     "axios": "^1.13.3",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^9.2.2",

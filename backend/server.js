@@ -103,6 +103,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
+// Add request tracking middleware
+const { requestTracking } = require('./middleware/logging');
+app.use(requestTracking);
+
 // Apply rate limiting
 app.use('/api/booking/book', bookingLimiter);
 app.use('/api/auth/login', authLimiter);
@@ -126,7 +130,14 @@ io.on('connection', (socket) => {
 });
 
 // Serve static files
-app.use('/admin', express.static(path.join(__dirname, '../frontend/admin')));
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/admin.html'));
+});
+
+// AI Dashboard
+app.get('/admin-ai', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/admin-ai-dashboard.html'));
+});
 app.use('/staff', express.static(path.join(__dirname, '../frontend/staff-app')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/stiltheights', express.static(path.join(__dirname, '../frontend/stiltheights')));
@@ -146,7 +157,9 @@ app.use('/api/settings',          requireAdmin, require('./routes/settings'));
 app.use('/api/onboarding',       requireAdmin, require('./routes/onboarding'));
 app.use('/api/media',            requireAuth,  require('./routes/media'));
 app.use('/api/automations',      requireAdmin, require('./routes/automations'));
-app.use('/api/wp',               requireAuth,  require('./routes/wordpress'));
+app.use('/api/ai-automations',    requireAuth, require('./routes/ai-automations'));
+app.use('/api/ai-test',           require('./routes/ai-test'));           // AI testing endpoint
+app.use('/api/wp',               requireAuth, require('./routes/wordpress'));
 
 // Root redirect to Stilt Heights website
 app.get('/', (req, res) => res.redirect('/stiltheights'));

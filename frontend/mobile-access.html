@@ -74,6 +74,45 @@
             border-radius: 5px;
             border-left: 4px solid #4299e1;
         }
+        .quick-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn {
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-staff {
+            background: #4299e1;
+        }
+        .btn-admin {
+            background: #805AD5;
+        }
+        .btn-booking {
+            background: #38A169;
+        }
+        .icon-badge {
+            background: #007AFF;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .android-badge {
+            background: #4285F4;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
         h3 {
             color: #2d3748;
             margin-bottom: 15px;
@@ -136,7 +175,7 @@
                 <strong>🍎 iPhone/iPad:</strong>
                 <ol>
                     <li>Scan QR code with camera or open this page in Safari</li>
-                    <li>Tap the Share button <span style="background: #007AFF; color: white; padding: 2px 6px; border-radius: 3px;">⬆️</span></li>
+                    <li>Tap the Share button <span class="icon-badge">⬆️</span></li>
                     <li>Scroll down and tap "Add to Home Screen"</li>
                     <li>Tap "Add" to create the FieldOps app icon</li>
                 </ol>
@@ -146,7 +185,7 @@
                 <strong>🤖 Android:</strong>
                 <ol>
                     <li>Scan QR code with camera or open this page in Chrome</li>
-                    <li>Tap the Menu button <span style="background: #4285F4; color: white; padding: 2px 6px; border-radius: 3px;">⋮</span></li>
+                    <li>Tap the Menu button <span class="android-badge">⋮</span></li>
                     <li>Tap "Add to Home screen" or "Install app"</li>
                     <li>Tap "Add" or "Install"</li>
                 </ol>
@@ -167,10 +206,10 @@
 
         <div class="instructions">
             <h3>🔗 Quick Links</h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-                <a href="https://fieldops-core-production.up.railway.app/staff" target="_blank" style="background: #4299e1; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">📱 Open Staff App</a>
-                <a href="https://fieldops-core-production.up.railway.app/admin" target="_blank" style="background: #805AD5; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">👨‍💼 Open Admin</a>
-                <a href="https://fieldops-core-production.up.railway.app/booking.html" target="_blank" style="background: #38A169; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">📝 Booking Form</a>
+            <div class="quick-links">
+                <a href="https://fieldops-core-production.up.railway.app/staff" target="_blank" rel="noopener noreferrer" class="btn btn-staff">📱 Open Staff App</a>
+                <a href="https://fieldops-core-production.up.railway.app/admin" target="_blank" rel="noopener noreferrer" class="btn btn-admin">👨‍💼 Open Admin</a>
+                <a href="https://fieldops-core-production.up.railway.app/booking.html" target="_blank" rel="noopener noreferrer" class="btn btn-booking">📝 Booking Form</a>
             </div>
         </div>
     </div>

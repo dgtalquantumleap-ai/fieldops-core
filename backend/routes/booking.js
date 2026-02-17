@@ -77,7 +77,25 @@ router.post('/book', validateBooking, async (req, res) => {
             
             // Send confirmation to customer
             if (email) {
-                await notifications.sendCustomerConfirmation(bookingData);
+                try {
+                    const aiAutomation = require('../utils/aiAutomation');
+                    const aiEmail = await aiAutomation.generateBookingEmail({
+                        name, email, service, date, time, address
+                    });
+                    
+                    // Send AI-generated email
+                    await notifications.sendEmail({
+                        to: email,
+                        subject: 'Booking Confirmed - FieldOps',
+                        body: aiEmail
+                    });
+                    
+                    console.log('✅ AI-generated confirmation email sent to:', email);
+                } catch (aiError) {
+                    console.log('⚠️ AI email generation failed (non-critical):', aiError.message);
+                    // Fallback to original notification method
+                    await notifications.sendCustomerConfirmation(bookingData);
+                }
             }
             
             // Notify admin

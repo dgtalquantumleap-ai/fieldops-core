@@ -1,7 +1,6 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
 
 // Use /app for Railway deployment, fallback to local development
 const dbPath = process.env.NODE_ENV === 'production' 
@@ -25,9 +24,9 @@ const validateDatabase = () => {
     const missing = requiredTables.filter(t => !tableNames.includes(t));
     
     if (missing.length > 0) {
-      console.warn('\n⚠️  WARNING: Missing tables: ' + missing.join(', '));
+      console.warn(`\n⚠️  WARNING: Missing tables: ${missing.join(', ')}`);
       console.warn('   Database has not been initialized.');
-      console.warn('   Run this command: npm run db:setup\n');
+      console.warn('   Run this command: npm run db:setup\n`);
       return false;
     }
     
@@ -62,18 +61,10 @@ const initializeAdminUser = () => {
   }
   
   try {
-    // Check if admin user already exists (handle both old and new schema)
-    let adminCount;
-    try {
-      adminCount = db.prepare(
-        "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1"
-      ).get().count;
-    } catch (e) {
-      // Fallback for old schema without is_active column
-      adminCount = db.prepare(
-        "SELECT COUNT(*) as count FROM users WHERE role = 'admin'"
-      ).get().count;
-    }
+    // Check if admin user already exists
+    const adminCount = db.prepare(
+      'SELECT COUNT(*) as count FROM users WHERE role = "admin" AND is_active = 1'
+    ).get().count;
     
     if (adminCount > 0) {
       console.log('✅ Admin user already exists');
@@ -85,19 +76,10 @@ const initializeAdminUser = () => {
                          Math.random().toString(36).slice(-4);
     const hashedPassword = bcrypt.hashSync(tempPassword, 10);
     
-    // Try to insert with new schema first, fallback to old schema
-    try {
-      db.prepare(`
-        INSERT INTO users (name, email, password, role, phone, is_active, created_at)
-        VALUES (?, ?, ?, 'admin', ?, 1, datetime('now'))
-      `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
-    } catch (e) {
-      // Fallback for old schema
-      db.prepare(`
-        INSERT INTO users (name, email, password, role, phone, created_at)
-        VALUES (?, ?, ?, 'admin', ?, datetime('now'))
-      `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
-    }
+    db.prepare(`
+      INSERT INTO users (name, email, password, role, phone, is_active, created_at)
+      VALUES (?, ?, ?, 'admin', ?, 1, datetime('now'))
+    `).run('System Administrator', adminEmail, hashedPassword, '555-0000');
     
     console.log('\n🔐 ADMIN USER CREATED:');
     console.log(`   Email: ${adminEmail}`);

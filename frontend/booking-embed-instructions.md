@@ -9,11 +9,12 @@ I've created a clean, professional booking form that you can easily embed into y
 ## 📱 **Embed Options**
 
 ### **Option 1: iframe Embed (Recommended)**
+
 Copy and paste this code into your WordPress scheduling page:
 
 ```html
 <iframe 
-    src="http://localhost:3000/booking-embed.html" 
+    src="https://fieldops-core-production.up.railway.app/booking-embed.html" 
     width="100%" 
     height="800" 
     frameborder="0" 
@@ -21,77 +22,53 @@ Copy and paste this code into your WordPress scheduling page:
 </iframe>
 ```
 
+**Benefits:**
+
+- ✅ Clean, professional appearance
+- ✅ Responsive design
+- ✅ No coding knowledge required
+- ✅ Works on all devices
+- ✅ Maintains your website branding
+
+---
+
 ### **Option 2: Direct Link**
-Add a button that opens the booking form:
+
+Add a "Book Now" button that opens the booking form in a new tab:
 
 ```html
-<a href="http://localhost:3000/booking-embed.html" 
+<a href="https://fieldops-core-production.up.railway.app/booking-embed.html" 
    target="_blank" 
-   style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">
-    Book Your Cleaning Service
+   rel="noopener noreferrer"
+   style="background: #38A169; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+    📝 Book Now
 </a>
 ```
 
-### **Option 3: WordPress Custom HTML Block**
-Add this to your WordPress page using the Custom HTML block:
-
-```html
-<div style="max-width: 600px; margin: 0 auto;">
-    <iframe 
-        src="http://localhost:3000/booking-embed.html" 
-        width="100%" 
-        height="800" 
-        frameborder="0" 
-        style="border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-    </iframe>
-</div>
-```
-
 ---
 
-## 🎨 **Features of the Booking Form**
+## 🔧 **WordPress Implementation**
 
-### ✅ **Professional Design**
-- Clean, modern interface
-- Mobile-responsive design
-- Professional styling
-- Smooth animations
+### **Method 1: WordPress Editor (Gutenberg)**
 
-### ✅ **Complete Booking Fields**
-- Full name and phone number
-- Email address (optional)
-- Service type selection
-- Service address
-- Preferred date and time
-- Additional notes
+1. Open your scheduling page in WordPress
+2. Add a "Custom HTML" block
+3. Paste the iframe code above
+4. Save and preview
 
-### ✅ **FieldOps Integration**
-- Direct integration with FieldOps Core
-- Real-time booking submission
-- Customer creation in FieldOps
-- Job creation in FieldOps
-- Email notifications
+### **Method 2: Classic Editor**
 
-### ✅ **User Experience**
-- Form validation
-- Loading states
-- Success/error messages
-- Auto-date setting (today's date)
-- Clear form functionality
+1. Switch to "Text" mode (not Visual)
+2. Paste the iframe code
+3. Switch back to Visual mode to preview
+4. Save the page
 
----
+### **Method 3: Page Builder (Elementor, Divi, etc.)**
 
-## 🚀 **How to Add to WordPress**
-
-### **Step 1: Edit Your Scheduling Page**
-1. **Log in to WordPress**: `stiltheights.com/wp-admin`
-2. **Go to**: Pages → Your Scheduling Page
-3. **Edit** the page
-
-### **Step 2: Add the Booking Form**
-1. **Add a Custom HTML block** (or use Text editor)
-2. **Paste the iframe code** from Option 1
-3. **Save and publish** the page
+1. Add a "HTML" or "Code" element
+2. Paste the iframe code
+3. Adjust styling if needed
+4. Save
 
 ### **Step 3: Test the Integration**
 1. **Visit your scheduling page**

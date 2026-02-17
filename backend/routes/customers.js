@@ -1,14 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { paginate } = require('../utils/dbHelper');
 
 router.get('/', async (req, res) => {
     try {
-        const stmt = db.prepare('SELECT * FROM customers ORDER BY created_at DESC');
-        const customers = stmt.all();
-        res.json(customers);
+        const { page, limit } = req.query;
+        
+        const baseQuery = 'SELECT * FROM customers WHERE deleted_at IS NULL ORDER BY created_at DESC';
+        const countQuery = 'SELECT COUNT(*) as count FROM customers WHERE deleted_at IS NULL';
+        
+        const result = paginate(baseQuery, countQuery, page, limit);
+        
+        if (!result.success) {
+            return res.status(result.status || 500).json(result);
+        }
+        
+        res.json(result);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch customers',
+            code: 'FETCH_ERROR'
+        });
     }
 });
 
@@ -103,23 +117,22 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-// Delete customer
+// Delete customer (soft delete)
 router.delete('/:id', async (req, res) => {
     try {
         const customerId = req.params.id;
         
-        // Check if customer has jobs
-        const customerJobs = db.prepare('SELECT COUNT(*) as count FROM jobs WHERE customer_id = ?').get(customerId);
-        if (customerJobs.count > 0) {
-            return res.status(400).json({ error: 'Cannot delete customer with associated jobs' });
-        }
-        
-        // Delete customer
-        const deleteCustomer = db.prepare('DELETE FROM customers WHERE id = ?');
-        const result = deleteCustomer.run(customerId);
+        // Soft delete customer
+        const result = db.prepare(
+            "UPDATE customers SET deleted_at = datetime('now') WHERE id = ? AND deleted_at IS NULL"
+        ).run(customerId);
         
         if (result.changes === 0) {
-            return res.status(404).json({ error: 'Customer not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Customer not found',
+                code: 'NOT_FOUND'
+            });
         }
         
         console.log(`👤 Customer deleted: ID ${customerId}`);
@@ -131,7 +144,11 @@ router.delete('/:id', async (req, res) => {
         
     } catch (error) {
         console.error('Delete customer error:', error);
-        res.status(500).json({ error: 'Failed to delete customer' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to delete customer',
+            code: 'DELETE_ERROR'
+        });
     }
 });
 

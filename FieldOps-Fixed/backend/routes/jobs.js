@@ -360,7 +360,7 @@ router.patch('/:id/status', async (req, res) => {
         
         try {
             const result = db.prepare(
-                "UPDATE jobs SET status = ?, updated_at = datetime('now') WHERE id = ? AND deleted_at IS NULL"
+                'UPDATE jobs SET status = ?, updated_at = datetime("now") WHERE id = ? AND deleted_at IS NULL'
             ).run(status, req.params.id);
             
             if (result.changes === 0) {
@@ -372,48 +372,6 @@ router.patch('/:id/status', async (req, res) => {
             }
             
             const updatedJob = db.prepare('SELECT * FROM jobs WHERE id = ?').get(req.params.id);
-            
-            // If job is completed, send AI-generated summary
-            if (status.toLowerCase() === 'completed') {
-                try {
-                    // Get job details for AI (simplified query to avoid schema issues)
-                    const jobDetails = db.prepare(`
-                        SELECT j.*, 
-                               c.name as customer_name, c.email as customer_email,
-                               COALESCE(u.name, 'Staff') as staff_name,
-                               COALESCE(s.name, 'Service') as service_name, 
-                               COALESCE(s.price, 0) as service_price
-                        FROM jobs j
-                        LEFT JOIN customers c ON j.customer_id = c.id
-                        LEFT JOIN users u ON j.assigned_to = u.id
-                        LEFT JOIN services s ON j.service_id = s.id
-                        WHERE j.id = ?
-                    `).get(req.params.id);
-                    
-                    if (jobDetails && jobDetails.customer_email) {
-                        const aiAutomation = require('../utils/aiAutomation');
-                        const aiSummary = await aiAutomation.generateJobSummary({
-                            customer_name: jobDetails.customer_name,
-                            service_name: jobDetails.service_name,
-                            address: jobDetails.address || 'Customer location',
-                            duration: jobDetails.duration || 120,
-                            notes: jobDetails.notes || ''
-                        });
-                        
-                        // Send AI-generated completion email
-                        const notifications = require('../utils/notifications');
-                        await notifications.sendEmail({
-                            to: jobDetails.customer_email,
-                            subject: 'Job Completed - FieldOps',
-                            body: aiSummary
-                        });
-                        
-                        console.log('✅ AI-generated job completion summary sent to:', jobDetails.customer_email);
-                    }
-                } catch (aiError) {
-                    console.log('⚠️ AI job completion summary failed (non-critical):', aiError.message);
-                }
-            }
             
             log.success(req.id, 'Job status updated', { jobId: req.params.id, status });
             
