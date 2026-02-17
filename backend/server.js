@@ -53,7 +53,6 @@ const createRateLimiter = (windowMs, max, message) => rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  trustProxy: true,
   handler: (req, res) => {
     console.warn(`🚫 Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
     res.status(429).json({
@@ -91,6 +90,9 @@ const strictLimiter = createRateLimiter(
 
 const app = express();
 const server = http.createServer(app);
+
+// Trust proxy for Railway deployment
+app.set('trust proxy', 1);
 const io = socketIo(server, {
     cors: {
         origin: allowedOrigins,
