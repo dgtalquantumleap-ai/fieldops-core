@@ -53,6 +53,7 @@ const createRateLimiter = (windowMs, max, message) => rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true,
   handler: (req, res) => {
     console.warn(`🚫 Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
     res.status(429).json({
