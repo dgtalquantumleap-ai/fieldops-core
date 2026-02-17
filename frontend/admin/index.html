@@ -774,6 +774,187 @@
         </div>
     </div>
 
+    <!-- Customer Details Modal -->
+    <div id="customer-details-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Customer Details</h3>
+                <button class="close-btn" onclick="closeModal('customer-details-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="customer-details-grid">
+                    <div class="customer-info-section">
+                        <h4>Basic Information</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Name:</label>
+                                <span id="detail-customer-name">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Phone:</label>
+                                <span id="detail-customer-phone">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Email:</label>
+                                <span id="detail-customer-email">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Address:</label>
+                                <span id="detail-customer-address">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Notes:</label>
+                                <p id="detail-customer-notes">-</p>
+                            </div>
+                            <div class="info-item">
+                                <label>Customer Since:</label>
+                                <span id="detail-customer-created">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="customer-jobs-section">
+                        <h4>Recent Jobs</h4>
+                        <div class="jobs-list" id="customer-jobs-list">
+                            <div class="loading">Loading customer jobs...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Customer Modal -->
+    <div id="edit-customer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Customer</h3>
+                <button class="close-btn" onclick="closeModal('edit-customer-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-customer-form">
+                    <input type="hidden" id="edit-customer-id">
+                    <div class="form-group">
+                        <label for="edit-customer-name">Name *</label>
+                        <input type="text" id="edit-customer-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-customer-phone">Phone *</label>
+                        <input type="tel" id="edit-customer-phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-customer-email">Email</label>
+                        <input type="email" id="edit-customer-email">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-customer-address">Address</label>
+                        <input type="text" id="edit-customer-address">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-customer-notes">Notes</label>
+                        <textarea id="edit-customer-notes" rows="3"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('edit-customer-modal')">Cancel</button>
+                        <button type="button" class="btn-primary" onclick="updateCustomer()">Update Customer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Details Modal -->
+    <div id="job-details-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Job Details</h3>
+                <button class="close-btn" onclick="closeModal('job-details-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="job-details-grid">
+                    <div class="job-info-section">
+                        <h4>Job Information</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Service:</label>
+                                <span id="detail-job-service">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Customer:</label>
+                                <span id="detail-job-customer">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Status:</label>
+                                <span id="detail-job-status-badge" class="status-badge">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Date:</label>
+                                <span id="detail-job-date">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Time:</label>
+                                <span id="detail-job-time">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Location:</label>
+                                <span id="detail-job-location">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Assigned Staff:</label>
+                                <span id="detail-job-staff">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Created:</label>
+                                <span id="detail-job-created">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="job-notes-section">
+                        <h4>Notes</h4>
+                        <p id="detail-job-notes">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Job Modal -->
+    <div id="edit-job-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Job</h3>
+                <button class="close-btn" onclick="closeModal('edit-job-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-job-form">
+                    <input type="hidden" id="edit-job-id">
+                    <div class="form-group">
+                        <label for="edit-job-status">Status *</label>
+                        <select id="edit-job-status" required>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-job-staff">Assign Staff</label>
+                        <select id="edit-job-staff">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-job-notes">Notes</label>
+                        <textarea id="edit-job-notes" rows="3"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('edit-job-modal')">Cancel</button>
+                        <button type="button" class="btn-primary" onclick="updateJob()">Update Job</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Error Boundary (load first) -->
     <script src="/admin/js/services/error-boundary.js"></script>
     
