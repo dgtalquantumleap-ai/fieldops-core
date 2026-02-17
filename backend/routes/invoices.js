@@ -168,43 +168,45 @@ router.post('/create', async (req, res) => {
             });
             
             // Send notification (non-blocking)
-            try {
-                const { sendInvoiceEmail } = require('../utils/emailTemplates');
-                const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(customer_id);
-                
-                // Send professional HTML invoice
-                if (job.customer_email) {
-                    try {
-                        await sendInvoiceEmail({
-                            customer_name: job.customer_name,
-                            customer_email: job.customer_email,
-                            customer_phone: customer.phone,
-                            invoice_number: invoiceNumber,
-                            issued_date: new Date().toLocaleDateString(),
-                            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-                            service_name: job.service_name,
-                            job_date: job.job_date,
-                            amount: amount.toFixed(2),
-                            payment_status: 'Unpaid',
-                            payment_status_color: '#fff3cd',
-                            payment_status_accent: '#ffc107',
-                            payment_link: 'https://fieldops-production-6b97.up.railway.app/admin',
-                            company_name: 'Stilt Heights',
-                            company_phone: '(555) 123-4567',
-                            company_email: 'info@stiltheights.com',
-                            company_website: 'www.stiltheights.com',
-                            company_address: '123 Main St, Your City, State 12345',
-                            payment_portal_link: 'https://fieldops-production-6b97.up.railway.app/admin'
-                        });
-                        
-                        console.log('✅ Professional invoice email sent to:', job.customer_email);
-                    } catch (emailError) {
-                        console.log('❌ Failed to send invoice email:', emailError.message);
+            setImmediate(async () => {
+                try {
+                    const { sendInvoiceEmail } = require('../utils/emailTemplates');
+                    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(customer_id);
+                    
+                    // Send professional HTML invoice
+                    if (job.customer_email) {
+                        try {
+                            await sendInvoiceEmail({
+                                customer_name: job.customer_name,
+                                customer_email: job.customer_email,
+                                customer_phone: customer.phone,
+                                invoice_number: invoiceNumber,
+                                issued_date: new Date().toLocaleDateString(),
+                                due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+                                service_name: job.service_name,
+                                job_date: job.job_date,
+                                amount: amount.toFixed(2),
+                                payment_status: 'Unpaid',
+                                payment_status_color: '#fff3cd',
+                                payment_status_accent: '#ffc107',
+                                payment_link: 'https://fieldops-production-6b97.up.railway.app/admin',
+                                company_name: 'Stilt Heights',
+                                company_phone: '(555) 123-4567',
+                                company_email: 'info@stiltheights.com',
+                                company_website: 'www.stiltheights.com',
+                                company_address: '123 Main St, Your City, State 12345',
+                                payment_portal_link: 'https://fieldops-production-6b97.up.railway.app/admin'
+                            });
+                            
+                            console.log('✅ Professional invoice email sent to:', job.customer_email);
+                        } catch (emailError) {
+                            console.log('❌ Failed to send invoice email:', emailError.message);
+                        }
                     }
+                } catch (notifError) {
+                    log.warn(req.id, 'Notification module not available', { error: notifError.message });
                 }
-            } catch (notifError) {
-                log.warn(req.id, 'Notification module not available', { error: notifError.message });
-            }
+            });
             
             res.status(201).json({
                 success: true,

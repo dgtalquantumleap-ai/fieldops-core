@@ -77,29 +77,31 @@ router.post('/book', validateBooking, async (req, res) => {
             
             // Send confirmation to customer
             if (email) {
-                try {
-                    const { sendBookingConfirmation } = require('../utils/emailTemplates');
-                    
-                    // Send professional HTML email
-                    await sendBookingConfirmation({
-                        customer_name: name,
-                        email: email,
-                        service_name: service,
-                        job_date: date,
-                        job_time: time,
-                        address: address,
-                        job_id: job.lastInsertRowid,
-                        support_link: 'https://fieldops-production-6b97.up.railway.app/admin',
-                        company_name: 'Stilt Heights',
-                        company_phone: '(555) 123-4567',
-                        company_email: 'info@stiltheights.com',
-                        company_website: 'www.stiltheights.com'
-                    });
-                    
-                    console.log('✅ Professional booking confirmation email sent to:', email);
-                } catch (emailError) {
-                    console.log('❌ Failed to send booking email:', emailError.message);
-                }
+                // Send professional HTML email asynchronously (non-blocking)
+                setImmediate(async () => {
+                    try {
+                        const { sendBookingConfirmation } = require('../utils/emailTemplates');
+                        
+                        await sendBookingConfirmation({
+                            customer_name: name,
+                            email: email,
+                            service_name: service,
+                            job_date: date,
+                            job_time: time,
+                            address: address,
+                            job_id: job.lastInsertRowid,
+                            support_link: 'https://fieldops-production-6b97.up.railway.app/admin',
+                            company_name: 'Stilt Heights',
+                            company_phone: '(555) 123-4567',
+                            company_email: 'info@stiltheights.com',
+                            company_website: 'www.stiltheights.com'
+                        });
+                        
+                        console.log('✅ Professional booking confirmation email sent to:', email);
+                    } catch (emailError) {
+                        console.log('❌ Failed to send booking email:', emailError.message);
+                    }
+                });
             }
             
             // Notify admin
