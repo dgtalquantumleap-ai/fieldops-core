@@ -137,6 +137,9 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });
 
+// Admin static files
+app.use('/admin', express.static(path.join(__dirname, '../frontend/admin')));
+
 // AI Dashboard
 app.get('/admin-ai', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/admin-ai-dashboard.html'));
