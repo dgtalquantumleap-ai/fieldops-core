@@ -1678,6 +1678,228 @@ function addNewService() {
 }
 
 // ============================================
+// AUDIT LOG MANAGEMENT
+// ============================================
+
+async function loadAuditLogs() {
+    try {
+        console.log('🔍 Loading audit logs...');
+        showSection('audit-dashboard');
+        
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+        
+        // Get filter values
+        const action = document.getElementById('audit-action')?.value || '';
+        const entity = document.getElementById('audit-entity')?.value || '';
+        const dateFrom = document.getElementById('audit-date-from')?.value || '';
+        const dateTo = document.getElementById('audit-date-to')?.value || '';
+        const page = 1; // Could be implemented with pagination
+        
+        // Build query string
+        const queryParams = new URLSearchParams({
+            page,
+            limit: 50,
+            ...(action && { action }),
+            ...(entity && { entity_type: entity }),
+            ...(dateFrom && { date_from: dateFrom }),
+            ...(dateTo && { date_to: dateTo })
+        });
+        
+        const res = await fetch(`${API_URL}/admin/audit-logs?${queryParams}`, { headers });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load audit logs');
+        }
+        
+        renderAuditLogs(data.data);
+        
+    } catch (error) {
+        console.error('❌ Error loading audit logs:', error);
+        const container = document.getElementById('audit-logs-container');
+        if (container) {
+            container.innerHTML = `<div class="error-message">Failed to load audit logs: ${error.message}</div>`;
+        }
+    }
+}
+
+async function loadSystemHealth() {
+    try {
+        console.log('🏥 Loading system health...');
+        showSection('audit-dashboard');
+        
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+        
+        const res = await fetch(`${API_URL}/admin/system-health`, { headers });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load system health');
+        }
+        
+        renderSystemHealth(data.data);
+        
+    } catch (error) {
+        console.error('❌ Error loading system health:', error);
+        const container = document.getElementById('audit-logs-container');
+        if (container) {
+            container.innerHTML = `<div class="error-message">Failed to load system health: ${error.message}</div>`;
+        }
+    }
+}
+
+function renderAuditLogs(auditData) {
+    const container = document.getElementById('audit-logs-container');
+    if (!container) return;
+    
+    if (!auditData.logs || auditData.logs.length === 0) {
+        container.innerHTML = '<div class="no-data">No audit logs found</div>';
+        return;
+    }
+    
+    const logsHtml = auditData.logs.map(log => `
+        <div class="audit-log-item">
+            <div class="audit-header">
+                <span class="audit-action">${log.action || 'Unknown'}</span>
+                <span class="audit-entity">${log.entity_type || 'System'}</span>
+                <span class="audit-date">${formatDate(log.created_at)}</span>
+            </div>
+            <div class="audit-details">
+                <p><strong>User:</strong> ${log.user_name || 'System'} (${log.user_email || 'N/A'})</p>
+                <p><strong>Details:</strong> ${log.details || 'No details'}</p>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = `
+        <div class="audit-summary">
+            <h3>Audit Summary</h3>
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <h4>${auditData.pagination.total}</h4>
+                    <p>Total Entries</p>
+                </div>
+                <div class="stat-item">
+                    <h4>${auditData.pagination.totalPages}</h4>
+                    <p>Pages</p>
+                </div>
+            </div>
+        </div>
+        <div class="audit-logs">
+            <h3>Recent Activity</h3>
+            ${logsHtml}
+        </div>
+    `;
+}
+
+function renderSystemHealth(healthData) {
+    const container = document.getElementById('audit-logs-container');
+    if (!container) return;
+    
+    const { database, activity, system, health } = healthData;
+    
+    container.innerHTML = `
+        <div class="system-health">
+            <div class="health-overview">
+                <div class="health-status ${health.status.toLowerCase()}">
+                    <h3>System Status: ${health.status}</h3>
+                    <p>Overall system health: ${health.status}</p>
+                </div>
+            </div>
+            
+            <div class="health-metrics">
+                <div class="metric-section">
+                    <h3>📊 Database Statistics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <h4>${database.totalCustomers}</h4>
+                            <p>Total Customers</p>
+                        </div>
+                        <div class="metric-item">
+                            <h4>${database.totalJobs}</h4>
+                            <p>Total Jobs</p>
+                        </div>
+                        <div class="metric-item">
+                            <h4>${database.totalStaff}</h4>
+                            <p>Active Staff</p>
+                        </div>
+                        <div class="metric-item">
+                            <h4>${database.totalServices}</h4>
+                            <p>Active Services</p>
+                        </div>
+                        <div class="metric-item">
+                            <h4>${database.pendingJobs}</h4>
+                            <p>Pending Jobs</p>
+                        </div>
+                        <div class="metric-item">
+                            <h4>${database.activeJobs}</h4>
+                            <p>Active Jobs</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metric-section">
+                    <h3>⚡ Activity Metrics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <h4>${activity.recentActions}</h4>
+                            <p>Actions (Last Hour)</p>
+                        </div>
+                        <div class="metric-item">
+                            <h4>${activity.errorRate}%</h4>
+                            <p>Error Rate (24h)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metric-section">
+                    <h3>🖥️ System Information</h3>
+                    <div class="system-info">
+                        <div class="info-item">
+                            <strong>Uptime:</strong> ${Math.floor(system.uptime / 3600)} hours
+                        </div>
+                        <div class="info-item">
+                            <strong>Node Version:</strong> ${system.nodeVersion}
+                        </div>
+                        <div class="info-item">
+                            <strong>Platform:</strong> ${system.platform}
+                        </div>
+                        <div class="info-item">
+                            <strong>Memory Usage:</strong> ${Math.round(system.memory.used / 1024 / 1024)}MB
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show target section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+}
+
+// ============================================
 // ACTION HANDLERS
 // ============================================
 async function markAsPaid(invoiceId) {

@@ -344,8 +344,47 @@
                     <div class="loading">Loading automations...</div>
                 </div>
             </div>
+        </div>
+        <div class="section-header">
+                <h2>🔍 System Audit & Monitoring</h2>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="loadAuditLogs()">View Audit Logs</button>
+                    <button class="btn-secondary" onclick="loadSystemHealth()">System Health</button>
+                </div>
+            </div>
+            
+            <div class="audit-dashboard" id="audit-dashboard" style="display: none;">
+                <div class="audit-filters">
+                    <div class="filter-group">
+                        <label for="audit-action">Action:</label>
+                        <select id="audit-action" onchange="loadAuditLogs()">
+                            <option value="">All Actions</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="audit-entity">Entity:</label>
+                        <select id="audit-entity" onchange="loadAuditLogs()">
+                            <option value="">All Entities</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="audit-date-from">From:</label>
+                        <input type="date" id="audit-date-from" onchange="loadAuditLogs()">
+                    </div>
+                    <div class="filter-group">
+                        <label for="audit-date-to">To:</label>
+                        <input type="date" id="audit-date-to" onchange="loadAuditLogs()">
+                    </div>
+                </div>
+                
+                <div class="audit-content">
+                    <div id="audit-logs-container">
+                        <div class="loading">Loading audit logs...</div>
+                    </div>
+                </div>
+            </div>
         </section>
-
+        
         <!-- Settings Section -->
         <section id="settings" class="content-section">
             <div class="section-header">

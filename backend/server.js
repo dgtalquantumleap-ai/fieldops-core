@@ -175,6 +175,7 @@ const { requireAuth, requireAdmin } = require('./middleware/auth');
 // Public routes (no auth required)
 app.use('/api/auth',             require('./routes/auth'));
 app.use('/api/booking',          require('./routes/booking'));
+app.use('/api/scheduling',        require('./routes/scheduling'));
 app.use('/api/ai-test',          require('./routes/ai-test'));
 
 // Protected routes (auth required)
@@ -186,11 +187,14 @@ app.use('/api/dashboard',        requireAuth,  require('./routes/dashboard'));
 app.use('/api/media',            requireAuth,  require('./routes/media'));
 app.use('/api/automations',      requireAuth,  require('./routes/automations'));
 app.use('/api/ai-automations',   requireAuth,  require('./routes/ai-automations'));
+app.use('/api/services',         requireAuth,  require('./routes/services-enhanced'));
+app.use('/api/analytics',        requireAuth,  require('./routes/analytics'));
 app.use('/api/wp',               requireAuth,  require('./routes/wordpress'));
 
 // Admin-only routes
 app.use('/api/staff-management', requireAdmin, require('./routes/staff-management'));
 app.use('/api/settings',         requireAdmin, require('./routes/settings'));
+app.use('/api/admin-audit',       requireAdmin, require('./routes/admin-audit'));
 app.use('/api/onboarding',       requireAdmin, require('./routes/onboarding'));
 
 // ============================================

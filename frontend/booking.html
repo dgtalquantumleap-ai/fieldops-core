@@ -792,7 +792,7 @@
 
                 console.log('📋 Booking data:', data);
 
-                const res = await fetch('/api/booking/book', {
+                const res = await fetch('/api/scheduling/validate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -802,19 +802,20 @@
                 console.log('✅ Response:', result);
 
                 if (result.success) {
-                    showSuccess('🎉 Booking received! We\'ll call you within 24 hours to confirm.');
-                    e.target.reset();
+                    showSuccess('🎉 Time slot available! Processing optimal staff assignment...');
+                    // Don't reset form yet - wait for scheduling confirmation
                     selectedService = '';
                     selectedServicePrice = 0;
-                    document.querySelectorAll('.service-card').forEach(card => {
-                        card.classList.remove('selected');
-                    });
-                    updateProgress();
+                    
+                    // Show scheduling details
+                    if (result.data && result.data.recommendedStaff) {
+                        showNotification(`Recommended staff: ${result.data.recommendedStaff.name}`, 'info');
+                    }
                     
                     setTimeout(() => {
                         submitBtn.disabled = false;
                         btnText.textContent = originalBtnText;
-                    }, 3000);
+                    }, 2000);
                 } else {
                     throw new Error(result.error || 'Booking failed');
                 }

@@ -246,141 +246,72 @@ router.post('/book', validateBooking, async (req, res) => {
         }
         
         // ============================================
-        // CREATE JOB WITH TIMESTAMPS
+        // REDIRECT TO SCHEDULING LAYER
         // ============================================
         
-        const now = new Date().toISOString();
-        const insertJob = db.prepare(
-            'INSERT INTO jobs (customer_id, service_id, job_date, job_time, location, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
+        console.log('📋 Redirecting to scheduling layer for validation...');
         
-        const job = insertJob.run(
-            customer.id,
-            serviceRecord.id,
-            date,
-            time.trim(),  // Use provided time, don't default
-            address.trim(),
-            'Scheduled',  // ✓ CAPITALIZED - CRITICAL for admin dashboard filter
-            notes ? notes.trim() : 'Online booking',
-            now,
-            now
-        );
+        // Create scheduling validation request
+        const schedulingResponse = await fetch(`${process.env.API_URL || 'http://localhost:3000'}/api/scheduling/validate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: name.trim(),
+                phone: phone.trim(),
+                email: email ? email.trim() : null,
+                address: address.trim(),
+                service: service.trim(),
+                date: date,
+                time: time,
+                notes: notes ? notes.trim() : null
+            })
+        });
         
-        console.log(`✅ Job created: ID ${job.lastInsertRowid} - ${name} - ${service} on ${date} at ${time}`);
-        
-        // ============================================
-        // GET CREATED JOB DETAILS
-        // ============================================
-        
-        const createdJob = db.prepare('SELECT * FROM jobs WHERE id = ?').get(job.lastInsertRowid);
-        
-        // ============================================
-        // LOG & NOTIFY
-        // ============================================
-        
-        // Log activity for audit trail
-        try {
-            logActivity(null, 'Customer', 'created', 'job', job.lastInsertRowid, `${name} - ${service}`);
-        } catch (err) {
-            console.warn('⚠️  Activity logging failed (non-critical):', err.message);
+        if (!schedulingResponse.ok) {
+            const errorData = await schedulingResponse.json();
+            return res.status(schedulingResponse.status).json(errorData);
         }
         
-        // Get io instance for real-time updates
-        const io = req.app.get('io');
+        const schedulingResult = await schedulingResponse.json();
         
-        // Send real-time update to admin dashboard - THIS IS CRITICAL FOR ADMIN VISIBILITY
-        if (io) {
-            try {
-                emitRealTimeUpdate(io, 'new-booking', {
-                    job: createdJob,
-                    customer: customer
-                }, 'admin');
-                console.log('📡 Real-time update sent to admin');
-            } catch (err) {
-                console.warn('⚠️  Real-time update failed (non-critical):', err.message);
-            }
+        if (!schedulingResult.success) {
+            return res.status(400).json(schedulingResult);
         }
         
         // ============================================
-        // SEND NOTIFICATIONS (Non-blocking)
+        // PROCEED WITH SCHEDULING CONFIRMATION
         // ============================================
         
-        (async () => {
-            try {
-                // Send confirmation email to customer
-                if (email && email.trim()) {
-                    try {
-                        const { sendBookingConfirmation } = require('../utils/emailTemplates');
-                        
-                        await sendBookingConfirmation({
-                            customer_name: name.trim(),
-                            email: email.trim(),
-                            service_name: service,
-                            job_date: date,
-                            job_time: time,
-                            address: address.trim(),
-                            job_id: job.lastInsertRowid,
-                            support_link: process.env.APP_URL || 'https://fieldops-production-6b97.up.railway.app',
-                            company_name: process.env.COMPANY_NAME || 'Stilt Heights',
-                            company_phone: process.env.COMPANY_PHONE || '(555) 123-4567',
-                            company_email: process.env.COMPANY_EMAIL || 'info@stiltheights.com',
-                            company_website: process.env.COMPANY_WEBSITE || 'www.stiltheights.com'
-                        });
-                        
-                        console.log('✉️  Booking confirmation email sent to:', email.trim());
-                    } catch (emailError) {
-                        console.error('❌ Failed to send booking confirmation email:', emailError.message);
-                        // Don't throw - email failure shouldn't break the booking
-                    }
-                }
-                
-                // Send notifications module alert if available
-                try {
-                    const notifications = require('../utils/notifications');
-                    
-                    const bookingData = {
-                        name: name.trim(),
-                        email: email ? email.trim() : null,
-                        phone: phone.trim(),
-                        service: service,
-                        date: date,
-                        time: time,
-                        address: address.trim(),
-                        notes: notes ? notes.trim() : null,
-                        job_id: job.lastInsertRowid
-                    };
-                    
-                    await notifications.sendAdminNotification(bookingData);
-                    console.log('📢 Admin notification sent');
-                } catch (notifError) {
-                    console.warn('⚠️  Admin notification failed (non-critical):', notifError.message);
-                }
-                
-                // Trigger automations if available
-                try {
-                    const bookingData = {
-                        name: name.trim(),
-                        email: email ? email.trim() : null,
-                        phone: phone.trim(),
-                        service: service,
-                        date: date,
-                        time: time,
-                        address: address.trim(),
-                        notes: notes ? notes.trim() : null,
-                        job_id: job.lastInsertRowid
-                    };
-                    
-                    await triggerAutomations('Customer Booking', bookingData, io);
-                    console.log('⚙️  Automations triggered');
-                } catch (autoError) {
-                    console.warn('⚠️  Automation trigger failed (non-critical):', autoError.message);
-                }
-                
-            } catch (error) {
-                console.error('❌ Error in notification chain:', error);
-                // Don't throw - notifications are non-critical
-            }
-        })().catch(err => console.error('Async notification error:', err));
+        console.log('✅ Scheduling validation passed, confirming booking...');
+        
+        // Confirm booking with staff assignment
+        const confirmResponse = await fetch(`${process.env.API_URL || 'http://localhost:3000'}/api/scheduling/confirm-booking`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customer_id: schedulingResult.data.service.customer_id,
+                service_id: schedulingResult.data.service.id,
+                date: date,
+                time: time,
+                address: address.trim(),
+                notes: notes ? notes.trim() : null,
+                staff_id: schedulingResult.data.recommendedStaff.id,
+                estimated_duration: schedulingResult.data.service.duration || 2
+            })
+        });
+        
+        if (!confirmResponse.ok) {
+            const errorData = await confirmResponse.json();
+            return res.status(confirmResponse.status).json(errorData);
+        }
+        
+        const confirmResult = await confirmResponse.json();
+        
+        if (!confirmResult.success) {
+            return res.status(400).json(confirmResult);
+        }
+        
+        console.log(`🎉 Booking confirmed via scheduling layer: Job ID ${confirmResult.data.jobId}`);
         
         // ============================================
         // RESPONSE
@@ -388,13 +319,15 @@ router.post('/book', validateBooking, async (req, res) => {
         
         res.status(201).json({
             success: true,
-            message: 'Booking confirmed! Check your email for details.',
+            message: 'Booking confirmed! Job scheduled with optimal staff assignment.',
             data: {
-                jobId: job.lastInsertRowid,
-                bookingDate: date,
-                bookingTime: time,
+                jobId: confirmResult.data.jobId,
+                jobDate: date,
+                jobTime: time,
                 service: service,
-                customerPhone: phone.trim()
+                customerPhone: phone.trim(),
+                assignedStaff: schedulingResult.data.recommendedStaff,
+                schedulingDetails: schedulingResult.data
             }
         });
         
