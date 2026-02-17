@@ -260,6 +260,7 @@
             background: rgba(255,255,255,0.1);
             padding: 25px;
             border-radius: 12px;
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
         }
         
@@ -331,6 +332,16 @@
             color: #64748b;
             margin-top: 5px;
             font-style: italic;
+        }
+        
+        .error-message div:first-child {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .success-message div:first-child {
+            font-size: 18px;
+            margin-bottom: 10px;
         }
         
         @keyframes fadeInUp {
@@ -603,8 +614,8 @@
                 
                 if (result.success) {
                     successMsg.innerHTML = `
-                        <div style="font-size: 18px; margin-bottom: 10px;">🎉 ${result.message || 'Booking confirmed!'}</div>
-                        <div style="font-size: 14px;">Check your email for booking details. Reference: <strong>#${result.data?.id || 'N/A'}</strong></div>
+                        <div>🎉 ${result.message || 'Booking confirmed!'}</div>
+                        <div>Check your email for booking details. Reference: <strong>#${result.data?.id || 'N/A'}</strong></div>
                     `;
                     successMsg.style.display = 'block';
                     errorMsg.style.display = 'none';
@@ -640,7 +651,7 @@
         function showError(message) {
             const errorMsg = document.getElementById('error-msg');
             const successMsg = document.getElementById('success-msg');
-            errorMsg.innerHTML = `<div style="font-size: 16px; margin-bottom: 8px;">⚠️ Error</div><div>${message}</div>`;
+            errorMsg.innerHTML = `<div>⚠️ Error</div><div>${message}</div>`;
             errorMsg.style.display = 'block';
             successMsg.style.display = 'none';
             
