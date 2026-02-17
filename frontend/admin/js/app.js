@@ -552,6 +552,287 @@ async function loadStaff() {
 }
 
 // ============================================
+// STAFF CRUD FUNCTIONS
+// ============================================
+
+function showAddStaffModal() {
+    showModal('add-staff-modal');
+    loadStaffFormOptions();
+}
+
+async function loadStaffFormOptions() {
+    console.log('📋 Loading staff form options...');
+    // Load any necessary options for staff form
+}
+
+async function saveStaff() {
+    try {
+        const form = document.getElementById('add-staff-form');
+        if (!form) return;
+
+        const formData = {
+            name: document.getElementById('staff-name').value.trim(),
+            email: document.getElementById('staff-email').value.trim(),
+            phone: document.getElementById('staff-phone').value.trim(),
+            role: document.getElementById('staff-role').value,
+            is_active: document.getElementById('staff-active').checked,
+            password: document.getElementById('staff-password').value
+        };
+
+        // Basic validation
+        if (!formData.name || formData.name.length < 2) {
+            showNotification('Please enter a valid staff name', 'error');
+            return;
+        }
+
+        if (!formData.email || !formData.email.includes('@')) {
+            showNotification('Please enter a valid email address', 'error');
+            return;
+        }
+
+        if (!formData.password || formData.password.length < 6) {
+            showNotification('Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/staff`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Staff member added successfully!', 'success');
+            closeModal('add-staff-modal');
+            if (currentSection === 'staff') loadStaff();
+        } else {
+            showNotification(`Failed to add staff: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error saving staff:', error);
+        showNotification('Failed to save staff', 'error');
+    }
+}
+
+function viewStaffDetails(staffId) {
+    if (!staffId) {
+        showNotification('Invalid staff ID', 'error');
+        return;
+    }
+    
+    loadStaffDetails(staffId);
+    showModal('staff-details-modal');
+}
+
+async function loadStaffDetails(staffId) {
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/staff/${staffId}`, { headers });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        const staff = await res.json();
+        
+        // Populate modal with staff details
+        const elements = {
+            'detail-staff-name': staff.name || 'N/A',
+            'detail-staff-email': staff.email || 'N/A',
+            'detail-staff-phone': staff.phone || 'N/A',
+            'detail-staff-role': staff.role || 'Staff',
+            'detail-staff-status': staff.is_active ? 'Active' : 'Inactive',
+            'detail-staff-created': formatDate(staff.created_at),
+            'detail-staff-updated': formatDate(staff.updated_at)
+        };
+        
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        });
+        
+        // Set status badge color
+        const statusBadge = document.getElementById('detail-staff-status-badge');
+        if (statusBadge) {
+            statusBadge.className = `status-badge status-${staff.is_active ? 'active' : 'inactive'}`;
+            statusBadge.textContent = staff.is_active ? 'Active' : 'Inactive';
+        }
+        
+        // Load staff's recent jobs
+        loadStaffJobs(staffId);
+        
+    } catch (error) {
+        console.error('❌ Error loading staff details:', error);
+        showNotification('Failed to load staff details', 'error');
+    }
+}
+
+async function loadStaffJobs(staffId) {
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/jobs?assigned_to=${staffId}`, { headers });
+        
+        if (!res.ok) return;
+
+        const jobsData = await res.json();
+        const jobs = Array.isArray(jobsData) ? jobsData : (jobsData.data || []);
+        
+        const jobsList = document.getElementById('staff-jobs-list');
+        if (!jobsList) return;
+
+        if (jobs.length === 0) {
+            jobsList.innerHTML = '<div class="no-data">No jobs assigned to this staff member</div>';
+            return;
+        }
+
+        jobsList.innerHTML = jobs.map(job => `
+            <div class="job-item">
+                <h4>${job.service_name || 'Service'}</h4>
+                <p>Customer: ${job.customer_name || 'N/A'}</p>
+                <p>Status: <span class="status-badge status-${job.status?.toLowerCase().replace(' ', '-') || 'unknown'}">${job.status || 'Unknown'}</span></p>
+                <p>Date: ${formatDate(job.job_date)} at ${job.job_time || 'TBD'}</p>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('❌ Error loading staff jobs:', error);
+    }
+}
+
+function editStaff(staffId) {
+    if (!staffId) {
+        showNotification('Invalid staff ID', 'error');
+        return;
+    }
+    
+    loadStaffForEdit(staffId);
+    showModal('edit-staff-modal');
+}
+
+async function loadStaffForEdit(staffId) {
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/staff/${staffId}`, { headers });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        const staff = await res.json();
+        
+        // Populate edit form
+        const fields = {
+            'edit-staff-id': staff.id || '',
+            'edit-staff-name': staff.name || '',
+            'edit-staff-email': staff.email || '',
+            'edit-staff-phone': staff.phone || '',
+            'edit-staff-role': staff.role || 'Staff'
+        };
+        
+        Object.entries(fields).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.value = value;
+        });
+        
+        // Set checkbox
+        const activeCheckbox = document.getElementById('edit-staff-active');
+        if (activeCheckbox) activeCheckbox.checked = staff.is_active;
+        
+    } catch (error) {
+        console.error('❌ Error loading staff for edit:', error);
+        showNotification('Failed to load staff data', 'error');
+    }
+}
+
+async function updateStaff() {
+    try {
+        const staffId = document.getElementById('edit-staff-id').value;
+        if (!staffId) {
+            showNotification('Invalid staff ID', 'error');
+            return;
+        }
+
+        const formData = {
+            name: document.getElementById('edit-staff-name').value.trim(),
+            email: document.getElementById('edit-staff-email').value.trim(),
+            phone: document.getElementById('edit-staff-phone').value.trim(),
+            role: document.getElementById('edit-staff-role').value,
+            is_active: document.getElementById('edit-staff-active').checked
+        };
+
+        // Basic validation
+        if (!formData.name || formData.name.length < 2) {
+            showNotification('Please enter a valid staff name', 'error');
+            return;
+        }
+
+        if (!formData.email || !formData.email.includes('@')) {
+            showNotification('Please enter a valid email address', 'error');
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/staff/${staffId}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Staff member updated successfully!', 'success');
+            closeModal('edit-staff-modal');
+            if (currentSection === 'staff') loadStaff();
+        } else {
+            showNotification(`Failed to update staff: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error updating staff:', error);
+        showNotification('Failed to update staff', 'error');
+    }
+}
+
+async function toggleStaffStatus(staffId) {
+    if (!staffId) return;
+    
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/staff/${staffId}/toggle-status`, {
+            method: 'PATCH',
+            headers
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Staff status updated!', 'success');
+            if (currentSection === 'staff') loadStaff();
+        } else {
+            showNotification(`Failed to update status: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error toggling staff status:', error);
+        showNotification('Failed to update staff status', 'error');
+    }
+}
+
+// ============================================
 // INVOICES
 // ============================================
 async function loadInvoices() {
@@ -599,6 +880,287 @@ async function loadInvoices() {
         console.error('❌ Error loading invoices:', error);
         const list = document.getElementById('invoices-list');
         if (list) list.innerHTML = `<div class="error-message">Failed to load invoices: ${error.message}</div>`;
+    }
+}
+
+// ============================================
+// INVOICE CRUD FUNCTIONS
+// ============================================
+
+function showCreateInvoiceModal() {
+    showModal('create-invoice-modal');
+    loadInvoiceFormOptions();
+}
+
+async function loadInvoiceFormOptions() {
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        // Load customers
+        const customersRes = await fetch(`${API_URL}/customers`, { headers });
+        const customersData = await customersRes.json();
+        const customers = Array.isArray(customersData) ? customersData : (customersData.data || []);
+        
+        const customerSelect = document.getElementById('invoice-customer');
+        if (customerSelect) {
+            customerSelect.innerHTML = '<option value="">Select Customer</option>' +
+                customers.map(customer => `<option value="${customer.id}">${customer.name} - ${customer.phone}</option>`).join('');
+        }
+
+        // Load jobs
+        const jobsRes = await fetch(`${API_URL}/jobs?status=Completed`, { headers });
+        const jobsData = await jobsRes.json();
+        const jobs = Array.isArray(jobsData) ? jobsData : (jobsData.data || []);
+        
+        const jobSelect = document.getElementById('invoice-job');
+        if (jobSelect) {
+            jobSelect.innerHTML = '<option value="">Select Job (Optional)</option>' +
+                jobs.map(job => `<option value="${job.id}">${job.customer_name} - ${job.service_name} (${formatDate(job.job_date)})</option>`).join('');
+        }
+
+        // Set default issue date to today
+        const dateInput = document.getElementById('invoice-date');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+
+        // Set default due date (30 days from now)
+        const dueInput = document.getElementById('invoice-due-date');
+        if (dueInput) {
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            dueInput.value = dueDate.toISOString().split('T')[0];
+        }
+
+    } catch (error) {
+        console.error('❌ Error loading invoice form options:', error);
+    }
+}
+
+async function saveInvoice() {
+    try {
+        const form = document.getElementById('create-invoice-form');
+        if (!form) return;
+
+        const formData = {
+            customer_id: parseInt(document.getElementById('invoice-customer').value),
+            job_id: document.getElementById('invoice-job').value ? parseInt(document.getElementById('invoice-job').value) : null,
+            invoice_number: document.getElementById('invoice-number').value.trim(),
+            amount: parseFloat(document.getElementById('invoice-amount').value),
+            issued_at: document.getElementById('invoice-date').value,
+            due_date: document.getElementById('invoice-due-date').value,
+            notes: document.getElementById('invoice-notes').value.trim(),
+            status: 'unpaid'
+        };
+
+        // Basic validation
+        if (!formData.customer_id) {
+            showNotification('Please select a customer', 'error');
+            return;
+        }
+
+        if (!formData.invoice_number) {
+            showNotification('Please enter an invoice number', 'error');
+            return;
+        }
+
+        if (!formData.amount || formData.amount <= 0) {
+            showNotification('Please enter a valid amount', 'error');
+            return;
+        }
+
+        if (!formData.issued_at) {
+            showNotification('Please select an issue date', 'error');
+            return;
+        }
+
+        if (!formData.due_date) {
+            showNotification('Please select a due date', 'error');
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/invoices`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Invoice created successfully!', 'success');
+            closeModal('create-invoice-modal');
+            if (currentSection === 'invoices') loadInvoices();
+            if (currentSection === 'dashboard') loadDashboard();
+        } else {
+            showNotification(`Failed to create invoice: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error saving invoice:', error);
+        showNotification('Failed to save invoice', 'error');
+    }
+}
+
+function viewInvoiceDetails(invoiceId) {
+    if (!invoiceId) {
+        showNotification('Invalid invoice ID', 'error');
+        return;
+    }
+    
+    loadInvoiceDetails(invoiceId);
+    showModal('invoice-details-modal');
+}
+
+async function loadInvoiceDetails(invoiceId) {
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/invoices/${invoiceId}`, { headers });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        const invoice = await res.json();
+        
+        // Populate modal with invoice details
+        const elements = {
+            'detail-invoice-number': invoice.invoice_number || `INV-${invoice.id}`,
+            'detail-invoice-customer': invoice.customer_name || 'N/A',
+            'detail-invoice-amount': `$${invoice.amount ? invoice.amount.toFixed(2) : '0.00'}`,
+            'detail-invoice-status': invoice.status || 'Unknown',
+            'detail-invoice-issue-date': formatDate(invoice.issued_at),
+            'detail-invoice-due-date': formatDate(invoice.due_date),
+            'detail-invoice-paid-date': invoice.paid_at ? formatDate(invoice.paid_at) : 'Not paid',
+            'detail-invoice-job': invoice.job_service_name || 'N/A',
+            'detail-invoice-notes': invoice.notes || 'No notes'
+        };
+        
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        });
+        
+        // Set status badge color
+        const statusBadge = document.getElementById('detail-invoice-status-badge');
+        if (statusBadge) {
+            statusBadge.className = `status-badge status-${invoice.status?.toLowerCase() || 'unknown'}`;
+            statusBadge.textContent = invoice.status || 'Unknown';
+        }
+        
+        // Load payment history
+        loadInvoicePayments(invoiceId);
+        
+    } catch (error) {
+        console.error('❌ Error loading invoice details:', error);
+        showNotification('Failed to load invoice details', 'error');
+    }
+}
+
+async function loadInvoicePayments(invoiceId) {
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/invoices/${invoiceId}/payments`, { headers });
+        
+        if (!res.ok) return;
+
+        const paymentsData = await res.json();
+        const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData.data || []);
+        
+        const paymentsList = document.getElementById('invoice-payments-list');
+        if (!paymentsList) return;
+
+        if (payments.length === 0) {
+            paymentsList.innerHTML = '<div class="no-data">No payments recorded</div>';
+            return;
+        }
+
+        paymentsList.innerHTML = payments.map(payment => `
+            <div class="payment-item">
+                <h4>$${payment.amount ? payment.amount.toFixed(2) : '0.00'}</h4>
+                <p>Date: ${formatDate(payment.payment_date)}</p>
+                <p>Method: ${payment.payment_method || 'N/A'}</p>
+                <p>Notes: ${payment.notes || 'No notes'}</p>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('❌ Error loading invoice payments:', error);
+    }
+}
+
+async function markAsPaid(invoiceId) {
+    if (!invoiceId || !confirm('Mark this invoice as paid?')) return;
+    
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/invoices/${invoiceId}/mark-paid`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ 
+                paid_at: new Date().toISOString(),
+                payment_method: 'Manual',
+                amount: null // Use full amount
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Invoice marked as paid!', 'success');
+            if (currentSection === 'invoices') loadInvoices();
+            if (currentSection === 'dashboard') loadDashboard();
+        } else {
+            showNotification(`Failed to mark as paid: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error marking invoice as paid:', error);
+        showNotification('Failed to mark invoice as paid', 'error');
+    }
+}
+
+async function downloadInvoice(invoiceId) {
+    if (!invoiceId) {
+        showNotification('Invalid invoice ID', 'error');
+        return;
+    }
+    
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/invoices/${invoiceId}/download`, { headers });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        // Create download link
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${invoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showNotification('Invoice downloaded successfully!', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error downloading invoice:', error);
+        showNotification('Failed to download invoice', 'error');
     }
 }
 
@@ -692,10 +1254,427 @@ async function loadAutomations() {
 }
 
 // ============================================
+// AUTOMATION CRUD FUNCTIONS
+// ============================================
+
+function showAddAutomationModal() {
+    showModal('add-automation-modal');
+    loadAutomationFormOptions();
+}
+
+async function loadAutomationFormOptions() {
+    console.log('📋 Loading automation form options...');
+    // Load any necessary options for automation form
+}
+
+async function saveAutomation() {
+    try {
+        const form = document.getElementById('add-automation-form');
+        if (!form) return;
+
+        const formData = {
+            trigger_event: document.getElementById('automation-trigger').value,
+            channel: document.getElementById('automation-channel').value,
+            message_template: document.getElementById('automation-message').value.trim(),
+            enabled: document.getElementById('automation-enabled').checked
+        };
+
+        // Basic validation
+        if (!formData.trigger_event) {
+            showNotification('Please select a trigger event', 'error');
+            return;
+        }
+
+        if (!formData.channel) {
+            showNotification('Please select a channel', 'error');
+            return;
+        }
+
+        if (!formData.message_template || formData.message_template.length < 5) {
+            showNotification('Please enter a message template (at least 5 characters)', 'error');
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/automations`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Automation created successfully!', 'success');
+            closeModal('add-automation-modal');
+            if (currentSection === 'automations') loadAutomations();
+        } else {
+            showNotification(`Failed to create automation: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error saving automation:', error);
+        showNotification('Failed to save automation', 'error');
+    }
+}
+
+function editAutomation(automationId) {
+    if (!automationId) {
+        showNotification('Invalid automation ID', 'error');
+        return;
+    }
+    
+    loadAutomationForEdit(automationId);
+    showModal('edit-automation-modal');
+}
+
+async function loadAutomationForEdit(automationId) {
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/automations/${automationId}`, { headers });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        const automation = await res.json();
+        
+        // Populate edit form
+        const fields = {
+            'edit-automation-id': automation.id || '',
+            'edit-automation-trigger': automation.trigger_event || '',
+            'edit-automation-channel': automation.channel || '',
+            'edit-automation-message': automation.message_template || ''
+        };
+        
+        Object.entries(fields).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.value = value;
+        });
+        
+        // Set checkbox
+        const enabledCheckbox = document.getElementById('edit-automation-enabled');
+        if (enabledCheckbox) enabledCheckbox.checked = automation.enabled;
+        
+    } catch (error) {
+        console.error('❌ Error loading automation for edit:', error);
+        showNotification('Failed to load automation data', 'error');
+    }
+}
+
+async function updateAutomation() {
+    try {
+        const automationId = document.getElementById('edit-automation-id').value;
+        if (!automationId) {
+            showNotification('Invalid automation ID', 'error');
+            return;
+        }
+
+        const formData = {
+            trigger_event: document.getElementById('edit-automation-trigger').value,
+            channel: document.getElementById('edit-automation-channel').value,
+            message_template: document.getElementById('edit-automation-message').value.trim(),
+            enabled: document.getElementById('edit-automation-enabled').checked
+        };
+
+        // Basic validation
+        if (!formData.trigger_event) {
+            showNotification('Please select a trigger event', 'error');
+            return;
+        }
+
+        if (!formData.channel) {
+            showNotification('Please select a channel', 'error');
+            return;
+        }
+
+        if (!formData.message_template || formData.message_template.length < 5) {
+            showNotification('Please enter a message template (at least 5 characters)', 'error');
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/automations/${automationId}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Automation updated successfully!', 'success');
+            closeModal('edit-automation-modal');
+            if (currentSection === 'automations') loadAutomations();
+        } else {
+            showNotification(`Failed to update automation: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error updating automation:', error);
+        showNotification('Failed to update automation', 'error');
+    }
+}
+
+async function toggleAutomationStatus(automationId) {
+    if (!automationId) return;
+    
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/automations/${automationId}/toggle-status`, {
+            method: 'PATCH',
+            headers
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Automation status updated!', 'success');
+            if (currentSection === 'automations') loadAutomations();
+        } else {
+            showNotification(`Failed to update status: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error toggling automation status:', error);
+        showNotification('Failed to update automation status', 'error');
+    }
+}
+
+async function testAutomation(automationId) {
+    if (!automationId) return;
+    
+    try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/automations/${automationId}/test`, {
+            method: 'POST',
+            headers
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Test message sent successfully!', 'success');
+        } else {
+            showNotification(`Failed to send test: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error testing automation:', error);
+        showNotification('Failed to test automation', 'error');
+    }
+}
+
+// ============================================
 // SETTINGS
 // ============================================
 function loadSettings() {
     console.log('✓ Settings page loaded');
+}
+
+// ============================================
+// SETTINGS CRUD FUNCTIONS
+// ============================================
+
+async function loadSettings() {
+    try {
+        console.log('🔄 Loading settings...');
+        
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+        
+        // Load business settings
+        const businessRes = await fetch(`${API_URL}/settings/business`, { headers });
+        if (businessRes.ok) {
+            const businessData = await businessRes.json();
+            const businessSettings = businessData.data || {};
+            
+            // Populate business settings
+            const businessFields = {
+                'business-name': businessSettings.business_name || '',
+                'business-phone': businessSettings.business_phone || '',
+                'business-email': businessSettings.business_email || '',
+                'business-address': businessSettings.business_address || ''
+            };
+            
+            Object.entries(businessFields).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.value = value;
+            });
+        }
+        
+        // Load label settings
+        const labelsRes = await fetch(`${API_URL}/settings/labels`, { headers });
+        if (labelsRes.ok) {
+            const labelsData = await labelsRes.json();
+            const labelSettings = labelsData.data || {};
+            
+            // Populate label settings
+            const labelFields = {
+                'jobs-label': labelSettings.jobs_label || 'Jobs',
+                'customers-label': labelSettings.customers_label || 'Customers',
+                'staff-label': labelSettings.staff_label || 'Staff'
+            };
+            
+            Object.entries(labelFields).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.value = value;
+            });
+        }
+        
+        // Load services
+        const servicesRes = await fetch(`${API_URL}/booking/services`, { headers });
+        if (servicesRes.ok) {
+            const servicesData = await servicesRes.json();
+            const services = Array.isArray(servicesData) ? servicesData : (servicesData.data || []);
+            
+            const servicesList = document.getElementById('service-list');
+            if (servicesList) {
+                if (services.length === 0) {
+                    servicesList.innerHTML = '<div class="no-data">No services found</div>';
+                } else {
+                    servicesList.innerHTML = services.map(service => `
+                        <div class="service-item">
+                            <span>${service.name} - $${service.price}</span>
+                            <button class="btn-small" onclick="editService(${service.id})">Edit</button>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+        
+        console.log('✅ Settings loaded successfully');
+        
+    } catch (error) {
+        console.error('❌ Error loading settings:', error);
+        showNotification('Failed to load settings', 'error');
+    }
+}
+
+async function saveBusinessSettings() {
+    try {
+        const formData = {
+            business_name: document.getElementById('business-name').value.trim(),
+            business_phone: document.getElementById('business-phone').value.trim(),
+            business_email: document.getElementById('business-email').value.trim(),
+            business_address: document.getElementById('business-address').value.trim()
+        };
+
+        // Basic validation
+        if (!formData.business_name) {
+            showNotification('Please enter a business name', 'error');
+            return;
+        }
+
+        if (!formData.business_email || !formData.business_email.includes('@')) {
+            showNotification('Please enter a valid business email', 'error');
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/settings/business`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Business settings saved successfully!', 'success');
+        } else {
+            showNotification(`Failed to save business settings: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error saving business settings:', error);
+        showNotification('Failed to save business settings', 'error');
+    }
+}
+
+async function saveLabelSettings() {
+    try {
+        const formData = {
+            jobs_label: document.getElementById('jobs-label').value.trim(),
+            customers_label: document.getElementById('customers-label').value.trim(),
+            staff_label: document.getElementById('staff-label').value.trim()
+        };
+
+        // Basic validation
+        if (!formData.jobs_label || !formData.customers_label || !formData.staff_label) {
+            showNotification('Please fill in all label fields', 'error');
+            return;
+        }
+
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) return;
+
+        const res = await fetch(`${API_URL}/settings/labels`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showNotification('Label settings saved successfully!', 'success');
+            // Update UI labels dynamically
+            updateUILabels(formData);
+        } else {
+            showNotification(`Failed to save label settings: ${data.error || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error saving label settings:', error);
+        showNotification('Failed to save label settings', 'error');
+    }
+}
+
+function updateUILabels(labelSettings) {
+    // Update navigation labels
+    const navItems = {
+        'customers-nav': document.querySelector('a[href="#customers"] span:last-child'),
+        'jobs-nav': document.querySelector('a[href="#jobs"] span:last-child'),
+        'staff-nav': document.querySelector('a[href="#staff"] span:last-child')
+    };
+    
+    Object.entries(navItems).forEach(([key, element]) => {
+        if (element) {
+            switch(key) {
+                case 'customers-nav':
+                    element.textContent = labelSettings.customers_label || 'Customers';
+                    break;
+                case 'jobs-nav':
+                    element.textContent = labelSettings.jobs_label || 'Jobs';
+                    break;
+                case 'staff-nav':
+                    element.textContent = labelSettings.staff_label || 'Staff';
+                    break;
+            }
+        }
+    });
+}
+
+function editService(serviceId) {
+    if (!serviceId) {
+        showNotification('Invalid service ID', 'error');
+        return;
+    }
+    
+    // For now, just show a notification
+    showNotification('Service editing coming soon!', 'info');
+}
+
+function addNewService() {
+    // For now, just show a notification
+    showNotification('Add service coming soon!', 'info');
 }
 
 // ============================================

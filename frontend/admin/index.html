@@ -225,7 +225,7 @@
                         <option value="suspended">Suspended</option>
                         <option value="inactive">Terminated</option>
                     </select>
-                    <button class="btn-primary" onclick="showModal('onboard-staff-modal')">+ Onboard Staff</button>
+                    <button class="btn-primary" onclick="showAddStaffModal()">+ Onboard Staff</button>
                 </div>
             </div>
             
@@ -570,30 +570,40 @@
             <div class="modal-body">
                 <form id="create-invoice-form">
                     <div class="form-group">
-                        <label for="invoice-job">Select Job *</label>
-                        <select id="invoice-job" title="Select completed job for invoice" required>
-                            <option value="">Select Completed Job</option>
+                        <label for="invoice-customer">Customer *</label>
+                        <select id="invoice-customer" required>
+                            <option value="">Select Customer</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="invoice-customer">Customer</label>
-                        <input type="text" id="invoice-customer" title="Invoice customer (auto-filled)" readonly>
+                        <label for="invoice-job">Job (Optional)</label>
+                        <select id="invoice-job">
+                            <option value="">Select Job</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label for="invoice-service">Service</label>
-                        <input type="text" id="invoice-service" title="Invoice service (auto-filled)" readonly>
+                        <label for="invoice-number">Invoice Number *</label>
+                        <input type="text" id="invoice-number" required placeholder="INV-001">
                     </div>
                     <div class="form-group">
-                        <label for="invoice-amount">Amount *</label>
-                        <input type="number" id="invoice-amount" title="Invoice amount" step="0.01" min="0" placeholder="Enter invoice amount" required>
+                        <label for="invoice-amount">Amount ($) *</label>
+                        <input type="number" id="invoice-amount" step="0.01" min="0" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-date">Issue Date *</label>
+                        <input type="date" id="invoice-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-due-date">Due Date *</label>
+                        <input type="date" id="invoice-due-date" required>
                     </div>
                     <div class="form-group">
                         <label for="invoice-notes">Notes</label>
-                        <textarea id="invoice-notes" title="Additional invoice notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                        <textarea id="invoice-notes" rows="3" placeholder="Enter any additional notes"></textarea>
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('create-invoice-modal')">Cancel</button>
-                        <button type="submit" class="btn-primary">Create Invoice</button>
+                        <button type="button" class="btn-primary" onclick="saveInvoice()">Create Invoice</button>
                     </div>
                 </form>
             </div>
@@ -608,36 +618,86 @@
                 <button class="close-btn" onclick="closeModal('onboard-staff-modal')">×</button>
             </div>
             <div class="modal-body">
-                <form id="onboard-staff-form" onsubmit="event.preventDefault(); onboardStaff();">
+                <form id="add-staff-form">
                     <div class="form-group">
-                        <label for="onboard-name">Full Name *</label>
-                        <input type="text" id="onboard-name" title="Staff member full name" placeholder="John Doe" required>
+                        <label for="staff-name">Full Name *</label>
+                        <input type="text" id="staff-name" required>
                     </div>
                     <div class="form-group">
-                        <label for="onboard-email">Email *</label>
-                        <input type="email" id="onboard-email" title="Staff member email address" placeholder="john@example.com" required>
+                        <label for="staff-email">Email Address *</label>
+                        <input type="email" id="staff-email" required>
                     </div>
                     <div class="form-group">
-                        <label for="onboard-phone">Phone</label>
-                        <input type="tel" id="onboard-phone" title="Staff member phone number" placeholder="+1234567890">
+                        <label for="staff-phone">Phone Number</label>
+                        <input type="tel" id="staff-phone">
                     </div>
                     <div class="form-group">
-                        <label for="onboard-role">Role *</label>
-                        <select id="onboard-role" title="Select staff role" required>
-                            <option value="">Select Role</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Manager">Manager</option>
+                        <label for="staff-role">Role *</label>
+                        <select id="staff-role" required>
                             <option value="Staff">Staff</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Admin">Admin</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="onboard-password">Temporary Password *</label>
-                        <input type="password" id="onboard-password" title="Temporary password for new staff member" required minlength="6" placeholder="Min 6 characters">
-                        <small>This password will be shared with the staff member. They should change it on first login.</small>
+                        <label for="staff-password">Temporary Password *</label>
+                        <input type="password" id="staff-password" required>
+                        <small>Staff member will be prompted to change this on first login</small>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="staff-active" checked>
+                            Active Staff Member
+                        </label>
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('onboard-staff-modal')">Cancel</button>
-                        <button type="submit" class="btn-primary">Onboard Staff</button>
+                        <button type="button" class="btn-primary" onclick="saveStaff()">Add Staff Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Staff Modal -->
+    <div id="edit-staff-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Staff Member</h3>
+                <button class="close-btn" onclick="closeModal('edit-staff-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-staff-form">
+                    <input type="hidden" id="edit-staff-id">
+                    <div class="form-group">
+                        <label for="edit-staff-name">Full Name *</label>
+                        <input type="text" id="edit-staff-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-staff-email">Email Address *</label>
+                        <input type="email" id="edit-staff-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-staff-phone">Phone Number</label>
+                        <input type="tel" id="edit-staff-phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-staff-role">Role *</label>
+                        <select id="edit-staff-role" required>
+                            <option value="Staff">Staff</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="edit-staff-active" checked>
+                            Active Staff Member
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('edit-staff-modal')">Cancel</button>
+                        <button type="button" class="btn-primary" onclick="updateStaff()">Save Changes</button>
                     </div>
                 </form>
             </div>
@@ -674,19 +734,15 @@
                             </div>
                             <div class="info-item">
                                 <label>Status:</label>
-                                <span id="detail-staff-status">-</span>
+                                <span id="detail-staff-status-badge" class="status-badge">-</span>
                             </div>
                             <div class="info-item">
-                                <label>Hire Date:</label>
-                                <span id="detail-staff-hire-date">-</span>
+                                <label>Created:</label>
+                                <span id="detail-staff-created">-</span>
                             </div>
                             <div class="info-item">
-                                <label>Last Login:</label>
-                                <span id="detail-staff-last-login">-</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Termination Date:</label>
-                                <span id="detail-staff-termination-date">-</span>
+                                <label>Updated:</label>
+                                <span id="detail-staff-updated">-</span>
                             </div>
                         </div>
                         <div class="form-group">
@@ -718,10 +774,79 @@
                     </div>
                 </div>
                 
+                <div class="staff-jobs-section">
+                    <h4>Recent Jobs</h4>
+                    <div class="jobs-list" id="staff-jobs-list">
+                        <div class="loading">Loading staff jobs...</div>
+                    </div>
+                </div>
+                
                 <div class="activity-section">
                     <h4>Activity Log</h4>
                     <div class="activity-log" id="staff-activity-log">
                         <div class="loading">Loading activity...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Details Modal -->
+    <div id="invoice-details-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Invoice Details</h3>
+                <button class="close-btn" onclick="closeModal('invoice-details-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="invoice-details-grid">
+                    <div class="invoice-info-section">
+                        <h4>Invoice Information</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Invoice Number:</label>
+                                <span id="detail-invoice-number">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Customer:</label>
+                                <span id="detail-invoice-customer">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Amount:</label>
+                                <span id="detail-invoice-amount">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Status:</label>
+                                <span id="detail-invoice-status-badge" class="status-badge">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Issue Date:</label>
+                                <span id="detail-invoice-issue-date">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Due Date:</label>
+                                <span id="detail-invoice-due-date">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Paid Date:</label>
+                                <span id="detail-invoice-paid-date">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Job:</label>
+                                <span id="detail-invoice-job">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="invoice-notes-section">
+                        <h4>Notes</h4>
+                        <p id="detail-invoice-notes">-</p>
+                    </div>
+                </div>
+                
+                <div class="invoice-payments-section">
+                    <h4>Payment History</h4>
+                    <div class="payments-list" id="invoice-payments-list">
+                        <div class="loading">Loading payment history...</div>
                     </div>
                 </div>
             </div>
@@ -768,6 +893,53 @@
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('add-automation-modal')">Cancel</button>
                         <button type="submit" class="btn-primary">Add Automation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Automation Modal -->
+    <div id="edit-automation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Automation</h3>
+                <button class="close-btn" onclick="closeModal('edit-automation-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-automation-form">
+                    <input type="hidden" id="edit-automation-id">
+                    <div class="form-group">
+                        <label for="edit-automation-trigger">Trigger Event *</label>
+                        <select id="edit-automation-trigger" required>
+                            <option value="">Select Trigger</option>
+                            <option value="Job Created">Job Created</option>
+                            <option value="Job Completed">Job Completed</option>
+                            <option value="Customer Booking">Customer Booking</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-automation-channel">Channel *</label>
+                        <select id="edit-automation-channel" required>
+                            <option value="">Select Channel</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="SMS">SMS</option>
+                            <option value="Email">Email</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-automation-message">Message Template *</label>
+                        <textarea id="edit-automation-message" rows="4" required placeholder="Enter your message template. Use {customer_name}, {job_date}, {service_name} as placeholders."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="edit-automation-enabled" checked>
+                            Enable this automation
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('edit-automation-modal')">Cancel</button>
+                        <button type="button" class="btn-primary" onclick="updateAutomation()">Update Automation</button>
                     </div>
                 </form>
             </div>
