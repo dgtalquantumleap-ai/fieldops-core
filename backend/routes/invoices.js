@@ -168,10 +168,11 @@ router.post('/create', async (req, res) => {
             });
             
             // Send notification (non-blocking)
+            const customerId = customer_id; // Capture for async scope
             setImmediate(async () => {
                 try {
                     const { sendInvoiceEmail } = require('../utils/emailTemplates');
-                    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(customer_id);
+                    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
                     
                     // Send professional HTML invoice
                     if (job.customer_email) {
