@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stilt Heights - Staff App</title>
     <link rel="manifest" href="/staff/manifest.json">
     <link rel="stylesheet" href="css/staff.css">
@@ -13,6 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Staff Jobs">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👷</text></svg>">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👷</text></svg>">
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -158,7 +159,7 @@
                             </div>
                         </div>
                         
-                        <div class="job-notes-enhanced" id="job-notes-section" style="display: none;">
+                        <div class="job-notes-enhanced hidden-notes" id="job-notes-section">
                             <label>Notes</label>
                             <p id="modal-job-notes">No additional notes</p>
                         </div>
@@ -204,11 +205,11 @@
                                 <i class="fas fa-play"></i>
                                 <span>Start Job</span>
                             </button>
-                            <button class="action-btn-large warning" id="btn-pause-job" onclick="pauseJob()" style="display: none;">
+                            <button class="action-btn-large warning hidden-button" id="btn-pause-job" onclick="pauseJob()">
                                 <i class="fas fa-pause"></i>
                                 <span>Pause Job</span>
                             </button>
-                            <button class="action-btn-large success" id="btn-complete-job" onclick="completeJob()" style="display: none;">
+                            <button class="action-btn-large success hidden-button" id="btn-complete-job" onclick="completeJob()">
                                 <i class="fas fa-check"></i>
                                 <span>Complete Job</span>
                             </button>
@@ -224,7 +225,7 @@
                     </div>
 
                     <!-- Time Tracking -->
-                    <div class="time-tracking-card-enhanced" id="time-tracking" style="display: none;">
+                    <div class="time-tracking-card-enhanced hidden-time-tracking" id="time-tracking">
                         <h4>Time Tracking</h4>
                         <div class="time-display">
                             <div class="current-time" id="elapsed-time">00:00:00</div>
@@ -248,7 +249,7 @@
     </div>
     
     <!-- Hidden file input for photos -->
-    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;">
+    <input type="file" id="photo-input" accept="image/*" class="hidden-photo-input" title="Upload job photos" aria-label="Upload job photos">
     
     <!-- Scripts -->
     <script src="js/staff-app.js"></script>
