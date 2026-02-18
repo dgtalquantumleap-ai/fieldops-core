@@ -95,6 +95,9 @@ function showSection(sectionName) {
         case 'automations':
             loadAutomations();
             break;
+        case 'audit':
+            // Audit section doesn't need initial load
+            break;
         case 'settings':
             loadSettings();
             break;

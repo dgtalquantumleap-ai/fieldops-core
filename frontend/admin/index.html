@@ -70,6 +70,10 @@
                 <span class="nav-icon">🤖</span>
                 <span>Automations</span>
             </a>
+            <a href="#audit" class="nav-item" onclick="showSection('audit')">
+                <span class="nav-icon">🔍</span>
+                <span>Audit</span>
+            </a>
             <a href="#settings" class="nav-item" onclick="showSection('settings')">
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
@@ -345,8 +349,11 @@
                     <div class="loading">Loading automations...</div>
                 </div>
             </div>
-        </div>
-        <div class="section-header">
+        </section>
+
+        <!-- Audit Section -->
+        <section id="audit" class="content-section">
+            <div class="section-header">
                 <h2>🔍 System Audit & Monitoring</h2>
                 <div class="header-actions">
                     <button class="btn-secondary" onclick="loadAuditLogs()">View Audit Logs</button>
