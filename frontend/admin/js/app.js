@@ -1687,7 +1687,10 @@ function addNewService() {
 async function loadAuditLogs() {
     try {
         console.log('🔍 Loading audit logs...');
-        showSection('audit-dashboard');
+        showSection('audit');
+        
+        const auditDashboard = document.getElementById('audit-dashboard');
+        if (auditDashboard) auditDashboard.hidden = false;
         
         const headers = getAuthHeaders();
         if (!headers.Authorization) return;
@@ -1735,7 +1738,10 @@ async function loadAuditLogs() {
 async function loadSystemHealth() {
     try {
         console.log('🏥 Loading system health...');
-        showSection('audit-dashboard');
+        showSection('audit');
+        
+        const auditDashboard = document.getElementById('audit-dashboard');
+        if (auditDashboard) auditDashboard.hidden = false;
         
         const headers = getAuthHeaders();
         if (!headers.Authorization) return;
