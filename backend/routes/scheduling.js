@@ -163,9 +163,9 @@ function getOptimalStaffAssignment(serviceId, date, time) {
  */
 router.post('/validate', validateBooking, async (req, res) => {
     try {
-        const { name, phone, email, address, service, date, time, notes } = req.body;
+        const { customer_id, name, phone, email, address, service, date, time, notes } = req.body;
         
-        console.log('🕐 Scheduling validation request:', { name, service, date, time });
+        console.log('🕐 Scheduling validation request:', { customer_id, name, service, date, time });
         
         // ============================================
         // TIME SLOT VALIDATION

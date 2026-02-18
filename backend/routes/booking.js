@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../config/database');
 const { emitRealTimeUpdate, logActivity, triggerAutomations } = require('../utils/realtime');
 const { validateBooking } = require('../middleware/validate');
+const aiAutomation = require('../utils/aiAutomation');
+const notifications = require('../utils/notifications');
 
 // ============================================
 // VALIDATION HELPERS
@@ -251,11 +253,12 @@ router.post('/book', validateBooking, async (req, res) => {
         
         console.log('📋 Redirecting to scheduling layer for validation...');
         
-        // Create scheduling validation request
+        // Create scheduling validation request WITH CUSTOMER ID
         const schedulingResponse = await fetch(`${process.env.API_URL || 'http://localhost:3000'}/api/scheduling/validate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                customer_id: customer.id,
                 name: name.trim(),
                 phone: phone.trim(),
                 email: email ? email.trim() : null,
@@ -289,7 +292,7 @@ router.post('/book', validateBooking, async (req, res) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                customer_id: schedulingResult.data.service.customer_id,
+                customer_id: customer.id,
                 service_id: schedulingResult.data.service.id,
                 date: date,
                 time: time,
@@ -312,6 +315,82 @@ router.post('/book', validateBooking, async (req, res) => {
         }
         
         console.log(`🎉 Booking confirmed via scheduling layer: Job ID ${confirmResult.data.jobId}`);
+        
+        // ============================================
+        // AI-POWERED AUTOMATIONS
+        // ============================================
+        
+        // Trigger automations (with AI-generated messages if applicable)
+        try {
+            const automationData = {
+                customer_id: customer.id,
+                customer_name: customer.name,
+                customer_email: customer.email,
+                customer_phone: customer.phone,
+                service: service,
+                date: date,
+                time: time,
+                address: address.trim(),
+                staff_name: schedulingResult.data.recommendedStaff?.name || 'Our Team',
+                job_id: confirmResult.data.jobId,
+                notes: notes ? notes.trim() : ''
+            };
+            
+            // Generate AI booking confirmation email
+            if (customer.email) {
+                try {
+                    const aiEmail = await aiAutomation.generateBookingEmail({
+                        name: customer.name,
+                        email: customer.email,
+                        service: service,
+                        date: date,
+                        time: time,
+                        address: address.trim()
+                    });
+                    
+                    await notifications.sendEmail({
+                        to: customer.email,
+                        subject: `🎉 Booking Confirmed - FieldOps`,
+                        body: aiEmail
+                    });
+                    
+                    console.log('📧 AI-generated booking confirmation sent to customer');
+                } catch (aiError) {
+                    console.warn('⚠️ AI email generation failed, falling back to standard confirmation');
+                }
+            }
+            
+            // Generate AI staff notification
+            if (schedulingResult.data.recommendedStaff?.email) {
+                try {
+                    const aiStaffMsg = await aiAutomation.generateJobAssignmentMessage({
+                        customer_name: customer.name,
+                        service_name: service,
+                        job_date: date,
+                        job_time: time,
+                        location: address.trim()
+                    });
+                    
+                    await notifications.sendEmail({
+                        to: schedulingResult.data.recommendedStaff.email,
+                        subject: `📋 New Job Assignment - ${service}`,
+                        body: aiStaffMsg
+                    });
+                    
+                    console.log('📨 AI-generated job assignment notification sent to staff');
+                } catch (aiError) {
+                    console.warn('⚠️ AI staff notification failed');
+                }
+            }
+            
+            // Trigger regular automations
+            await triggerAutomations('Booking Confirmed', automationData);
+            console.log('⚙️ Automations triggered for booking confirmation');
+            
+        } catch (automationError) {
+            console.warn('⚠️ Automation error (non-critical):', automationError.message);
+            // Don't fail the booking if automations fail
+        }
         
         // ============================================
         // RESPONSE

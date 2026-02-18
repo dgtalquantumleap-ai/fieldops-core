@@ -188,7 +188,8 @@ const { requireAuth, requireAdmin } = require('./middleware/auth');
 app.use('/api/auth',             require('./routes/auth'));
 app.use('/api/booking',          require('./routes/booking'));
 app.use('/api/scheduling',        require('./routes/scheduling'));
-app.use('/api/ai-test',          require('./routes/ai-test'));
+// app.use('/api/ai-test',          require('./routes/ai-test'));
+// app.use('/api/webhooks',         require('./routes/webhooks'));  // Google Forms integration
 
 // Protected routes (auth required)
 app.use('/api/customers',        requireAuth,  require('./routes/customers'));
@@ -273,6 +274,18 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('   🚫 Rate limiting enabled');
     console.log('   🌐 CORS configured');
     console.log(`   📡 Allowed Origins: ${allowedOrigins.join(', ')}`);
+    
+    // ============================================
+    // Initialize automated schedulers
+    // ============================================
+    try {
+      const scheduler = require('./utils/scheduler');
+      scheduler.initSchedulers();
+      console.log('   🔄 Automated schedulers initialized (follow-ups, reminders, etc.)');
+    } catch (error) {
+      console.warn('   ⚠️  Scheduler initialization failed:', error.message);
+      console.warn('   → Install node-cron: npm install node-cron');
+    }
     
     console.log('\n');
 });
