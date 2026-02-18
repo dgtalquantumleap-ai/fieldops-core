@@ -130,4 +130,67 @@ router.post('/create-admin', async (req, res) => {
     }
 });
 
+// Database initialization endpoint for production
+router.post('/init-database', async (req, res) => {
+    try {
+        console.log('🔧 Initializing database tables...');
+        
+        // Create staff table
+        db.prepare(`
+            CREATE TABLE IF NOT EXISTS staff (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                phone TEXT,
+                role TEXT DEFAULT 'Staff',
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `).run();
+        
+        console.log('✅ Staff table created');
+        
+        // Insert sample staff members
+        const staffMembers = [
+            ['John Staff', 'john.staff@stiltheights.com', '5550101001', 'Staff'],
+            ['Sarah Cleaner', 'sarah.cleaner@stiltheights.com', '5550102002', 'Senior Staff'],
+            ['Mike Technician', 'mike.tech@stiltheights.com', '5550103003', 'Staff']
+        ];
+        
+        for (const [name, email, phone, role] of staffMembers) {
+            try {
+                const result = db.prepare(`
+                    INSERT OR IGNORE INTO staff (name, email, phone, role, is_active)
+                    VALUES (?, ?, ?, ?, 1)
+                `).run(name, email, phone, role);
+                
+                if (result.changes > 0) {
+                    console.log('✅ Created staff:', name);
+                }
+            } catch (error) {
+                console.log('⚠️ Staff already exists or error:', name, error.message);
+            }
+        }
+        
+        // Verify staff table exists
+        const staffCount = db.prepare('SELECT COUNT(*) as count FROM staff').get();
+        console.log('👥 Total staff members:', staffCount.count);
+        
+        res.json({
+            success: true,
+            message: 'Database initialized successfully',
+            staffCount: staffCount.count,
+            tables: ['staff']
+        });
+        
+    } catch (error) {
+        console.error('Database initialization error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
 module.exports = router;
