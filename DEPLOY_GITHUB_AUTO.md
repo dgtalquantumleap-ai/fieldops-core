@@ -8,7 +8,7 @@
 
 Before starting, make sure you have:
 
-- ✅ Railway account (create at https://railway.app)
+- ✅ Railway account (create at <https://railway.app>)
 - ✅ GitHub account with FieldOps-Core repo
 - ✅ A strong JWT_SECRET ready (will generate below)
 - ✅ Gmail App Password ready (see below)
@@ -33,6 +33,7 @@ git push origin main
 Run these commands in PowerShell:
 
 ### Generate JWT_SECRET (32 random characters)
+
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
@@ -40,7 +41,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 **Copy the output** - you'll paste it into Railway in Step 3.
 
 Example output:
-```
+
+```text
 a7f2c8e1b9d4f3a2c1e5b8d9f2a3c4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
 ```
 
@@ -51,10 +53,9 @@ a7f2c8e1b9d4f3a2c1e5b8d9f2a3c4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
 Gmail requires an app-specific password (not your regular password):
 
 1. Go to: **https://myaccount.google.com/security**
-2. In left menu → **App passwords**
-3. Select: **Mail** and **Windows Computer**
-4. Click **Generate**
-5. Copy the 16-character password (with spaces)
+2. Click "2-Step Verification" → "App passwords"
+3. Generate new app password for "FieldOps"
+4. Copy the 16-character password
 
 Example: `xxxx xxxx xxxx xxxx`
 
