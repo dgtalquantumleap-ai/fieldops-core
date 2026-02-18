@@ -19,16 +19,13 @@ function validateTimeSlot(date, time, duration = 2) {
         const startTime = new Date(`${date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
         const endTime = new Date(startTime.getTime() + (duration * 60 * 60 * 1000));
         
-        // Check for existing jobs in this time slot
+        // Check for existing jobs in this time slot (simplified approach)
         const conflictingJobs = db.prepare(`
             SELECT * FROM jobs 
             WHERE job_date = ? 
-            AND (
-                (job_time <= ? AND ADD_TIME(job_time, '02:00') > ?) OR
-                (job_time < ? AND ADD_TIME(job_time, '02:00') >= ?)
-            )
             AND status NOT IN ('Cancelled', 'completed')
-        `).all(date, time, time, endTime);
+            AND job_time = ?
+        `).all(date, time);
         
         if (conflictingJobs.length > 0) {
             return {
