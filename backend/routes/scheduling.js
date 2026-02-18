@@ -95,54 +95,40 @@ function getOptimalStaffAssignment(serviceId, date, time) {
             GROUP BY s.id
         `).all();
         
+        console.log(' Found active staff:', activeStaff.length);
+        
+        if (activeStaff.length === 0) {
+            return { 
+                error: 'No active staff available',
+                alternatives: ['Please contact admin to add staff members']
+            };
+        }
+        
         // Get service requirements
         const service = db.prepare('SELECT * FROM services WHERE id = ?').get(serviceId);
         if (!service) {
             throw new Error('Service not found');
         }
         
-        // Score each staff member
-        const scoredStaff = activeStaff.map(staff => {
-            let score = 100; // Base score
-            
-            // Availability check
+        // For now, just return the first available staff member
+        // (simplified assignment logic)
+        const availableStaff = activeStaff.filter(staff => {
             const availability = checkStaffAvailability(staff.id, date, time);
-            if (!availability.available) {
-                score -= 50; // Heavy penalty for conflicts
-            }
-            
-            // Workload balancing (fewer current jobs = higher score)
-            score -= (staff.current_jobs * 5);
-            
-            // Recency bonus (more recent work = slightly higher score)
-            if (staff.last_job_date) {
-                const daysSinceLastJob = Math.floor((Date.now() - new Date(staff.last_job_date)) / (1000 * 60 * 60 * 24));
-                if (daysSinceLastJob > 7) {
-                    score += 10; // Bonus for being available
-                }
-            }
-            
-            // Skill/experience bonus (role-based)
-            if (staff.role === 'Senior Staff' || staff.role === 'Manager') {
-                score += 15;
-            }
-            
-            return {
-                ...staff,
-                availability,
-                score: Math.max(0, score)
-            };
+            return availability.available;
         });
         
-        // Sort by score (highest first) and filter available staff
-        const availableStaff = scoredStaff
-            .filter(staff => staff.availability.available)
-            .sort((a, b) => b.score - a.score);
+        if (availableStaff.length === 0) {
+            return { 
+                error: 'No staff available for this time slot',
+                alternatives: activeStaff.map(s => s.name)
+            };
+        }
         
+        // Return the first available staff member
         return {
-            recommended: availableStaff[0] || null,
-            alternatives: availableStaff.slice(1, 3), // Top 4 alternatives
-            allStaff: scoredStaff
+            recommended: availableStaff[0],
+            alternatives: availableStaff.slice(1),
+            totalAvailable: availableStaff.length
         };
     } catch (error) {
         console.error('Staff assignment error:', error);
