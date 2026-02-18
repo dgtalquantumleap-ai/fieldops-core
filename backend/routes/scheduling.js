@@ -75,6 +75,44 @@ function checkStaffAvailability(staffId, date, time, duration = 2) {
  */
 function getOptimalStaffAssignment(serviceId, date, time) {
     try {
+        // Ensure staff table exists
+        try {
+            db.prepare('SELECT COUNT(*) FROM staff').get();
+        } catch (error) {
+            // Create staff table if it doesn't exist
+            console.log('🔧 Creating staff table...');
+            db.prepare(`
+                CREATE TABLE IF NOT EXISTS staff (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    phone TEXT,
+                    role TEXT DEFAULT 'Staff',
+                    is_active INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `).run();
+            
+            // Insert sample staff if table is empty
+            const staffCount = db.prepare('SELECT COUNT(*) as count FROM staff').get();
+            if (staffCount.count === 0) {
+                console.log('👥 Inserting sample staff...');
+                const sampleStaff = [
+                    ['John Staff', 'john.staff@stiltheights.com', '5550101001', 'Staff'],
+                    ['Sarah Cleaner', 'sarah.cleaner@stiltheights.com', '5550102002', 'Senior Staff'],
+                    ['Mike Technician', 'mike.tech@stiltheights.com', '5550103003', 'Staff']
+                ];
+                
+                for (const [name, email, phone, role] of sampleStaff) {
+                    db.prepare(`
+                        INSERT OR IGNORE INTO staff (name, email, phone, role, is_active)
+                        VALUES (?, ?, ?, ?, 1)
+                    `).run(name, email, phone, role);
+                }
+            }
+        }
+        
         // Get all active staff
         const activeStaff = db.prepare(`
             SELECT s.*, 
