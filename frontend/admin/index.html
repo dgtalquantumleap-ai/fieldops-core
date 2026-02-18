@@ -1172,14 +1172,12 @@
                     </div>
                 </form>
             </div>
-        </div>
-    </div>
-
-    <!-- Error Boundary (load first) -->
-    <script src="/admin/js/services/error-boundary.js"></script>
-    
     <!-- Service Layer Scripts (must load in order) -->
     <script src="/admin/js/services/logger.js"></script>
+    
+    <!-- Error Boundary (load after logger) -->
+    <script src="/admin/js/services/error-boundary.js"></script>
+    
     <script src="/admin/js/services/state.js"></script>
     <script src="/admin/js/services/utils.js"></script>
     <script src="/admin/js/services/ui.js"></script>

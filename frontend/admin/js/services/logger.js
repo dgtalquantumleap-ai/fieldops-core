@@ -12,7 +12,9 @@ const LOG_LEVELS = {
     ERROR: 3
 };
 
-const CURRENT_LOG_LEVEL = process.env.NODE_ENV === 'development' ? LOG_LEVELS.DEBUG : LOG_LEVELS.WARN;
+// Detect environment: development if localhost, otherwise production
+const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const CURRENT_LOG_LEVEL = isDevelopment ? LOG_LEVELS.DEBUG : LOG_LEVELS.WARN;
 
 class Logger {
     /**
