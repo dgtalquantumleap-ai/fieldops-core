@@ -51,21 +51,14 @@ function validateTimeSlot(date, time, duration = 2) {
  */
 function checkStaffAvailability(staffId, date, time, duration = 2) {
     try {
-        const [hours, minutes] = time.split(':').map(Number);
-        const startTime = new Date(`${date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
-        const endTime = new Date(startTime.getTime() + (duration * 60 * 60 * 1000));
-        
-        // Check staff's existing jobs
+        // Check staff's existing jobs (simplified)
         const staffJobs = db.prepare(`
             SELECT * FROM jobs 
             WHERE assigned_to = ? 
             AND job_date = ? 
+            AND job_time = ?
             AND status NOT IN ('Cancelled', 'completed')
-            AND (
-                (job_time <= ? AND ADD_TIME(job_time, '02:00') > ?) OR
-                (job_time < ? AND ADD_TIME(job_time, '02:00') >= ?)
-            )
-        `).all(staffId, date, time, time, endTime);
+        `).all(staffId, date, time);
         
         return {
             available: staffJobs.length === 0,
