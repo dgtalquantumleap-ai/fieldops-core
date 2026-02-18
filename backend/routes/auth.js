@@ -87,4 +87,47 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// Emergency endpoint to create admin user in production
+router.post('/create-admin', async (req, res) => {
+    try {
+        const { email, password, name } = req.body;
+        
+        // Check if admin already exists
+        const existingAdmin = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+        
+        if (existingAdmin) {
+            // Update password for existing admin
+            const hashedPassword = await bcrypt.hash(password, 10);
+            db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hashedPassword, email);
+            
+            return res.json({
+                success: true,
+                message: 'Admin password updated successfully',
+                email: email
+            });
+        }
+        
+        // Create new admin user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const result = db.prepare(`
+            INSERT INTO users (name, email, password, phone, role)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(name || 'System Administrator', email, hashedPassword, '', 'admin');
+        
+        res.json({
+            success: true,
+            message: 'Admin user created successfully',
+            email: email,
+            id: result.lastInsertRowid
+        });
+        
+    } catch (error) {
+        console.error('Create admin error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
 module.exports = router;
