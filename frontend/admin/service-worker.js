@@ -47,12 +47,12 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // API requests - network first with cache fallback
+    // API requests - network first with cache fallback (only cache GET)
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(
             fetch(request)
                 .then(response => {
-                    if (response.ok) {
+                    if (response.ok && request.method === 'GET') {
                         const clonedResponse = response.clone();
                         caches.open(CACHE_NAME).then(cache => {
                             cache.put(request, clonedResponse);
