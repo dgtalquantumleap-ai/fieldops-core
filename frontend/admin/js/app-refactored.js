@@ -173,6 +173,13 @@ function showAddAutomationModal() {
 }
 
 /**
+ * Show Add/Onboard Staff Modal
+ */
+function showAddStaffModal() {
+    showModal('onboard-staff-modal');
+}
+
+/**
  * Initialize the application
  */
 async function initializeApp() {

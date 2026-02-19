@@ -153,8 +153,9 @@ window.errorBoundary = new ErrorBoundary();
 
 // Register default error handlers
 errorBoundary.onError((error) => {
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    // Log to console in development (check hostname since process.env not available in browser)
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isDevelopment) {
         console.error('Error details:', {
             name: error?.name,
             message: error?.message,
