@@ -329,6 +329,14 @@ function showSection(sectionName) {
         // Update state
         store.setState({ currentSection: sectionName });
         
+        // Scroll to top of content area
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
+        // Also scroll window to top for mobile
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
         // Load section data
         loadSectionData(sectionName);
         
