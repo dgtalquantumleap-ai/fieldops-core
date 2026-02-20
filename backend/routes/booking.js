@@ -459,4 +459,64 @@ router.get('/services', async (req, res) => {
     }
 });
 
+// ============================================
+// BOOKING STATUS LOOKUP (PUBLIC)
+// ============================================
+
+/**
+ * GET /api/booking/status/:ref
+ * Let customers check their booking status by job reference (e.g. JOB-0001)
+ * Returns only safe public fields — no customer PII exposed
+ */
+router.get('/status/:ref', (req, res) => {
+    try {
+        const ref = req.params.ref.trim().toUpperCase();
+        const match = ref.match(/^JOB-(\d+)$/);
+        if (!match) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid reference format. Use JOB-XXXX (e.g. JOB-0001)'
+            });
+        }
+
+        const jobId = parseInt(match[1], 10);
+        const job = db.prepare(`
+            SELECT j.id, j.status, j.job_date, j.job_time, j.location,
+                   s.name AS service_name,
+                   u.name AS staff_name
+            FROM jobs j
+            LEFT JOIN services s ON j.service_id = s.id
+            LEFT JOIN users   u ON j.assigned_to = u.id
+            WHERE j.id = ? AND j.deleted_at IS NULL
+        `).get(jobId);
+
+        if (!job) {
+            return res.status(404).json({
+                success: false,
+                error: 'No booking found with that reference number'
+            });
+        }
+
+        // Only return the staff member's first name for privacy
+        const staffFirstName = job.staff_name
+            ? job.staff_name.split(' ')[0]
+            : 'Pending Assignment';
+
+        res.json({
+            success: true,
+            data: {
+                reference: `JOB-${String(job.id).padStart(4, '0')}`,
+                status: job.status,
+                service: job.service_name,
+                date: job.job_date,
+                time: job.job_time,
+                assignedStaff: staffFirstName
+            }
+        });
+    } catch (error) {
+        console.error('Booking status lookup error:', error);
+        res.status(500).json({ success: false, error: 'Failed to look up booking' });
+    }
+});
+
 module.exports = router;

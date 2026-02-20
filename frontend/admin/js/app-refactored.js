@@ -148,12 +148,11 @@ function showAddCustomerModal() {
 }
 
 /**
- * Show Create Job Modal
+ * Show Create Job Modal - fetches fresh data before opening
  */
-function showCreateJobModal() {
-    // Populate customer and staff selects
-    populateJobSelects();
+async function showCreateJobModal() {
     showModal('create-job-modal');
+    await populateJobSelects();
 }
 
 /**
@@ -918,8 +917,8 @@ async function createJob() {
         
         const response = await API.jobs.create({
             customer_id: parseInt(formData['job-customer']),
-            service_name: formData['job-service'],
-            staff_id: formData['job-staff'] ? parseInt(formData['job-staff']) : null,
+            service_id: parseInt(formData['job-service']),
+            assigned_to: formData['job-staff'] ? parseInt(formData['job-staff']) : null,
             job_date: formData['job-date'],
             job_time: formData['job-time'],
             location: formData['job-location'],
@@ -952,10 +951,22 @@ async function createJob() {
 /**
  * Populate customer and staff selects for job creation
  */
-function populateJobSelects() {
-    const customers = store.getState('customers') || [];
-    const staff = store.getState('staff') || [];
-    
+async function populateJobSelects() {
+    // Always fetch fresh data so dropdowns are never empty
+    const [customersRes, staffRes, servicesRes] = await Promise.all([
+        API.customers.getAll(),
+        API.staff.getAll(),
+        API.services.getAll()
+    ]);
+
+    const customers = customersRes.success ? customersRes.data : (store.getState('customers') || []);
+    const staff = staffRes.success ? staffRes.data : (store.getState('staff') || []);
+    const services = servicesRes.success ? servicesRes.data : [];
+
+    // Store for other uses
+    if (customers.length) store.setState({ customers });
+    if (staff.length) store.setState({ staff });
+
     const customerSelect = document.getElementById('job-customer');
     if (customerSelect) {
         customerSelect.innerHTML = '<option value="">Select Customer</option>';
@@ -963,12 +974,25 @@ function populateJobSelects() {
             if (customer && customer.id) {
                 const option = document.createElement('option');
                 option.value = customer.id;
-                option.textContent = customer.name || 'Unknown';
+                option.textContent = `${customer.name || 'Unknown'} (${customer.phone || ''})`;
                 customerSelect.appendChild(option);
             }
         });
     }
-    
+
+    const serviceSelect = document.getElementById('job-service');
+    if (serviceSelect) {
+        serviceSelect.innerHTML = '<option value="">Select Service</option>';
+        services.forEach(svc => {
+            if (svc && svc.id) {
+                const option = document.createElement('option');
+                option.value = svc.id;
+                option.textContent = `${svc.name} ($${svc.price || 0})`;
+                serviceSelect.appendChild(option);
+            }
+        });
+    }
+
     const staffSelect = document.getElementById('job-staff');
     if (staffSelect) {
         staffSelect.innerHTML = '<option value="">Unassigned</option>';
@@ -976,7 +1000,7 @@ function populateJobSelects() {
             if (member && member.id) {
                 const option = document.createElement('option');
                 option.value = member.id;
-                option.textContent = member.name || 'Unknown';
+                option.textContent = `${member.name || 'Unknown'} (${member.role || 'Staff'})`;
                 staffSelect.appendChild(option);
             }
         });

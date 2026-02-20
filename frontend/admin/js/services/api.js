@@ -377,7 +377,7 @@ const jobAPI = {
      * @returns {Promise<APIResponse>}
      */
     async create(job) {
-        if (!job || !job.customer_id || !job.service_name || !job.job_date) {
+        if (!job || !job.customer_id || !job.service_id || !job.job_date) {
             throw new Error('Customer, service, and date are required');
         }
         
@@ -853,6 +853,27 @@ const automationAPI = {
     }
 };
 
+/**
+ * Services API calls
+ */
+const servicesAPI = {
+    async getAll() {
+        try {
+            const headers = getAuthHeaders();
+            const response = await fetchWithRetry(`${API_BASE_URL}/booking/services`, { headers });
+            const data = await parseResponse(response);
+            return {
+                success: response.ok,
+                data: normalizeData(data),
+                status: response.status
+            };
+        } catch (error) {
+            logger.error('Failed to fetch services:', error);
+            return { success: false, data: [], error, status: 500 };
+        }
+    }
+};
+
 // Export API modules (for use with module systems) and expose globally
 window.API = {
     dashboard: dashboardAPI,
@@ -860,5 +881,6 @@ window.API = {
     jobs: jobAPI,
     staff: staffAPI,
     invoices: invoiceAPI,
-    automations: automationAPI
+    automations: automationAPI,
+    services: servicesAPI
 };

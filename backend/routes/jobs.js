@@ -316,7 +316,32 @@ router.patch('/:id', validateJob, async (req, res) => {
             `).get(jobId);
             
             log.success(req.id, 'Job updated', { jobId, changes: result.changes });
-            
+
+            // Push notification when staff is assigned or job is updated
+            if (updatedJob && updatedJob.assigned_to) {
+                try {
+                    const push = require('../utils/pushNotifications');
+                    if (assigned_to !== undefined) {
+                        // Staff was reassigned — notify new staff member
+                        await push.notifyJobAssigned(updatedJob.assigned_to, {
+                            jobId,
+                            service: updatedJob.service_name || 'Service',
+                            customerName: updatedJob.customer_name || 'Customer',
+                            date: updatedJob.job_date,
+                            time: updatedJob.job_time
+                        });
+                    } else if (status !== undefined) {
+                        await push.notifyJobUpdated(updatedJob.assigned_to, {
+                            jobId,
+                            service: updatedJob.service_name || 'Service',
+                            status: updatedJob.status
+                        });
+                    }
+                } catch (pushError) {
+                    log.warn(req.id, 'Push notification failed (non-critical)', pushError.message);
+                }
+            }
+
             res.json({
                 success: true,
                 data: updatedJob,
@@ -380,15 +405,16 @@ router.patch('/:id/status', async (req, res) => {
             
             const updatedJob = db.prepare('SELECT * FROM jobs WHERE id = ?').get(req.params.id);
             
-            // If job is completed, send AI-generated summary
+            // If job is completed: auto-invoice + AI summary email
             if (status === 'Completed') {
+                // Get full job details once (shared by invoice creation and AI email)
+                let jobDetails = null;
                 try {
-                    // Get job details for AI (simplified query to avoid schema issues)
-                    const jobDetails = db.prepare(`
-                        SELECT j.*, 
+                    jobDetails = db.prepare(`
+                        SELECT j.*,
                                c.name as customer_name, c.email as customer_email,
                                COALESCE(u.name, 'Staff') as staff_name,
-                               COALESCE(s.name, 'Service') as service_name, 
+                               COALESCE(s.name, 'Service') as service_name,
                                COALESCE(s.price, 0) as service_price
                         FROM jobs j
                         LEFT JOIN customers c ON j.customer_id = c.id
@@ -396,7 +422,37 @@ router.patch('/:id/status', async (req, res) => {
                         LEFT JOIN services s ON j.service_id = s.id
                         WHERE j.id = ?
                     `).get(req.params.id);
-                    
+                } catch (detailErr) {
+                    console.warn('⚠️ Could not fetch job details on completion:', detailErr.message);
+                }
+
+                // Auto-create invoice if one doesn't exist yet
+                try {
+                    if (jobDetails && jobDetails.customer_id) {
+                        const existing = db.prepare(
+                            'SELECT id FROM invoices WHERE job_id = ? AND deleted_at IS NULL'
+                        ).get(req.params.id);
+
+                        if (!existing) {
+                            const lastInv = db.prepare('SELECT MAX(id) as maxId FROM invoices').get();
+                            const nextId = (lastInv.maxId || 0) + 1;
+                            const invoiceNumber = 'INV-' + String(nextId).padStart(6, '0');
+                            const amount = jobDetails.service_price || 0;
+
+                            db.prepare(`
+                                INSERT INTO invoices (invoice_number, job_id, customer_id, amount, status, issued_at)
+                                VALUES (?, ?, ?, ?, 'unpaid', datetime('now'))
+                            `).run(invoiceNumber, req.params.id, jobDetails.customer_id, amount);
+
+                            console.log(`✅ Auto-invoice ${invoiceNumber} created for completed job #${req.params.id} ($${amount})`);
+                        }
+                    }
+                } catch (invoiceErr) {
+                    console.warn('⚠️ Auto-invoice creation failed (non-critical):', invoiceErr.message);
+                }
+
+                // Send AI-generated job completion email
+                try {
                     if (jobDetails && jobDetails.customer_email) {
                         const aiAutomation = require('../utils/aiAutomation');
                         const aiSummary = await aiAutomation.generateJobSummary({
@@ -406,19 +462,16 @@ router.patch('/:id/status', async (req, res) => {
                             duration: jobDetails.duration || 120,
                             notes: jobDetails.notes || ''
                         });
-                        
-                        // Send AI-generated completion email
                         const notifications = require('../utils/notifications');
                         await notifications.sendEmail({
                             to: jobDetails.customer_email,
-                            subject: 'Job Completed - FieldOps',
+                            subject: 'Job Completed - Stilt Heights',
                             body: aiSummary
                         });
-                        
-                        console.log('✅ AI-generated job completion summary sent to:', jobDetails.customer_email);
+                        console.log('✅ AI completion email sent to:', jobDetails.customer_email);
                     }
                 } catch (aiError) {
-                    console.log('⚠️ AI job completion summary failed (non-critical):', aiError.message);
+                    console.log('⚠️ AI job completion email failed (non-critical):', aiError.message);
                 }
             }
             

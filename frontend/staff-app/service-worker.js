@@ -137,67 +137,112 @@ self.addEventListener('sync', (event) => {
     }
 });
 
+// ─── IndexedDB helpers ───────────────────────────────────────────────────────
+// DB version 2 adds the photo-uploads store alongside pending-requests
+
+function openSyncDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open('fieldops-staff-sync', 2);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('pending-requests')) {
+                const os = db.createObjectStore('pending-requests', { keyPath: 'id', autoIncrement: true });
+                os.createIndex('timestamp', 'timestamp');
+            }
+            if (!db.objectStoreNames.contains('photo-uploads')) {
+                const os = db.createObjectStore('photo-uploads', { keyPath: 'id', autoIncrement: true });
+                os.createIndex('timestamp', 'timestamp');
+            }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function getPendingPhotosFromDB() {
+    const db = await openSyncDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('photo-uploads', 'readonly');
+        tx.objectStore('photo-uploads').getAll().onsuccess = (e) => resolve(e.target.result || []);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function markPhotoSynced(id) {
+    const db = await openSyncDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('photo-uploads', 'readwrite');
+        tx.objectStore('photo-uploads').delete(id).onsuccess = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getPendingJobUpdatesFromDB() {
+    const db = await openSyncDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('pending-requests', 'readonly');
+        tx.objectStore('pending-requests').getAll().onsuccess = (e) => {
+            const all = e.target.result || [];
+            resolve(all.filter(r => r.url && r.url.includes('/api/jobs/') && r.method === 'PATCH'));
+        };
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function markJobUpdateSynced(id) {
+    const db = await openSyncDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('pending-requests', 'readwrite');
+        tx.objectStore('pending-requests').delete(id).onsuccess = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+// ─── Sync: Photos ─────────────────────────────────────────────────────────────
 async function syncPhotosToServer() {
-    try {
-        const pendingPhotos = await getPendingPhotosFromDB();
-        
-        for (const photo of pendingPhotos) {
+    const pendingPhotos = await getPendingPhotosFromDB();
+    for (const photo of pendingPhotos) {
+        try {
             const formData = new FormData();
             formData.append('job_id', photo.job_id);
-            formData.append('photo', photo.blob);
-            formData.append('category', photo.category);
-            
+            formData.append('photo', photo.blob, photo.filename || 'photo.jpg');
+            formData.append('media_type', photo.category || 'before');
+
             const response = await fetch('/api/media/upload', {
                 method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('staffToken')
-                },
+                headers: { 'Authorization': 'Bearer ' + (photo.token || '') },
                 body: formData
             });
-            
+
             if (response.ok) {
                 await markPhotoSynced(photo.id);
-                // Notify client
                 self.clients.matchAll().then(clients => {
-                    clients.forEach(client => {
-                        client.postMessage({
-                            type: 'PHOTO_SYNCED',
-                            photoId: photo.id
-                        });
-                    });
+                    clients.forEach(c => c.postMessage({ type: 'PHOTO_SYNCED', photoId: photo.id }));
                 });
             }
+        } catch (err) {
+            console.warn('Photo sync item failed:', err.message);
         }
-    } catch (error) {
-        console.error('Photo sync failed:', error);
-        throw error;
     }
 }
 
+// ─── Sync: Job status updates ─────────────────────────────────────────────────
 async function syncJobStatusToServer() {
-    try {
-        const pendingJobs = await getPendingJobUpdatesFromDB();
-        
-        for (const job of pendingJobs) {
-            const response = await fetch(`/api/jobs/${job.id}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('staffToken')
-                },
-                body: JSON.stringify({
-                    status: job.status,
-                    notes: job.notes
-                })
+    const pendingJobs = await getPendingJobUpdatesFromDB();
+    for (const item of pendingJobs) {
+        try {
+            // Replay the original stored request (headers include Authorization)
+            const response = await fetch(item.url, {
+                method: item.method,
+                headers: Object.fromEntries(item.headers || []),
+                body: item.body
             });
-            
             if (response.ok) {
-                await markJobUpdateSynced(job.id);
+                await markJobUpdateSynced(item.id);
             }
+        } catch (err) {
+            console.warn('Job sync item failed:', err.message);
         }
-    } catch (error) {
-        console.error('Job sync failed:', error);
-        throw error;
     }
 }
 
@@ -206,10 +251,10 @@ self.addEventListener('push', (event) => {
     const data = event.data?.json() || {};
     const options = {
         body: data.body || 'New job assignment',
-        icon: '/staff/assets/icon-192.png',
-        badge: '/staff/assets/badge-72.png',
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🏠</text></svg>',
         tag: data.tag || 'fieldops-job-notification',
-        requireInteraction: data.requireInteraction || false,
+        requireInteraction: false,
+        data: { url: data.url || '/staff/index.html' },
         actions: [
             { action: 'view', title: 'View Job' },
             { action: 'dismiss', title: 'Dismiss' }
@@ -224,33 +269,26 @@ self.addEventListener('push', (event) => {
 // Notification click
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    
-    if (event.action === 'view') {
-        clients.matchAll().then(clientList => {
-            for (let client of clientList) {
-                if (client.url === '/staff/index.html' && 'focus' in client) {
+    if (event.action === 'dismiss') return;
+
+    const targetUrl = event.notification.data?.url || '/staff/index.html';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                if (client.url.includes('/staff/') && 'focus' in client) {
                     return client.focus();
                 }
             }
-            if (clients.openWindow) {
-                return clients.openWindow('/staff/index.html');
-            }
-        });
-    }
+            return clients.openWindow(targetUrl);
+        })
+    );
 });
 
-// Helper: Save failed requests to IndexedDB for sync
+// Helper: Save failed API requests to IndexedDB for background sync replay
 async function indexedDB_saveForSync(request) {
     try {
-        const db = await new Promise((resolve, reject) => {
-            const req = indexedDB.open('fieldops-staff-sync', 1);
-            req.onupgradeneeded = () => {
-                const os = req.result.createObjectStore('pending-requests', { keyPath: 'id', autoIncrement: true });
-                os.createIndex('timestamp', 'timestamp');
-            };
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error);
-        });
+        const db = await openSyncDB();
 
         const tx = db.transaction('pending-requests', 'readwrite');
         const store = tx.objectStore('pending-requests');

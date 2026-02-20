@@ -111,14 +111,21 @@ function renderJobs() {
 function createJobCard(job) {
     const statusColors = {
         'scheduled': 'blue',
+        'Scheduled': 'blue',
         'in-progress': 'orange',
+        'In Progress': 'orange',
         'completed': 'green',
-        'cancelled': 'gray'
+        'Completed': 'green',
+        'cancelled': 'gray',
+        'Cancelled': 'gray'
     };
-    
+
     const statusColor = statusColors[job.status] || 'gray';
     const time = job.job_time || 'TBD';
-    
+    const mapsUrl = job.location
+        ? `https://maps.google.com/?q=${encodeURIComponent(job.location)}`
+        : null;
+
     return `
         <div class="job-card" onclick="openJobDetail(${job.id})">
             <div class="job-card-header">
@@ -127,7 +134,15 @@ function createJobCard(job) {
             </div>
             <h4>${job.service_name}</h4>
             <p class="customer-name">${job.customer_name}</p>
-            <p class="location">📍 ${job.location}</p>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.4rem;">
+                <p class="location" style="margin:0;">📍 ${job.location || 'No location'}</p>
+                ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" rel="noopener"
+                    onclick="event.stopPropagation()"
+                    title="Get directions"
+                    style="display:inline-flex; align-items:center; gap:4px; padding:5px 10px; background:#3b82f6; color:white; border-radius:6px; font-size:0.75rem; font-weight:600; text-decoration:none; white-space:nowrap;">
+                    <i class="fas fa-directions"></i> Directions
+                </a>` : ''}
+            </div>
         </div>
     `;
 }
@@ -306,7 +321,7 @@ async function uploadPhoto(file, type) {
             headers: { 'Authorization': 'Bearer ' + localStorage.getItem('staffToken') },
             body: formData
         });
-        
+
         if (!response.ok) {
             if (response.status === 401) {
                 window.location.href = '/staff/login.html';
@@ -314,13 +329,13 @@ async function uploadPhoto(file, type) {
             }
             throw new Error(`HTTP ${response.status}`);
         }
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
-            showNotification('Photo uploaded successfully', 'success');
+            showNotification('Photo uploaded', 'success');
             await loadJobPhotos(); // Refresh photos
-            
+
             // Emit real-time update if socket is connected
             if (socket && socket.connected) {
                 socket.emit('photo-uploaded', {
@@ -333,9 +348,54 @@ async function uploadPhoto(file, type) {
             showNotification('Failed to upload photo: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
-        console.error('Error uploading photo:', error);
-        showNotification('Error uploading photo: ' + error.message, 'error');
+        // Offline — queue photo for background sync
+        if (!navigator.onLine) {
+            try {
+                await storePhotoForSync(file, type, currentJob.id);
+                showNotification('Offline: photo saved, will upload when reconnected', 'success');
+                if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                    const sw = await navigator.serviceWorker.ready;
+                    await sw.sync.register('sync-photos');
+                }
+            } catch (queueErr) {
+                showNotification('Failed to queue photo for sync', 'error');
+            }
+        } else {
+            console.error('Error uploading photo:', error);
+            showNotification('Error uploading photo: ' + error.message, 'error');
+        }
     }
+}
+
+// Store photo in IndexedDB for offline sync
+async function storePhotoForSync(file, category, jobId) {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open('fieldops-staff-sync', 2);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('pending-requests')) {
+                db.createObjectStore('pending-requests', { keyPath: 'id', autoIncrement: true });
+            }
+            if (!db.objectStoreNames.contains('photo-uploads')) {
+                db.createObjectStore('photo-uploads', { keyPath: 'id', autoIncrement: true });
+            }
+        };
+        req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('photo-uploads', 'readwrite');
+            tx.objectStore('photo-uploads').add({
+                job_id: jobId,
+                blob: file,
+                filename: file.name,
+                category,
+                token: localStorage.getItem('staffToken'),
+                timestamp: Date.now()
+            });
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        };
+        req.onerror = () => reject(req.error);
+    });
 }
 
 // Delete photo
@@ -533,8 +593,56 @@ function logout() {
     }
 }
 
+// Push Notifications Setup
+async function setupPushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+        // Fetch VAPID public key
+        const keyRes = await fetch('/api/push/vapid-public-key', {
+            headers: staffAuthHeaders()
+        });
+        if (!keyRes.ok) return;
+        const { publicKey } = await keyRes.json();
+
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey)
+            });
+        }
+
+        // Send subscription to server
+        await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: staffAuthHeaders(),
+            body: JSON.stringify({
+                endpoint: subscription.endpoint,
+                keys: {
+                    p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))),
+                    auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth'))))
+                }
+            })
+        });
+        console.log('✅ Push notifications enabled');
+    } catch (err) {
+        console.warn('Push notification setup failed:', err.message);
+    }
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     initializeSocket();
     loadJobs();
+    setupPushNotifications();
 });

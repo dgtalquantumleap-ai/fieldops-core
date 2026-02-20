@@ -71,62 +71,26 @@ function checkStaffAvailability(staffId, date, time, duration = 2) {
 }
 
 /**
- * Get optimal staff assignment using AI-based logic
+ * Get optimal staff assignment - uses users table (single source of truth)
  */
 function getOptimalStaffAssignment(serviceId, date, time) {
     try {
-        // Ensure staff table exists
-        try {
-            db.prepare('SELECT COUNT(*) FROM staff').get();
-        } catch (error) {
-            // Create staff table if it doesn't exist
-            console.log('🔧 Creating staff table...');
-            db.prepare(`
-                CREATE TABLE IF NOT EXISTS staff (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
-                    phone TEXT,
-                    role TEXT DEFAULT 'Staff',
-                    is_active INTEGER DEFAULT 1,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `).run();
-            
-            // Insert sample staff if table is empty
-            const staffCount = db.prepare('SELECT COUNT(*) as count FROM staff').get();
-            if (staffCount.count === 0) {
-                console.log('👥 Inserting sample staff...');
-                const sampleStaff = [
-                    ['John Staff', 'john.staff@stiltheights.com', '5550101001', 'Staff'],
-                    ['Sarah Cleaner', 'sarah.cleaner@stiltheights.com', '5550102002', 'Senior Staff'],
-                    ['Mike Technician', 'mike.tech@stiltheights.com', '5550103003', 'Staff']
-                ];
-                
-                for (const [name, email, phone, role] of sampleStaff) {
-                    db.prepare(`
-                        INSERT OR IGNORE INTO staff (name, email, phone, role, is_active)
-                        VALUES (?, ?, ?, ?, 1)
-                    `).run(name, email, phone, role);
-                }
-            }
-        }
-        
-        // Get all active staff
+        // Query users table — the single source of truth for staff
         const activeStaff = db.prepare(`
-            SELECT s.*, 
+            SELECT u.id, u.name, u.email, u.phone, u.role,
                    COUNT(j.id) as current_jobs,
                    MAX(j.created_at) as last_job_date
-            FROM staff s
-            LEFT JOIN jobs j ON s.id = j.assigned_to 
+            FROM users u
+            LEFT JOIN jobs j ON u.id = j.assigned_to
                 AND j.job_date >= date('now', '-7 days')
                 AND j.status NOT IN ('Cancelled', 'completed')
-            WHERE s.is_active = 1
-            GROUP BY s.id
+            WHERE u.is_active = 1
+              AND u.role IN ('staff', 'admin', 'owner')
+            GROUP BY u.id
+            ORDER BY current_jobs ASC
         `).all();
-        
-        console.log(' Found active staff:', activeStaff.length);
+
+        console.log('👥 Found active staff (users):', activeStaff.length);
         
         if (activeStaff.length === 0) {
             return { 
@@ -311,14 +275,15 @@ router.get('/staff-availability', async (req, res) => {
             });
         }
         
-        // Get all active staff with their availability
+        // Get all active staff from users table
         const activeStaff = db.prepare(`
-            SELECT s.*, j.id as current_job_id
-            FROM staff s
-            LEFT JOIN jobs j ON s.id = j.assigned_to 
+            SELECT u.id, u.name, u.email, u.phone, u.role, j.id as current_job_id
+            FROM users u
+            LEFT JOIN jobs j ON u.id = j.assigned_to
                 AND j.job_date = ? AND j.status IN ('Scheduled', 'In Progress')
-            WHERE s.is_active = 1
-            ORDER BY s.name
+            WHERE u.is_active = 1
+              AND u.role IN ('staff', 'admin', 'owner')
+            ORDER BY u.name
         `).all(date);
         
         const staffWithAvailability = activeStaff.map(staff => {
@@ -349,7 +314,7 @@ router.get('/staff-availability', async (req, res) => {
  * POST /api/scheduling/confirm-booking
  * Confirm booking after scheduling validation
  */
-router.post('/confirm-booking', validateBooking, async (req, res) => {
+router.post('/confirm-booking', async (req, res) => {
     try {
         const { 
             customer_id, 
@@ -386,8 +351,10 @@ router.post('/confirm-booking', validateBooking, async (req, res) => {
             });
         }
         
-        // Verify staff exists and available
-        const staff = db.prepare('SELECT * FROM staff WHERE id = ? AND is_active = 1').get(staff_id);
+        // Verify staff exists in users table (single source of truth)
+        const staff = db.prepare(
+            "SELECT * FROM users WHERE id = ? AND is_active = 1 AND role IN ('staff', 'admin', 'owner')"
+        ).get(staff_id);
         if (!staff) {
             return res.status(400).json({
                 success: false,
@@ -491,7 +458,21 @@ router.post('/confirm-booking', validateBooking, async (req, res) => {
             
             await triggerAutomations('Job Scheduled', automationData, io);
             console.log('⚙️ Automations triggered for job scheduling');
-            
+
+            // Send free push notification to assigned staff member
+            try {
+                const push = require('../utils/pushNotifications');
+                await push.notifyJobAssigned(staff_id, {
+                    jobId,
+                    service: service.name,
+                    customerName: customer.name,
+                    date,
+                    time
+                });
+            } catch (pushError) {
+                console.warn('⚠️ Push notification failed (non-critical):', pushError.message);
+            }
+
         } catch (automationError) {
             console.warn('⚠️ Automation/real-time failed (non-critical):', automationError.message);
         }

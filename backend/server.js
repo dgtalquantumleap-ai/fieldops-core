@@ -203,6 +203,7 @@ app.use('/api/ai-automations',   requireAuth,  require('./routes/ai-automations'
 app.use('/api/services',         requireAuth,  require('./routes/services-enhanced'));
 app.use('/api/analytics',        requireAuth,  require('./routes/analytics'));
 app.use('/api/wp',               requireAuth,  require('./routes/wordpress'));
+app.use('/api/push',             requireAuth,  require('./routes/push'));
 
 // Admin-only routes
 app.use('/api/staff-management', requireAdmin, require('./routes/staff-management'));

@@ -1,5 +1,5 @@
-// Stilt Heights Website with WordPress Integration
-const API_URL = 'https://fieldops-core-production.up.railway.app/api';
+// Stilt Heights Website
+const API_URL = '/api'; // Relative path — works in dev and production
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,27 +11,35 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSmoothScrolling();
 });
 
+// Escape HTML to prevent XSS
+function escapeHtml(str) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(str || '').replace(/[&<>"']/g, m => map[m]);
+}
+
 // Load services from FieldOps API
 async function loadServices() {
     try {
         const response = await fetch(`${API_URL}/booking/services`);
-        const services = await response.json();
-        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        const services = result.data || result;
+
         const servicesGrid = document.getElementById('services-grid');
-        if (servicesGrid) {
-            servicesGrid.innerHTML = services.map(service => `
-                <div class="service-card">
-                    <div class="service-icon">${getServiceIcon(service.name)}</div>
-                    <h3>${service.name}</h3>
-                    <p>${service.description || 'Professional cleaning service'}</p>
-                    <div class="service-price">$${service.price || 80}/hr</div>
-                    <button class="btn-primary" onclick="bookService('${service.name}')">Book Now</button>
-                </div>
-            `).join('');
-        }
+        if (!servicesGrid) return;
+        if (!services || services.length === 0) { loadStaticServices(); return; }
+
+        servicesGrid.innerHTML = services.map(service => `
+            <div class="service-card">
+                <div class="service-icon">${getServiceIcon(service.name)}</div>
+                <h3>${escapeHtml(service.name)}</h3>
+                <p>${escapeHtml(service.description || 'Professional cleaning service')}</p>
+                <div class="service-price">$${service.price || 80}</div>
+                <a href="/booking.html?service=${encodeURIComponent(service.name)}" class="btn-primary" style="display:inline-block;text-decoration:none;text-align:center;">Book Now</a>
+            </div>
+        `).join('');
     } catch (error) {
         console.error('Error loading services:', error);
-        // Fallback to static services
         loadStaticServices();
     }
 }
@@ -154,60 +162,30 @@ async function loadPricingPlans() {
     }
 }
 
-// Setup quick quote form
+// Setup quick quote form — redirects to booking page with pre-filled service
 function setupQuickQuoteForm() {
     const form = document.getElementById('quick-quote-form');
     if (form) {
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            const formData = {
-                name: document.getElementById('quick-name').value,
-                phone: document.getElementById('quick-phone').value,
-                service: document.getElementById('quick-service').value,
-                message: document.getElementById('quick-message').value,
-                source: 'Website Quick Quote'
-            };
-            
-            try {
-                // Send to FieldOps API
-                const response = await fetch(`${API_URL}/wp/booking`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showQuoteSuccess(formData);
-                    form.reset();
-                } else {
-                    showQuoteError(result.error || 'Failed to submit request');
-                }
-            } catch (error) {
-                console.error('Quote submission error:', error);
-                showQuoteError('Network error. Please try again.');
-            }
+            const service = document.getElementById('quick-service').value;
+            window.location.href = `/booking.html${service ? '?service=' + encodeURIComponent(service) : ''}`;
         });
     }
-    
-    // Load services into quick quote form
     loadServicesIntoQuickQuote();
 }
 
-// Load services into quick quote form
+// Load services into quick quote dropdown
 async function loadServicesIntoQuickQuote() {
     try {
         const response = await fetch(`${API_URL}/booking/services`);
-        const services = await response.json();
-        
+        if (!response.ok) return;
+        const result = await response.json();
+        const services = result.data || result;
         const serviceSelect = document.getElementById('quick-service');
-        if (serviceSelect) {
-            serviceSelect.innerHTML = '<option value="">Select a service</option>' + 
-                services.map(service => `<option value="${service.name}">${service.name}</option>`).join('');
+        if (serviceSelect && services && services.length) {
+            serviceSelect.innerHTML = '<option value="">Select a service</option>' +
+                services.map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
         }
     } catch (error) {
         console.error('Error loading services for quick quote:', error);
@@ -280,18 +258,14 @@ function formatDate(dateString) {
 
 // Booking functions
 function bookService(serviceName) {
-    // Scroll to booking section or open booking modal
-    const bookingSection = document.getElementById('booking');
-    if (bookingSection) {
-        bookingSection.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        // Open booking page
-        window.open('/booking.html', '_blank');
-    }
+    const url = serviceName
+        ? `/booking.html?service=${encodeURIComponent(serviceName)}`
+        : '/booking.html';
+    window.location.href = url;
 }
 
 function scrollToBooking() {
-    bookService('');
+    window.location.href = '/booking.html';
 }
 
 function scrollToServices() {

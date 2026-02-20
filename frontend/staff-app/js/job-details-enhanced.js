@@ -13,8 +13,18 @@ class JobDetailsManager {
     async openJobDetail(jobId) {
         try {
             this.showLoadingState();
-            
-            const response = await fetch(`/api/jobs/${jobId}`);
+
+            const token = localStorage.getItem('staffToken');
+            const response = await fetch(`/api/jobs/${jobId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/staff/login.html';
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
             this.currentJob = await response.json();
             
             this.updateJobDetailModal();

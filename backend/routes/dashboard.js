@@ -6,10 +6,10 @@ router.get('/stats', async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
 
-        const todayJobs = db.prepare('SELECT COUNT(*) as count FROM jobs WHERE job_date = ?').get(today);
-        const pending = db.prepare('SELECT COUNT(*) as count FROM jobs WHERE status = ?').get('scheduled');
-        const completed = db.prepare('SELECT COUNT(*) as count FROM jobs WHERE status = ?').get('completed');
-        const revenue = db.prepare('SELECT SUM(amount) as sum FROM invoices WHERE status = ?').get('Paid');
+        const todayJobs = db.prepare("SELECT COUNT(*) as count FROM jobs WHERE job_date = ? AND deleted_at IS NULL").get(today);
+        const pending = db.prepare("SELECT COUNT(*) as count FROM jobs WHERE status = 'Scheduled' AND deleted_at IS NULL").get();
+        const completed = db.prepare("SELECT COUNT(*) as count FROM jobs WHERE status = 'Completed' AND deleted_at IS NULL").get();
+        const revenue = db.prepare("SELECT SUM(amount) as sum FROM invoices WHERE LOWER(status) = 'paid' AND deleted_at IS NULL").get();
 
         res.json({
             todayJobs: todayJobs.count,

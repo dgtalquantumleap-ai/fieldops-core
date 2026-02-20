@@ -549,23 +549,22 @@
         let selectedServicePrice = 0;
 
         // ==========================================
+        // HTML ESCAPE (XSS PREVENTION)
+        // ==========================================
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text || '').replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // ==========================================
         // LOAD SERVICES
         // ==========================================
         async function loadServices() {
-            console.log('📥 Loading services from API...');
             try {
-                const response = await fetch('/api/booking/services', {
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                const response = await fetch('/api/booking/services');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const result = await response.json();
                 const services = result.data || result;
-                console.log('✅ Services loaded:', services);
-
                 const container = document.getElementById('serviceCards');
 
                 if (!services || services.length === 0) {
@@ -573,107 +572,66 @@
                     return;
                 }
 
-                container.innerHTML = services.map((service) => {
-                    // Sanitize service name for safe HTML attribute
-                    const safeName = (service.name || '').replace(/['"<>]/g, '');
-                    const price = service.price ? `$${service.price}` : 'Contact for price';
-                    
+                container.innerHTML = services.map((svc) => {
+                    const price = svc.price ? `$${svc.price}` : 'Contact for price';
+                    const desc = svc.description || 'Professional cleaning service';
                     return `
-                        <div class="service-card" 
-                             data-service="${safeName}" 
-                             data-price="${service.price || 0}" 
-                             role="radio" 
+                        <div class="service-card"
+                             data-id="${svc.id}"
+                             data-name="${escapeHtml(svc.name)}"
+                             data-price="${svc.price || 0}"
+                             role="radio"
                              aria-checked="false"
-                             tabindex="0"
-                             onclick="selectService('${safeName}', ${service.price || 0})"
-                             onkeypress="handleServiceKeypress(event, '${safeName}', ${service.price || 0})">
-                            <div class="service-name">${escapeHtml(service.name)}</div>
+                             tabindex="0">
+                            <div class="service-name">${escapeHtml(svc.name)}</div>
                             <div class="service-price">${escapeHtml(price)}</div>
-                            <div class="service-description">Professional service</div>
-                        </div>
-                    `;
+                            <div class="service-description">${escapeHtml(desc)}</div>
+                        </div>`;
                 }).join('');
+
+                // Wire up click/keyboard on service cards (no inline handlers)
+                container.querySelectorAll('.service-card').forEach(card => {
+                    card.addEventListener('click', () => selectServiceCard(card));
+                    card.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectServiceCard(card); }
+                    });
+                });
             } catch (error) {
-                console.error('❌ Error loading services:', error);
+                console.error('Error loading services:', error);
                 const container = document.getElementById('serviceCards');
                 container.textContent = 'Unable to load services. Please refresh or call us.';
                 container.style.color = '#c53030';
             }
         }
 
-        // ==========================================
-        // HTML ESCAPE FUNCTION (XSS PREVENTION)
-        // ==========================================
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return String(text).replace(/[&<>"']/g, m => map[m]);
-        }
-
-        // ==========================================
-        // SELECT SERVICE
-        // ==========================================
-        function selectService(serviceName, price) {
-            if (!serviceName || typeof price !== 'number') {
-                console.warn('Invalid service selection');
-                return;
-            }
-            
-            console.log(`🎯 Selected: ${serviceName} ($${price})`);
-            
-            document.querySelectorAll('.service-card').forEach(card => {
-                card.classList.remove('selected');
-                card.setAttribute('aria-checked', 'false');
+        function selectServiceCard(card) {
+            document.querySelectorAll('.service-card').forEach(c => {
+                c.classList.remove('selected');
+                c.setAttribute('aria-checked', 'false');
             });
-
-            // Find and select the clicked card safely
-            const selectedCard = event?.target?.closest('.service-card');
-            if (selectedCard) {
-                selectedCard.classList.add('selected');
-                selectedCard.setAttribute('aria-checked', 'true');
-            }
-
-            selectedService = serviceName;
-            selectedServicePrice = price;
+            card.classList.add('selected');
+            card.setAttribute('aria-checked', 'true');
+            selectedService = card.dataset.name;
+            selectedServicePrice = parseFloat(card.dataset.price) || 0;
             updateProgress();
-        }
-
-        // ==========================================
-        // KEYBOARD SUPPORT
-        // ==========================================
-        function handleServiceKeypress(event, serviceName, price) {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                selectService(serviceName, price);
-            }
         }
 
         // ==========================================
         // PROGRESS BAR
         // ==========================================
         function updateProgress() {
-            const form = document.getElementById('bookingForm');
-            const formData = new FormData(form);
+            const formData = new FormData(document.getElementById('bookingForm'));
             const progressBar = document.getElementById('progressBar');
-
             let completed = 0;
-            const total = 6;
-
             if (selectedService) completed++;
             if (formData.get('name')) completed++;
             if (formData.get('phone')) completed++;
             if (formData.get('address')) completed++;
             if (formData.get('date')) completed++;
             if (formData.get('time')) completed++;
-
-            const progress = (completed / total) * 100;
-            progressBar.style.width = `${progress}%`;
-            progressBar.setAttribute('aria-valuenow', Math.round(progress));
+            const pct = (completed / 6) * 100;
+            progressBar.style.width = `${pct}%`;
+            progressBar.setAttribute('aria-valuenow', Math.round(pct));
         }
 
         // ==========================================
@@ -681,85 +639,115 @@
         // ==========================================
         function validateForm(formData) {
             const errors = [];
-
             if (!selectedService) errors.push('Please select a service');
-            if (!formData.get('name')?.trim()) errors.push('Please provide your name');
-            if (!formData.get('phone')?.trim()) errors.push('Please provide your phone');
-            if (!formData.get('address')?.trim()) errors.push('Please provide your address');
-            if (!formData.get('date')) errors.push('Please select a date');
-            if (!formData.get('time')) errors.push('Please select a time');
-
-            const phone = formData.get('phone');
-            if (phone && !/^[\d\-\(\) ]+$/.test(phone)) {
-                errors.push('Phone number contains invalid characters');
-            }
-
-            const email = formData.get('email');
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                errors.push('Invalid email format');
-            }
-
+            if (!formData.get('name')?.trim()) errors.push('Name is required');
+            const phone = formData.get('phone')?.trim();
+            if (!phone) errors.push('Phone is required');
+            if (!formData.get('address')?.trim()) errors.push('Address is required');
+            if (!formData.get('date')) errors.push('Date is required');
+            if (!formData.get('time')) errors.push('Time is required');
+            const email = formData.get('email')?.trim();
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Invalid email format');
             return errors;
         }
 
         // ==========================================
-        // SHOW MESSAGES
+        // MESSAGES
         // ==========================================
         function showError(message) {
-            const errorMsg = document.getElementById('error-msg');
-            const successMsg = document.getElementById('success-msg');
-            errorMsg.textContent = message;
-            errorMsg.style.display = 'block';
-            successMsg.style.display = 'none';
-            errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        function showSuccess(message) {
-            const successMsg = document.getElementById('success-msg');
-            const errorMsg = document.getElementById('error-msg');
-            successMsg.textContent = message;
-            successMsg.style.display = 'block';
-            errorMsg.style.display = 'none';
-            successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        function showNotification(message, type = 'info') {
-            // Use the appropriate success or error display based on type
-            if (type === 'error') {
-                showError(message);
-            } else if (type === 'success') {
-                showSuccess(message);
-            } else {
-                // For 'info' type, show as success
-                showSuccess(message);
-            }
+            const el = document.getElementById('error-msg');
+            el.textContent = message;
+            el.style.display = 'block';
+            document.getElementById('success-msg').style.display = 'none';
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         // ==========================================
-        // FORM VALIDATION
+        // BOOKING CONFIRMATION SCREEN
         // ==========================================
-        function validateForm(formData) {
-            const errors = [];
-            
-            const name = formData.get('name')?.trim();
-            const phone = formData.get('phone')?.trim();
-            const address = formData.get('address')?.trim();
-            const date = formData.get('date');
-            const time = formData.get('time');
+        function showConfirmationScreen(booking, formData) {
+            const ref = `JOB-${String(booking.jobId).padStart(4, '0')}`;
+            const dateObj = new Date(`${booking.jobDate}T${booking.jobTime}:00`);
+            const formattedDate = dateObj.toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            const formattedTime = dateObj.toLocaleTimeString('en-US', {
+                hour: 'numeric', minute: '2-digit', hour12: true
+            });
+            const staffName = booking.assignedStaff?.name || 'Our Team';
 
-            if (!selectedService) errors.push('Please select a service');
-            if (!name) errors.push('Name is required');
-            if (!phone) errors.push('Phone is required');
-            if (!address) errors.push('Address is required');
-            if (!date) errors.push('Date is required');
-            if (!time) errors.push('Time is required');
+            // Build ICS calendar file
+            const pad = n => String(n).padStart(2, '0');
+            const endObj = new Date(dateObj.getTime() + 2 * 60 * 60 * 1000);
+            const toICS = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+            const icsContent = [
+                'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Stilt Heights//EN', 'BEGIN:VEVENT',
+                `UID:${ref}@stiltheights.com`,
+                `DTSTART:${toICS(dateObj)}`,
+                `DTEND:${toICS(endObj)}`,
+                `SUMMARY:${escapeHtml(booking.service)} - Stilt Heights`,
+                `DESCRIPTION:Booking ref: ${ref}. Assigned cleaner: ${escapeHtml(staffName)}.`,
+                `LOCATION:${escapeHtml(formData.address)}`,
+                'END:VEVENT', 'END:VCALENDAR'
+            ].join('\r\n');
+            const icsUrl = URL.createObjectURL(new Blob([icsContent], { type: 'text/calendar' }));
 
-            // Validate phone format (basic)
-            if (phone && !/^\d{3}-\d{3}-\d{4}$/.test(phone)) {
-                errors.push('Phone must be in format XXX-XXX-XXXX');
-            }
+            document.querySelector('.booking-container').innerHTML = `
+                <div style="background:rgba(255,255,255,0.97);border-radius:20px;padding:40px 30px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.12);animation:fadeInUp 0.6s ease-out;">
+                    <div style="font-size:4rem;margin-bottom:1rem;">🎉</div>
+                    <h2 style="color:#16a34a;font-size:1.8rem;margin-bottom:0.5rem;">Booking Confirmed!</h2>
+                    <p style="color:#4a5568;margin-bottom:2rem;font-size:1rem;">Your appointment has been scheduled. Here's your summary:</p>
 
-            return errors;
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px 24px;text-align:left;margin-bottom:1.5rem;">
+                        <div style="display:grid;gap:12px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #d1fae5;">
+                                <span style="color:#64748b;font-weight:500;">Reference #</span>
+                                <span style="font-weight:800;color:#16a34a;font-size:1.15rem;letter-spacing:1px;">${ref}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="color:#64748b;font-weight:500;">Service</span>
+                                <span style="font-weight:600;">${escapeHtml(booking.service)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="color:#64748b;font-weight:500;">Date</span>
+                                <span style="font-weight:600;">${formattedDate}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="color:#64748b;font-weight:500;">Arrival Window</span>
+                                <span style="font-weight:600;">${formattedTime}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="color:#64748b;font-weight:500;">Assigned Cleaner</span>
+                                <span style="font-weight:600;">${escapeHtml(staffName)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                                <span style="color:#64748b;font-weight:500;white-space:nowrap;">Address</span>
+                                <span style="font-weight:600;text-align:right;">${escapeHtml(formData.address)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="${icsUrl}" download="stilt-heights-appointment.ics"
+                       style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:13px 28px;border-radius:8px;font-weight:600;text-decoration:none;font-size:0.95rem;margin-bottom:1rem;">
+                        📅 Add to Calendar
+                    </a>
+
+                    <p style="color:#64748b;font-size:0.9rem;margin-top:1rem;line-height:1.6;">
+                        We'll call to confirm at <strong>${escapeHtml(formData.phone)}</strong>
+                        ${formData.email ? `<br>Confirmation sent to <strong>${escapeHtml(formData.email)}</strong>` : ''}
+                    </p>
+
+                    <p style="color:#94a3b8;font-size:0.8rem;margin-top:1rem;">
+                        Questions? Call <a href="tel:825-994-6606" style="color:#667eea;">825-994-6606</a>
+                        &nbsp;|&nbsp;
+                        <a href="/booking-status.html?ref=${ref}" style="color:#667eea;">Track this booking</a>
+                    </p>
+
+                    <button onclick="window.location.reload()"
+                            style="margin-top:1.5rem;background:none;border:2px solid #667eea;color:#667eea;padding:10px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.95rem;">
+                        Book Another Service
+                    </button>
+                </div>`;
         }
 
         // ==========================================
@@ -767,89 +755,58 @@
         // ==========================================
         document.getElementById('bookingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const formData = new FormData(e.target);
             const errors = validateForm(formData);
-
             if (errors.length > 0) {
-                showError('❌ ' + errors.join('. '));
+                showError('Please fix these issues: ' + errors.join('. '));
                 return;
             }
 
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
-            const originalBtnText = btnText.textContent;
-
             submitBtn.disabled = true;
-            btnText.innerHTML = '<div class="loading-spinner"></div> Processing...';
+            btnText.innerHTML = '<div class="loading-spinner"></div> Booking your appointment...';
+
+            const data = {
+                name: formData.get('name').trim(),
+                phone: formData.get('phone').trim(),
+                email: formData.get('email')?.trim() || null,
+                address: formData.get('address').trim(),
+                service: selectedService,
+                date: formData.get('date'),
+                time: formData.get('time'),
+                notes: formData.get('notes')?.trim() || ''
+            };
 
             try {
-                console.log('📤 Submitting booking...');
-
-                const data = {
-                    name: formData.get('name').trim(),
-                    phone: formData.get('phone').trim(),
-                    email: formData.get('email')?.trim() || null,
-                    address: formData.get('address').trim(),
-                    service: selectedService,
-                    date: formData.get('date'),
-                    time: formData.get('time'),
-                    notes: formData.get('notes')?.trim() || ''
-                };
-
-                // Validate data
-                if (!data.name || !data.phone || !data.address || !data.service || !data.date || !data.time) {
-                    throw new Error('Missing required fields');
-                }
-
-                console.log('📋 Booking data:', data);
-
-                const res = await fetch('/api/scheduling/validate', {
+                const res = await fetch('/api/booking/book', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-
                 const result = await res.json();
-                console.log('✅ Response:', result);
 
                 if (result.success) {
-                    showSuccess('🎉 Time slot available! Processing optimal staff assignment...');
-                    // Don't reset form yet - wait for scheduling confirmation
-                    selectedService = '';
-                    selectedServicePrice = 0;
-                    
-                    // Show scheduling details
-                    if (result.data && result.data.recommendedStaff) {
-                        showNotification(`Recommended staff: ${result.data.recommendedStaff.name}`, 'info');
-                    }
-                    
-                    setTimeout(() => {
-                        submitBtn.disabled = false;
-                        btnText.textContent = originalBtnText;
-                    }, 2000);
+                    showConfirmationScreen(result.data, data);
                 } else {
-                    throw new Error(result.error || 'Booking failed');
+                    throw new Error(result.message || result.error || 'Booking failed. Please try again.');
                 }
             } catch (error) {
-                console.error('❌ Error:', error);
-                showError(`❌ ${error.message || 'Failed to submit booking'}`);
+                console.error('Booking error:', error);
+                showError(error.message || 'Something went wrong. Please call us at 825-994-6606');
                 submitBtn.disabled = false;
-                btnText.textContent = originalBtnText;
+                btnText.textContent = 'Book Now - Get Free Quote';
             }
         });
 
         // ==========================================
-        // PHONE FORMATTING
+        // PHONE AUTO-FORMAT
         // ==========================================
         document.getElementById('phone').addEventListener('input', function (e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length >= 6) {
-                value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6, 10);
-            } else if (value.length >= 3) {
-                value = value.slice(0, 3) + '-' + value.slice(3);
-            }
-            e.target.value = value;
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length >= 6) v = v.slice(0, 3) + '-' + v.slice(3, 6) + '-' + v.slice(6, 10);
+            else if (v.length >= 3) v = v.slice(0, 3) + '-' + v.slice(3);
+            e.target.value = v;
         });
 
         // ==========================================
@@ -859,24 +816,40 @@
         const today = new Date();
         const maxDate = new Date();
         maxDate.setMonth(maxDate.getMonth() + 3);
-
         dateInput.min = today.toISOString().split('T')[0];
         dateInput.max = maxDate.toISOString().split('T')[0];
         dateInput.value = today.toISOString().split('T')[0];
 
         // ==========================================
-        // UPDATE PROGRESS ON INPUT
+        // PROGRESS BAR UPDATE ON INPUT
         // ==========================================
         document.getElementById('bookingForm').addEventListener('change', updateProgress);
         document.getElementById('bookingForm').addEventListener('input', updateProgress);
 
         // ==========================================
+        // PRE-SELECT SERVICE FROM URL PARAM
+        // ==========================================
+        function preselectServiceFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const serviceName = params.get('service');
+            if (!serviceName) return;
+            // Wait for service cards to render, then select the matching one
+            const interval = setInterval(() => {
+                const cards = document.querySelectorAll('.service-card[data-name]');
+                if (cards.length === 0) return;
+                clearInterval(interval);
+                cards.forEach(card => {
+                    if (card.dataset.name === serviceName) selectServiceCard(card);
+                });
+            }, 100);
+            // Give up after 5 seconds
+            setTimeout(() => clearInterval(interval), 5000);
+        }
+
+        // ==========================================
         // INITIALIZE
         // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Page loaded. Loading services...');
-            loadServices();
-        });
+        loadServices().then(preselectServiceFromUrl);
     </script>
 </body>
 </html>
