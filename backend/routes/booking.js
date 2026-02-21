@@ -254,7 +254,7 @@ router.post('/book', validateBooking, async (req, res) => {
         console.log('📋 Redirecting to scheduling layer for validation...');
         
         // Create scheduling validation request WITH CUSTOMER ID
-        const schedulingResponse = await fetch(`${process.env.API_URL || 'http://localhost:3000'}/api/scheduling/validate`, {
+        const schedulingResponse = await fetch(`${process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`}/api/scheduling/validate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -288,7 +288,7 @@ router.post('/book', validateBooking, async (req, res) => {
         console.log('✅ Scheduling validation passed, confirming booking...');
         
         // Confirm booking with staff assignment
-        const confirmResponse = await fetch(`${process.env.API_URL || 'http://localhost:3000'}/api/scheduling/confirm-booking`, {
+        const confirmResponse = await fetch(`${process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`}/api/scheduling/confirm-booking`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
