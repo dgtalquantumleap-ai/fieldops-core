@@ -403,11 +403,14 @@ select:focus {
         display: none;
     }
 
+    /* Keep sidebar fixed so it doesn't occupy vertical space in flow */
     .sidebar {
-        position: static;
-        left: auto;
+        position: fixed;
+        left: 0;
+        top: 0;
         height: 100vh;
         border-radius: 0;
+        box-shadow: none;
     }
 
     .main-content {

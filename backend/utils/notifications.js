@@ -12,6 +12,10 @@ const transporter = nodemailer.createTransport({
 
 // Send customer confirmation email
 const sendCustomerConfirmation = async (bookingData) => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn('⚠️ Customer confirmation skipped: EMAIL_USER / EMAIL_PASS not configured');
+        return;
+    }
     const { name, email, service, date, time, address } = bookingData;
     
     const mailOptions = {
@@ -44,6 +48,10 @@ const sendCustomerConfirmation = async (bookingData) => {
 
 // Send admin notification email
 const sendAdminNotification = async (bookingData) => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn('⚠️ Admin notification skipped: EMAIL_USER / EMAIL_PASS not configured');
+        return;
+    }
     const { name, email, phone, service, date, time, address, notes } = bookingData;
     
     const mailOptions = {

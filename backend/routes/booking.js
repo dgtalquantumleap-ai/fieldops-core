@@ -313,91 +313,78 @@ router.post('/book', validateBooking, async (req, res) => {
         // AUTOMATIONS (non-critical)
         // ============================================
 
-        try {
-            const automationData = {
-                customer_id: customer.id,
-                customer_name: customer.name,
-                customer_email: customer.email,
-                customer_phone: customer.phone,
+        // Fire-and-forget all notifications — do NOT await so the response
+        // is sent immediately without waiting for SMTP / push delays.
+        const automationData = {
+            customer_id: customer.id,
+            customer_name: customer.name,
+            customer_email: customer.email,
+            customer_phone: customer.phone,
+            service: service,
+            date: date,
+            time: time,
+            address: address.trim(),
+            staff_name: assignedStaff.name || 'Our Team',
+            job_id: jobId,
+            notes: notes ? notes.trim() : ''
+        };
+
+        // Customer confirmation email (fire-and-forget)
+        if (customer.email) {
+            notifications.sendCustomerConfirmation({
+                name: customer.name,
+                email: customer.email,
                 service: service,
                 date: date,
                 time: time,
-                address: address.trim(),
-                staff_name: assignedStaff.name || 'Our Team',
-                job_id: jobId,
-                notes: notes ? notes.trim() : ''
-            };
-
-            // Confirmation email to customer
-            if (customer.email) {
-                try {
-                    await notifications.sendCustomerConfirmation({
-                        name: customer.name,
-                        email: customer.email,
-                        service: service,
-                        date: date,
-                        time: time,
-                        address: address.trim()
-                    });
-                    console.log('📧 Confirmation email sent to customer');
-                } catch (emailErr) {
-                    console.warn('⚠️ Customer email failed (non-critical):', emailErr.message);
-                }
-            }
-
-            // Admin notification email (always send)
-            try {
-                await notifications.sendAdminNotification({
-                    name: customer.name,
-                    email: customer.email || 'N/A',
-                    phone: customer.phone,
-                    service: service,
-                    date: date,
-                    time: time,
-                    address: address.trim(),
-                    notes: notes ? notes.trim() : ''
-                });
-                console.log('📨 Admin notification email sent');
-            } catch (adminEmailErr) {
-                console.warn('⚠️ Admin email failed (non-critical):', adminEmailErr.message);
-            }
-
-            // Assignment email to staff
-            if (assignedStaff.email) {
-                try {
-                    await notifications.sendEmail({
-                        to: assignedStaff.email,
-                        subject: `New Job Assignment — ${service}`,
-                        html: `<h3>New Job Assigned to You</h3>
-                               <p><strong>Customer:</strong> ${customer.name} (${customer.phone})</p>
-                               <p><strong>Service:</strong> ${service}</p>
-                               <p><strong>Date:</strong> ${date} at ${time}</p>
-                               <p><strong>Location:</strong> ${address.trim()}</p>
-                               <p><strong>Job Ref:</strong> JOB-${String(jobId).padStart(4, '0')}</p>`
-                    });
-                    console.log('📨 Assignment email sent to staff');
-                } catch (staffEmailErr) {
-                    console.warn('⚠️ Staff email failed (non-critical):', staffEmailErr.message);
-                }
-            }
-
-            // Push notification to assigned staff
-            try {
-                const push = require('../utils/pushNotifications');
-                await push.notifyJobAssigned(assignedStaff.id, {
-                    jobId, service: service,
-                    customerName: customer.name, date, time
-                });
-            } catch (pushError) {
-                console.warn('⚠️ Push notification failed (non-critical)');
-            }
-
-            await triggerAutomations('Booking Confirmed', automationData);
-            console.log('⚙️ Automations triggered');
-
-        } catch (automationError) {
-            console.warn('⚠️ Automation error (non-critical):', automationError.message);
+                address: address.trim()
+            }).then(() => console.log('📧 Confirmation email sent to customer'))
+              .catch(e => console.warn('⚠️ Customer email failed (non-critical):', e.message));
         }
+
+        // Admin notification email (fire-and-forget)
+        notifications.sendAdminNotification({
+            name: customer.name,
+            email: customer.email || 'N/A',
+            phone: customer.phone,
+            service: service,
+            date: date,
+            time: time,
+            address: address.trim(),
+            notes: notes ? notes.trim() : ''
+        }).then(() => console.log('📨 Admin notification email sent'))
+          .catch(e => console.warn('⚠️ Admin email failed (non-critical):', e.message));
+
+        // Staff assignment email (fire-and-forget)
+        if (assignedStaff.email) {
+            notifications.sendEmail({
+                to: assignedStaff.email,
+                subject: `New Job Assignment — ${service}`,
+                html: `<h3>New Job Assigned to You</h3>
+                       <p><strong>Customer:</strong> ${customer.name} (${customer.phone})</p>
+                       <p><strong>Service:</strong> ${service}</p>
+                       <p><strong>Date:</strong> ${date} at ${time}</p>
+                       <p><strong>Location:</strong> ${address.trim()}</p>
+                       <p><strong>Job Ref:</strong> JOB-${String(jobId).padStart(4, '0')}</p>`
+            }).then(() => console.log('📨 Assignment email sent to staff'))
+              .catch(e => console.warn('⚠️ Staff email failed (non-critical):', e.message));
+        }
+
+        // Push notification (fire-and-forget)
+        try {
+            const push = require('../utils/pushNotifications');
+            push.notifyJobAssigned(assignedStaff.id, {
+                jobId, service: service,
+                customerName: customer.name, date, time
+            }).catch(() => console.warn('⚠️ Push notification failed (non-critical)'));
+        } catch (pushError) {
+            console.warn('⚠️ Push notification failed (non-critical)');
+        }
+
+        // Automations (fire-and-forget)
+        triggerAutomations('Booking Confirmed', automationData)
+            .then(() => console.log('⚙️ Automations triggered'))
+            .catch(e => console.warn('⚠️ Automation error (non-critical):', e.message));
 
         // ============================================
         // RESPONSE
