@@ -23,8 +23,8 @@ router.get('/enhanced', requireAuth, async (req, res) => {
                 COUNT(j.id) as total_jobs,
                 COUNT(CASE WHEN j.status = 'completed' THEN 1 END) as completed_jobs,
                 AVG(j.estimated_duration) as avg_duration,
-                SUM(CASE WHEN j.status = 'completed' THEN j.final_price ELSE 0 END) as total_revenue,
-                AVG(CASE WHEN j.status = 'completed' THEN j.final_price ELSE NULL END) as avg_price
+                SUM(CASE WHEN j.status = 'completed' THEN COALESCE(j.final_price, s.price, 0) ELSE 0 END) as total_revenue,
+                AVG(CASE WHEN j.status = 'completed' THEN COALESCE(j.final_price, s.price) ELSE NULL END) as avg_price
             FROM services s
             LEFT JOIN jobs j ON s.id = j.service_id
             WHERE s.is_active = 1
@@ -40,13 +40,14 @@ router.get('/enhanced', requireAuth, async (req, res) => {
                     SELECT 
                         strftime('%Y-%m', job_date) as month,
                         COUNT(*) as jobs,
-                        SUM(final_price) as revenue
-                    FROM jobs 
-                    WHERE service_id = ? 
-                    AND status = 'completed'
-                    ${date_from ? `AND job_date >= ?` : ''}
-                    ${date_to ? `AND job_date <= ?` : ''}
-                    GROUP BY strftime('%Y-%m', job_date)
+                        SUM(COALESCE(j2.final_price, s2.price, 0)) as revenue
+                    FROM jobs j2
+                    LEFT JOIN services s2 ON j2.service_id = s2.id
+                    WHERE j2.service_id = ? 
+                    AND j2.status = 'completed'
+                    ${date_from ? `AND j2.job_date >= ?` : ''}
+                    ${date_to ? `AND j2.job_date <= ?` : ''}
+                    GROUP BY strftime('%Y-%m', j2.job_date)
                     ORDER BY month DESC
                     LIMIT 12
                 `).all(
@@ -61,9 +62,9 @@ router.get('/enhanced', requireAuth, async (req, res) => {
                         st.name,
                         COUNT(j.id) as jobs_completed,
                         AVG(j.estimated_duration) as avg_duration,
-                        AVG(j.final_price) as avg_revenue
+                        AVG(COALESCE(j.final_price, s.price)) as avg_revenue
                     FROM jobs j
-                    JOIN staff st ON j.assigned_to = st.id
+                    JOIN users st ON j.assigned_to = st.id
                     WHERE j.service_id = ? 
                     AND j.status = 'completed'
                     GROUP BY st.id
@@ -293,68 +294,70 @@ router.put('/enhanced/:id', requireAdmin, async (req, res) => {
 router.get('/analytics', requireAuth, async (req, res) => {
     try {
         const { period = '30', service_id } = req.query;
-        
+        const safePeriod = Math.max(1, Math.min(365, parseInt(period) || 30));
+        const safeServiceId = service_id ? parseInt(service_id) || null : null;
+
         // Revenue trends
         const revenueTrends = db.prepare(`
-            SELECT 
-                strftime('%Y-%m-%d', job_date) as date,
+            SELECT
+                strftime('%Y-%m-%d', j.job_date) as date,
                 s.name as service_name,
                 COUNT(*) as jobs,
-                SUM(final_price) as revenue
+                SUM(COALESCE(j.final_price, s.price, 0)) as revenue
             FROM jobs j
             JOIN services s ON j.service_id = s.id
             WHERE j.status = 'completed'
-            AND j.job_date >= date('now', '-${period} days')
-            ${service_id ? 'AND j.service_id = ?' : ''}
+            AND j.job_date >= date('now', '-${safePeriod} days')
+            ${safeServiceId ? 'AND j.service_id = ?' : ''}
             GROUP BY date, s.id
             ORDER BY date DESC
-        `).all(...(service_id ? [service_id] : []));
-        
+        `).all(...(safeServiceId ? [safeServiceId] : []));
+
         // Service performance comparison
         const serviceComparison = db.prepare(`
-            SELECT 
+            SELECT
                 s.name,
                 COUNT(j.id) as total_jobs,
                 COUNT(CASE WHEN j.status = 'completed' THEN 1 END) as completed_jobs,
-                AVG(j.final_price) as avg_revenue,
+                AVG(COALESCE(j.final_price, s.price)) as avg_revenue,
                 AVG(j.estimated_duration) as avg_duration,
                 COUNT(DISTINCT j.assigned_to) as unique_staff
             FROM services s
             LEFT JOIN jobs j ON s.id = j.service_id
             WHERE s.is_active = 1
-            AND j.job_date >= date('now', '-${period} days')
+            AND (j.job_date >= date('now', '-${safePeriod} days') OR j.id IS NULL)
             GROUP BY s.id
             ORDER BY total_jobs DESC
         `).all();
-        
+
         // Popular services
         const popularServices = db.prepare(`
-            SELECT 
+            SELECT
                 s.name,
                 COUNT(j.id) as bookings,
                 COUNT(CASE WHEN j.status = 'completed' THEN 1 END) as completions,
-                AVG(j.final_price) as avg_revenue
+                AVG(COALESCE(j.final_price, s.price)) as avg_revenue
             FROM services s
             JOIN jobs j ON s.id = j.service_id
-            WHERE j.job_date >= date('now', '-${period} days')
+            WHERE j.job_date >= date('now', '-${safePeriod} days')
             GROUP BY s.id
             ORDER BY bookings DESC
             LIMIT 10
         `).all();
-        
+
         // Staff service expertise
         const staffExpertise = db.prepare(`
-            SELECT 
+            SELECT
                 st.name as staff_name,
                 s.name as service_name,
                 COUNT(j.id) as jobs_completed,
-                AVG(j.final_price) as avg_revenue,
+                AVG(COALESCE(j.final_price, s.price)) as avg_revenue,
                 AVG(j.estimated_duration) as avg_duration
-            FROM staff st
+            FROM users st
             JOIN jobs j ON st.id = j.assigned_to
             JOIN services s ON j.service_id = s.id
             WHERE j.status = 'completed'
-            AND j.job_date >= date('now', '-${period} days')
+            AND j.job_date >= date('now', '-${safePeriod} days')
             GROUP BY st.id, s.id
             ORDER BY jobs_completed DESC
         `).all();

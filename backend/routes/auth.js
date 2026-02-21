@@ -16,7 +16,7 @@ router.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            { id: user.id, role: user.role, is_active: user.is_active },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -87,109 +87,42 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Emergency endpoint to create admin user in production
+// Emergency endpoint to create/reset admin — requires SETUP_SECRET env var
 router.post('/create-admin', async (req, res) => {
     try {
-        const { email, password, name } = req.body;
-        
-        // Check if admin already exists
-        const existingAdmin = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-        
-        if (existingAdmin) {
-            // Update password for existing admin
-            const hashedPassword = await bcrypt.hash(password, 10);
-            db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hashedPassword, email);
-            
-            return res.json({
-                success: true,
-                message: 'Admin password updated successfully',
-                email: email
+        const { email, password, name, setup_secret } = req.body;
+
+        // Require a secret key to prevent unauthorized use
+        const requiredSecret = process.env.SETUP_SECRET;
+        if (!requiredSecret || setup_secret !== requiredSecret) {
+            return res.status(403).json({
+                success: false,
+                error: 'Forbidden: invalid or missing setup_secret'
             });
         }
-        
-        // Create new admin user
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, error: 'email and password are required' });
+        }
+
+        const existingAdmin = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+        if (existingAdmin) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hashedPassword, email);
+            return res.json({ success: true, message: 'Admin password updated', email });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        const result = db.prepare(`
-            INSERT INTO users (name, email, password, phone, role)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(name || 'System Administrator', email, hashedPassword, '', 'admin');
-        
-        res.json({
-            success: true,
-            message: 'Admin user created successfully',
-            email: email,
-            id: result.lastInsertRowid
-        });
-        
+        const result = db.prepare(
+            'INSERT INTO users (name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)'
+        ).run(name || 'System Administrator', email, hashedPassword, '', 'admin');
+
+        res.json({ success: true, message: 'Admin user created', email, id: result.lastInsertRowid });
+
     } catch (error) {
         console.error('Create admin error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-// Database initialization endpoint for production
-router.post('/init-database', async (req, res) => {
-    try {
-        console.log('🔧 Initializing database tables...');
-        
-        // Create staff table
-        db.prepare(`
-            CREATE TABLE IF NOT EXISTS staff (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                phone TEXT,
-                role TEXT DEFAULT 'Staff',
-                is_active INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `).run();
-        
-        console.log('✅ Staff table created');
-        
-        // Insert sample staff members
-        const staffMembers = [
-            ['John Staff', 'john.staff@stiltheights.com', '5550101001', 'Staff'],
-            ['Sarah Cleaner', 'sarah.cleaner@stiltheights.com', '5550102002', 'Senior Staff'],
-            ['Mike Technician', 'mike.tech@stiltheights.com', '5550103003', 'Staff']
-        ];
-        
-        for (const [name, email, phone, role] of staffMembers) {
-            try {
-                const result = db.prepare(`
-                    INSERT OR IGNORE INTO staff (name, email, phone, role, is_active)
-                    VALUES (?, ?, ?, ?, 1)
-                `).run(name, email, phone, role);
-                
-                if (result.changes > 0) {
-                    console.log('✅ Created staff:', name);
-                }
-            } catch (error) {
-                console.log('⚠️ Staff already exists or error:', name, error.message);
-            }
-        }
-        
-        // Verify staff table exists
-        const staffCount = db.prepare('SELECT COUNT(*) as count FROM staff').get();
-        console.log('👥 Total staff members:', staffCount.count);
-        
-        res.json({
-            success: true,
-            message: 'Database initialized successfully',
-            staffCount: staffCount.count,
-            tables: ['staff']
-        });
-        
-    } catch (error) {
-        console.error('Database initialization error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

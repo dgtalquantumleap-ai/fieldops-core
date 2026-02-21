@@ -175,6 +175,7 @@ async function initializeApp() {
         setupFilterListeners();
         setupFormHandlers();
         setupModalListeners();
+        setupCustomerSearch();
         
         // Load initial dashboard
         await loadDashboard();
@@ -348,6 +349,9 @@ async function loadSectionData(sectionName) {
             break;
         case 'automations':
             await loadAutomations();
+            break;
+        case 'audit-dashboard':
+            await loadAuditLogs();
             break;
         case 'settings':
             loadSettings();
@@ -1537,119 +1541,497 @@ function logout() {
 }
 
 // ============================================================
-// MODAL FUNCTIONS (AI & Advanced Features)
+// ============================================================
+// HELPER UTILITIES (used by view/edit functions)
 // ============================================================
 
-/**
- * Show AI Follow-up Modal
- */
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = (value !== null && value !== undefined && value !== '') ? value : '—';
+}
+
+function setField(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value ?? '';
+}
+
+function getAuthToken() {
+    return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+}
+
+// ============================================================
+// CUSTOMER CRUD
+// ============================================================
+
+async function viewCustomerDetails(id) {
+    try {
+        const response = await API.customers.getById(id);
+        if (!response.success) throw new Error(response.error || 'Failed to load customer');
+        const c = response.data;
+
+        setText('detail-customer-name', c.name);
+        setText('detail-customer-phone', c.phone);
+        setText('detail-customer-email', c.email);
+        setText('detail-customer-address', c.address);
+        setText('detail-customer-notes', c.notes);
+        setText('detail-customer-created', utils.format.date(c.created_at));
+
+        // Load customer job history — filter from all jobs in state, or fetch fresh
+        const allJobs = store.getState().jobs || [];
+        const jobs = allJobs.filter(j => j.customer_id == id);
+        const jobsList = document.getElementById('customer-jobs-list');
+        if (jobsList) {
+            jobsList.innerHTML = jobs.length === 0
+                ? '<p style="color:var(--text-secondary)">No jobs found for this customer.</p>'
+                : jobs.map(j => `
+                    <div style="padding:0.5rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+                        <span><strong>${j.service_name || 'Job'}</strong> &mdash; ${utils.format.date(j.job_date)}</span>
+                        <span class="status-badge status-${(j.status||'unknown').toLowerCase().replace(/ /g,'-')}">${j.status || 'Unknown'}</span>
+                    </div>`).join('');
+        }
+
+        openModal('customer-details-modal');
+    } catch (error) {
+        logger.error('Failed to load customer details:', error);
+        ui.notify.error('Failed to load customer details');
+    }
+}
+
+async function editCustomer(id) {
+    try {
+        const response = await API.customers.getById(id);
+        if (!response.success) throw new Error(response.error || 'Failed to load customer');
+        const c = response.data;
+
+        setField('edit-customer-id', c.id);
+        setField('edit-customer-name', c.name);
+        setField('edit-customer-phone', c.phone);
+        setField('edit-customer-email', c.email || '');
+        setField('edit-customer-address', c.address || '');
+        setField('edit-customer-notes', c.notes || '');
+
+        openModal('edit-customer-modal');
+    } catch (error) {
+        logger.error('Failed to load customer for edit:', error);
+        ui.notify.error('Failed to load customer');
+    }
+}
+
+async function updateCustomer() {
+    const id = document.getElementById('edit-customer-id')?.value;
+    if (!id) return;
+
+    const formData = ui.form.getFormData('edit-customer-form');
+    const validation = utils.validate.validateForm(
+        { 'edit-customer-name': formData['edit-customer-name'], 'edit-customer-phone': formData['edit-customer-phone'] },
+        { 'edit-customer-name': { required: true }, 'edit-customer-phone': { required: true } }
+    );
+    if (!validation.isValid) { ui.form.setErrors('edit-customer-form', validation.errors); return; }
+
+    try {
+        const response = await API.customers.update(id, {
+            name: formData['edit-customer-name'],
+            phone: formData['edit-customer-phone'],
+            email: formData['edit-customer-email'] || null,
+            address: formData['edit-customer-address'] || null,
+            notes: formData['edit-customer-notes'] || null
+        });
+        if (response.success) {
+            ui.notify.success('Customer updated');
+            closeModal('edit-customer-modal');
+            await loadCustomers();
+        } else {
+            ui.notify.error(response.error?.message || 'Failed to update customer');
+        }
+    } catch (error) {
+        logger.error('Failed to update customer:', error);
+        ui.notify.error('Failed to update customer');
+    }
+}
+
+// ============================================================
+// JOB CRUD
+// ============================================================
+
+async function viewJobDetails(id) {
+    try {
+        const response = await API.jobs.getById(id);
+        if (!response.success) throw new Error(response.error || 'Failed to load job');
+        const j = response.data;
+
+        setText('detail-job-service', j.service_name);
+        setText('detail-job-customer', j.customer_name);
+        setText('detail-job-date', utils.format.date(j.job_date));
+        setText('detail-job-time', j.job_time);
+        setText('detail-job-location', j.location);
+        setText('detail-job-staff', j.staff_name || 'Unassigned');
+        setText('detail-job-created', utils.format.date(j.created_at));
+        setText('detail-job-notes', j.notes);
+
+        const statusBadge = document.getElementById('detail-job-status-badge');
+        if (statusBadge) {
+            const status = j.status || 'Unknown';
+            statusBadge.textContent = status;
+            statusBadge.className = `status-badge status-${status.toLowerCase().replace(/ /g, '-')}`;
+        }
+
+        openModal('job-details-modal');
+    } catch (error) {
+        logger.error('Failed to load job details:', error);
+        ui.notify.error('Failed to load job details');
+    }
+}
+
+async function editJob(id) {
+    try {
+        const [jobRes, staffRes] = await Promise.all([API.jobs.getById(id), API.staff.getAll()]);
+        if (!jobRes.success) throw new Error('Failed to load job');
+        const j = jobRes.data;
+        const staffList = staffRes.success ? (Array.isArray(staffRes.data) ? staffRes.data : staffRes.data?.items || []) : [];
+
+        setField('edit-job-id', j.id);
+        setField('edit-job-status', j.status);
+        setField('edit-job-notes', j.notes || '');
+
+        const staffSelect = document.getElementById('edit-job-staff');
+        if (staffSelect) {
+            staffSelect.innerHTML = '<option value="">— Unassigned —</option>' +
+                staffList.filter(s => s.is_active).map(s =>
+                    `<option value="${s.id}" ${s.id == j.assigned_to ? 'selected' : ''}>${s.name}</option>`
+                ).join('');
+        }
+
+        openModal('edit-job-modal');
+    } catch (error) {
+        logger.error('Failed to load job for edit:', error);
+        ui.notify.error('Failed to load job');
+    }
+}
+
+async function updateJob() {
+    const id = document.getElementById('edit-job-id')?.value;
+    if (!id) return;
+
+    const formData = ui.form.getFormData('edit-job-form');
+    try {
+        const response = await API.jobs.update(id, {
+            status: formData['edit-job-status'],
+            assigned_to: formData['edit-job-staff'] || null,
+            notes: formData['edit-job-notes'] || null
+        });
+        if (response.success) {
+            ui.notify.success('Job updated');
+            closeModal('edit-job-modal');
+            await loadJobs();
+        } else {
+            ui.notify.error(response.error?.message || 'Failed to update job');
+        }
+    } catch (error) {
+        logger.error('Failed to update job:', error);
+        ui.notify.error('Failed to update job');
+    }
+}
+
+// ============================================================
+// STAFF CRUD
+// ============================================================
+
+async function viewStaffDetails(id) {
+    try {
+        const staffRes = await API.staff.getById(id);
+        if (!staffRes.success) throw new Error('Failed to load staff');
+        const s = staffRes.data;
+        // Filter jobs from state for this staff member
+        const allJobs = store.getState().jobs || [];
+        const jobs = allJobs.filter(j => j.assigned_to == id);
+
+        setText('detail-staff-name', s.name);
+        setText('detail-staff-email', s.email);
+        setText('detail-staff-phone', s.phone);
+        setText('detail-staff-role', s.role);
+        setText('detail-staff-created', utils.format.date(s.created_at));
+        setText('detail-staff-notes', null);
+
+        const statusBadge = document.getElementById('detail-staff-status-badge');
+        if (statusBadge) {
+            const active = s.is_active === 1 || s.is_active === true;
+            statusBadge.textContent = active ? 'Active' : 'Inactive';
+            statusBadge.className = `status-badge ${active ? 'status-active' : 'status-inactive'}`;
+        }
+
+        setText('detail-total-jobs', jobs.length);
+        setText('detail-completed-jobs', jobs.filter(j => j.status === 'Completed').length);
+        setText('detail-scheduled-jobs', jobs.filter(j => j.status === 'Scheduled').length);
+        setText('detail-in-progress-jobs', jobs.filter(j => j.status === 'In Progress').length);
+
+        const jobsList = document.getElementById('staff-jobs-list');
+        if (jobsList) {
+            jobsList.innerHTML = jobs.length === 0
+                ? '<p style="color:var(--text-secondary)">No jobs found.</p>'
+                : jobs.slice(0, 10).map(j => `
+                    <div style="padding:0.5rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+                        <span><strong>${j.service_name || 'Job'}</strong> &mdash; ${utils.format.date(j.job_date)}</span>
+                        <span class="status-badge status-${(j.status||'unknown').toLowerCase().replace(/ /g,'-')}">${j.status || 'Unknown'}</span>
+                    </div>`).join('');
+        }
+
+        const activityLog = document.getElementById('staff-activity-log');
+        if (activityLog) {
+            activityLog.innerHTML = '<p style="color:var(--text-secondary)">Activity logged on future actions.</p>';
+        }
+
+        openModal('staff-details-modal');
+    } catch (error) {
+        logger.error('Failed to load staff details:', error);
+        ui.notify.error('Failed to load staff details');
+    }
+}
+
+async function editStaff(id) {
+    try {
+        const response = await API.staff.getById(id);
+        if (!response.success) throw new Error('Failed to load staff');
+        const s = response.data;
+
+        setField('edit-staff-id', s.id);
+        setField('edit-staff-name', s.name);
+        setField('edit-staff-email', s.email);
+        setField('edit-staff-phone', s.phone || '');
+        setField('edit-staff-role', s.role);
+
+        const activeCheckbox = document.getElementById('edit-staff-active');
+        if (activeCheckbox) activeCheckbox.checked = s.is_active === 1 || s.is_active === true;
+
+        openModal('edit-staff-modal');
+    } catch (error) {
+        logger.error('Failed to load staff for edit:', error);
+        ui.notify.error('Failed to load staff');
+    }
+}
+
+async function updateStaff() {
+    const id = document.getElementById('edit-staff-id')?.value;
+    if (!id) return;
+
+    const formData = ui.form.getFormData('edit-staff-form');
+    const validation = utils.validate.validateForm(
+        { 'edit-staff-name': formData['edit-staff-name'], 'edit-staff-email': formData['edit-staff-email'] },
+        { 'edit-staff-name': { required: true }, 'edit-staff-email': { required: true, email: true } }
+    );
+    if (!validation.isValid) { ui.form.setErrors('edit-staff-form', validation.errors); return; }
+
+    try {
+        const isActive = document.getElementById('edit-staff-active')?.checked;
+        const response = await API.staff.update(id, {
+            name: formData['edit-staff-name'],
+            email: formData['edit-staff-email'],
+            phone: formData['edit-staff-phone'] || null,
+            role: formData['edit-staff-role'],
+            is_active: isActive ? 1 : 0
+        });
+        if (response.success) {
+            ui.notify.success('Staff member updated');
+            closeModal('edit-staff-modal');
+            await loadStaff();
+        } else {
+            ui.notify.error(response.error?.message || 'Failed to update staff');
+        }
+    } catch (error) {
+        logger.error('Failed to update staff:', error);
+        ui.notify.error('Failed to update staff');
+    }
+}
+
+// ============================================================
+// INVOICE VIEW
+// ============================================================
+
+async function viewInvoiceDetails(id) {
+    try {
+        const response = await API.invoices.getById(id);
+        if (!response.success) throw new Error(response.error || 'Failed to load invoice');
+        const inv = response.data;
+
+        setText('detail-invoice-number', inv.invoice_number);
+        setText('detail-invoice-customer', inv.customer_name);
+        setText('detail-invoice-amount', utils.format.currency(inv.amount));
+        setText('detail-invoice-issue-date', utils.format.date(inv.issued_at));
+        setText('detail-invoice-paid-date', inv.paid_date ? utils.format.date(inv.paid_date) : null);
+        setText('detail-invoice-job', inv.job_id ? `Job #${inv.job_id}` : null);
+        setText('detail-invoice-notes', inv.notes);
+
+        const statusBadge = document.getElementById('detail-invoice-status-badge');
+        if (statusBadge) {
+            const status = inv.status || 'unpaid';
+            statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusBadge.className = `status-badge ${status === 'paid' ? 'status-active' : 'status-pending'}`;
+        }
+
+        const paymentsList = document.getElementById('invoice-payments-list');
+        if (paymentsList) {
+            paymentsList.innerHTML = '<p style="color:var(--text-secondary)">No payment records available.</p>';
+        }
+
+        openModal('invoice-details-modal');
+    } catch (error) {
+        logger.error('Failed to load invoice details:', error);
+        ui.notify.error('Failed to load invoice details');
+    }
+}
+
+// ============================================================
+// AUTOMATION CRUD
+// ============================================================
+
+async function editAutomation(id) {
+    try {
+        const response = await API.automations.getAll();
+        const automations = response.success ? response.data : [];
+        const automation = (Array.isArray(automations) ? automations : automations?.items || []).find(a => a.id == id);
+
+        if (!automation) { ui.notify.error('Automation not found'); return; }
+
+        setField('edit-automation-id', automation.id);
+        setField('edit-automation-trigger', automation.trigger_event);
+        setField('edit-automation-channel', automation.channel);
+        setField('edit-automation-message', automation.message_template);
+
+        const enabledCheckbox = document.getElementById('edit-automation-enabled');
+        if (enabledCheckbox) enabledCheckbox.checked = !!(automation.enabled || automation.is_active);
+
+        openModal('edit-automation-modal');
+    } catch (error) {
+        logger.error('Failed to load automation for edit:', error);
+        ui.notify.error('Failed to load automation');
+    }
+}
+
+async function updateAutomation() {
+    const id = document.getElementById('edit-automation-id')?.value;
+    if (!id) return;
+
+    const formData = ui.form.getFormData('edit-automation-form');
+    const isEnabled = document.getElementById('edit-automation-enabled')?.checked;
+
+    try {
+        const response = await API.automations.update(id, {
+            trigger_event: formData['edit-automation-trigger'],
+            channel: formData['edit-automation-channel'],
+            message_template: formData['edit-automation-message'],
+            enabled: isEnabled
+        });
+        if (response.success) {
+            ui.notify.success('Automation updated');
+            closeModal('edit-automation-modal');
+            await loadAutomations();
+        } else {
+            ui.notify.error(response.error?.message || 'Failed to update automation');
+        }
+    } catch (error) {
+        logger.error('Failed to update automation:', error);
+        ui.notify.error('Failed to update automation');
+    }
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+async function loadAuditLogs() {
+    const container = document.getElementById('audit-logs-container');
+    if (!container) return;
+
+    container.innerHTML = '<p style="color:var(--text-secondary)">Loading audit logs...</p>';
+
+    try {
+        const token = getAuthToken();
+        const res = await fetch('/api/admin-audit/audit-logs?limit=100', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        const logs = data.success ? (Array.isArray(data.data) ? data.data : data.data?.items || []) : [];
+
+        if (logs.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-secondary)">No audit logs yet. Logs are recorded as actions are taken.</p>';
+            return;
+        }
+
+        container.innerHTML = logs.map(log => `
+            <div style="padding:0.75rem 1rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+                <div>
+                    <strong>${utils.sanitize ? utils.sanitize(log.user_name || 'System') : (log.user_name || 'System')}</strong>
+                    <span style="color:var(--text-secondary);margin:0 0.3rem;">${log.action || 'performed action on'}</span>
+                    <strong>${log.entity_type || ''}</strong>
+                    ${log.entity_name ? `<span style="color:var(--text-secondary)"> &ldquo;${log.entity_name}&rdquo;</span>` : ''}
+                </div>
+                <span style="color:var(--text-secondary);font-size:0.8rem;white-space:nowrap;">${utils.format.date(log.created_at)}</span>
+            </div>
+        `).join('');
+    } catch (error) {
+        logger.error('Failed to load audit logs:', error);
+        container.innerHTML = '<p style="color:var(--danger-color,#e53e3e)">Failed to load audit logs.</p>';
+    }
+}
+
+// ============================================================
+// CUSTOMER SEARCH
+// ============================================================
+
+function setupCustomerSearch() {
+    const searchInput = document.getElementById('customer-search');
+    if (!searchInput) return;
+
+    const debounce = (fn, delay) => {
+        let timer;
+        return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+    };
+
+    searchInput.addEventListener('input', debounce((e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const customers = store.getState().customers || [];
+        const filtered = query
+            ? customers.filter(c =>
+                (c.name || '').toLowerCase().includes(query) ||
+                (c.phone || '').toLowerCase().includes(query) ||
+                (c.email || '').toLowerCase().includes(query)
+              )
+            : customers;
+        renderCustomersList(filtered);
+    }, 300));
+}
+
+// ============================================================
+// LEGACY / AI STUBS (kept for UI compatibility)
+// ============================================================
+
+function loadStaffManagement() { loadStaff(); }
+
 function showFollowUpModal() {
-    ui.notify.info('AI Follow-up feature coming soon');
+    showSection('automations');
+    ui.notify.info('Create an automation with trigger "Job Completed" for follow-ups');
 }
 
-/**
- * Show Staff Notification Modal
- */
 function showStaffNotificationModal() {
-    ui.notify.info('Staff Notification feature coming soon');
+    showSection('automations');
+    ui.notify.info('Create an automation with trigger "Job Assigned" for staff notifications');
 }
 
-/**
- * Show Custom AI Modal
- */
-function showCustomAIModal() {
-    ui.notify.info('Custom AI Message feature coming soon');
-}
+function showCustomAIModal() { ui.notify.info('Custom AI messaging — configure via Automations'); }
+function showAITemplates() { ui.notify.info('AI Templates — configure via Automations'); }
+function openSchedulingPlugin() { showSection('jobs'); }
 
-/**
- * Show AI Templates
- */
-function showAITemplates() {
-    ui.notify.info('AI Templates feature coming soon');
-}
+function editService() { ui.notify.info('Service editing — use Settings > Services'); }
+function addNewService() { ui.notify.info('Add service — use Settings > Services'); }
 
-/**
- * Open Scheduling Plugin
- */
-function openSchedulingPlugin() {
-    ui.notify.info('Scheduling Plugin integration coming soon');
-}
-
-/**
- * Load Staff Management (legacy compatibility)
- */
-function loadStaffManagement() {
-    loadStaff();
-}
-
-/**
- * Edit Service
- */
-function editService(button) {
-    ui.notify.info('Service editing coming soon');
-}
-
-/**
- * Add New Service
- */
-function addNewService() {
-    ui.notify.info('Add service feature coming soon');
-}
-
-/**
- * Save Label Settings
- */
 function saveLabelSettings() {
     const jobsLabel = document.getElementById('jobs-label')?.value || 'Jobs';
     const customersLabel = document.getElementById('customers-label')?.value || 'Customers';
     const staffLabel = document.getElementById('staff-label')?.value || 'Staff';
-    
     localStorage.setItem('jobsLabel', jobsLabel);
     localStorage.setItem('customersLabel', customersLabel);
     localStorage.setItem('staffLabel', staffLabel);
-    
     ui.notify.success('Label settings saved');
-}
-
-// Placeholder functions (implement as needed)
-function viewCustomerDetails(id) { 
-    logger.debug('View customer:', id);
-    ui.notify.info('Customer details view coming soon');
-}
-
-function editCustomer(id) { 
-    logger.debug('Edit customer:', id);
-    ui.notify.info('Customer editing coming soon');
-}
-
-function viewJobDetails(id) { 
-    logger.debug('View job:', id);
-    ui.notify.info('Job details view coming soon');
-}
-
-function editJob(id) { 
-    logger.debug('Edit job:', id);
-    ui.notify.info('Job editing coming soon');
-}
-
-function viewStaffDetails(id) { 
-    logger.debug('View staff:', id);
-    ui.notify.info('Staff details view coming soon');
-}
-
-function editStaff(id) { 
-    logger.debug('Edit staff:', id);
-    ui.notify.info('Staff editing coming soon');
-}
-
-function viewInvoiceDetails(id) { 
-    logger.debug('View invoice:', id);
-    ui.notify.info('Invoice details view coming soon');
-}
-
-function editAutomation(id) { 
-    logger.debug('Edit automation:', id);
-    ui.notify.info('Automation editing coming soon');
 }
 
 // ============================================================

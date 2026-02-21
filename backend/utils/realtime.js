@@ -2,6 +2,7 @@ const db = require('../config/database');
 
 // Real-time update helper
 const emitRealTimeUpdate = (io, event, data, room = null) => {
+    if (!io) return;
     if (room) {
         io.to(room).emit(event, data);
     } else {
@@ -29,7 +30,7 @@ const triggerAutomations = async (triggerEvent, data, io) => {
     try {
         const automations = db.prepare(`
             SELECT * FROM automations 
-            WHERE trigger_event = ? AND enabled = 1
+            WHERE trigger_event = ? AND is_active = 1
         `).all(triggerEvent);
         
         if (automations.length === 0) return;

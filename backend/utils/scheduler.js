@@ -40,7 +40,7 @@ function initSchedulers() {
                 LEFT JOIN customers c ON j.customer_id = c.id
                 LEFT JOIN users u ON j.assigned_to = u.id
                 LEFT JOIN services s ON j.service_id = s.id
-                WHERE j.status = 'completed' 
+                WHERE j.status = 'Completed'
                 AND j.updated_at < datetime('now', '-24 hours')
                 AND j.updated_at > datetime('now', '-25 hours')
                 AND j.follow_up_sent = 0
@@ -96,8 +96,8 @@ function initSchedulers() {
                 SELECT i.*, c.name as customer_name, c.email as customer_email, c.phone
                 FROM invoices i
                 LEFT JOIN customers c ON i.customer_id = c.id
-                WHERE date(i.due_date) = date('now', '+3 days')
-                AND i.payment_status = 'pending'
+                WHERE date(i.issued_at, '+30 days') = date('now', '+3 days')
+                AND i.status = 'unpaid'
                 AND i.reminder_sent_3day = 0
             `).all();
 
@@ -157,7 +157,7 @@ function initSchedulers() {
                 LEFT JOIN users u ON j.assigned_to = u.id
                 LEFT JOIN services s ON j.service_id = s.id
                 WHERE date(j.job_date) = date('now', '+1 day')
-                AND j.status IN ('scheduled', 'pending', 'in progress')
+                AND j.status IN ('Scheduled', 'In Progress')
                 AND j.reminder_sent = 0
             `).all();
 
@@ -239,7 +239,7 @@ function initSchedulers() {
                 AND (
                     SELECT COUNT(*) FROM customers c2
                     WHERE c2.id = c.id 
-                    AND c2.last_engagement_sent < datetime('now', '-30 days')
+                    AND (c2.last_engagement_sent IS NULL OR c2.last_engagement_sent < datetime('now', '-30 days'))
                 ) > 0
             `).all();
 
@@ -264,7 +264,7 @@ function initSchedulers() {
 
                             // Update last engagement sent
                             db.prepare(
-                                'UPDATE customers SET last_engagement_sent = datetime("now") WHERE id = ?'
+                                "UPDATE customers SET last_engagement_sent = datetime('now') WHERE id = ?"
                             ).run(customer.id);
 
                             console.log(`📧 Re-engagement email sent to ${customer.name}`);

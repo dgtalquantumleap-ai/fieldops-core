@@ -2,22 +2,22 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { paginate } = require('../utils/dbHelper');
+const { requireAuth } = require('../middleware/auth');
 
-// Get jobs assigned to staff (for mobile staff app)
-router.get('/jobs', async (req, res) => {
+// Get jobs assigned to this staff member (for mobile staff app)
+router.get('/jobs', requireAuth, async (req, res) => {
     try {
-        // For now, return all jobs since we don't have staff assignment logic yet
-        // In a real system, you'd filter by assigned_to = staff_id
         const stmt = db.prepare(`
             SELECT j.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
                    s.name as service_name, s.price as service_price
             FROM jobs j
             LEFT JOIN customers c ON j.customer_id = c.id
             LEFT JOIN services s ON j.service_id = s.id
-            WHERE j.status != 'Completed'
+            WHERE j.assigned_to = ?
+            AND j.status NOT IN ('Completed', 'Cancelled')
             ORDER BY j.job_date ASC, j.job_time ASC
         `);
-        const jobs = stmt.all();
+        const jobs = stmt.all(req.user.id);
         res.json(jobs);
     } catch (error) {
         res.status(500).json({ error: error.message });

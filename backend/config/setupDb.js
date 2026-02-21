@@ -140,6 +140,63 @@ const setupDatabase = () => {
         `);
         console.log('✅ Push subscriptions table ready');
 
+        // Create activity_log table for audit trail
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS activity_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                user_name TEXT,
+                action TEXT NOT NULL,
+                entity_type TEXT,
+                entity_id INTEGER,
+                entity_name TEXT,
+                details TEXT,
+                ip_address TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Activity log table ready');
+
+        // Create automations table
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS automations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                trigger_event TEXT NOT NULL,
+                message_template TEXT NOT NULL,
+                channel TEXT DEFAULT 'email',
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Automations table ready');
+
+        // Create settings table
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Settings table ready');
+
+        // Create job_reviews table
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS job_reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER,
+                customer_id INTEGER,
+                rating INTEGER CHECK(rating >= 1 AND rating <= 5),
+                comment TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (job_id) REFERENCES jobs(id),
+                FOREIGN KEY (customer_id) REFERENCES customers(id)
+            )
+        `);
+        console.log('✅ Job reviews table ready');
+
         // Create indexes for performance
         console.log('\n🔍 Creating indexes for better performance...');
         db.exec(`
@@ -154,6 +211,9 @@ const setupDatabase = () => {
             CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
             CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
             CREATE INDEX IF NOT EXISTS idx_job_media_job ON job_media(job_id);
+            CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id);
+            CREATE INDEX IF NOT EXISTS idx_activity_log_entity ON activity_log(entity_type, entity_id);
+            CREATE INDEX IF NOT EXISTS idx_automations_trigger ON automations(trigger_event);
         `);
         console.log('✅ Indexes created');
 
@@ -166,6 +226,26 @@ const setupDatabase = () => {
         if (!jobCols.includes('follow_up_sent')) {
             db.exec('ALTER TABLE jobs ADD COLUMN follow_up_sent INTEGER DEFAULT 0');
             console.log('✅ Migration: added follow_up_sent to jobs');
+        }
+        if (!jobCols.includes('final_price')) {
+            db.exec('ALTER TABLE jobs ADD COLUMN final_price REAL');
+            console.log('✅ Migration: added final_price to jobs');
+        }
+        if (!jobCols.includes('reminder_sent')) {
+            db.exec('ALTER TABLE jobs ADD COLUMN reminder_sent INTEGER DEFAULT 0');
+            console.log('✅ Migration: added reminder_sent to jobs');
+        }
+
+        const invoiceCols = db.prepare('PRAGMA table_info(invoices)').all().map(c => c.name);
+        if (!invoiceCols.includes('reminder_sent_3day')) {
+            db.exec('ALTER TABLE invoices ADD COLUMN reminder_sent_3day INTEGER DEFAULT 0');
+            console.log('✅ Migration: added reminder_sent_3day to invoices');
+        }
+
+        const customerCols = db.prepare('PRAGMA table_info(customers)').all().map(c => c.name);
+        if (!customerCols.includes('last_engagement_sent')) {
+            db.exec('ALTER TABLE customers ADD COLUMN last_engagement_sent DATETIME');
+            console.log('✅ Migration: added last_engagement_sent to customers');
         }
 
         // Insert default services if empty
