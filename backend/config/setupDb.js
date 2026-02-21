@@ -68,6 +68,7 @@ const setupDatabase = () => {
                 location TEXT,
                 status TEXT DEFAULT 'scheduled',
                 notes TEXT,
+                estimated_duration REAL DEFAULT 2,
                 deleted_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -154,6 +155,13 @@ const setupDatabase = () => {
             CREATE INDEX IF NOT EXISTS idx_job_media_job ON job_media(job_id);
         `);
         console.log('✅ Indexes created');
+
+        // Run migrations for columns added after initial schema
+        const jobCols = db.prepare('PRAGMA table_info(jobs)').all().map(c => c.name);
+        if (!jobCols.includes('estimated_duration')) {
+            db.exec('ALTER TABLE jobs ADD COLUMN estimated_duration REAL DEFAULT 2');
+            console.log('✅ Migration: added estimated_duration to jobs');
+        }
 
         // Insert default services if empty
         const serviceCount = db.prepare('SELECT COUNT(*) as count FROM services').get().count;
