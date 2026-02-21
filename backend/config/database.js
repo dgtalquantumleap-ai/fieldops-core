@@ -80,12 +80,13 @@ const initializeAdminUser = () => {
       return;
     }
     
-    // Create new admin user with random temporary password
-    const tempPassword = Math.random().toString(36).slice(-8) + 
-                         Math.random().toString(36).slice(-4);
-    const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+    // Use ADMIN_PASSWORD env var if set, otherwise generate a random one
+    const adminPassword = process.env.ADMIN_PASSWORD || (
+        Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4)
+    );
+    const hashedPassword = bcrypt.hashSync(adminPassword, 10);
     const adminPhone = process.env.ADMIN_PHONE || null;
-    
+
     // Try to insert with new schema first, fallback to old schema
     try {
       db.prepare(`
@@ -99,11 +100,15 @@ const initializeAdminUser = () => {
         VALUES (?, ?, ?, 'admin', ?, datetime('now'))
       `).run('System Administrator', adminEmail, hashedPassword, adminPhone);
     }
-    
+
     console.log('\n🔐 ADMIN USER CREATED:');
     console.log(`   Email: ${adminEmail}`);
-    console.log(`   Temporary Password: ${tempPassword}`);
-    console.log('   ⚠️  IMPORTANT: Change this password immediately after first login!\n');
+    if (!process.env.ADMIN_PASSWORD) {
+      console.log(`   Temporary Password: ${adminPassword}`);
+      console.log('   ⚠️  IMPORTANT: Set ADMIN_PASSWORD env var or change this password!\n');
+    } else {
+      console.log('   Password: set from ADMIN_PASSWORD environment variable');
+    }
     
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
