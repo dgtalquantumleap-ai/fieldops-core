@@ -678,13 +678,13 @@ const invoiceAPI = {
      * @returns {Promise<APIResponse>}
      */
     async create(invoice) {
-        if (!invoice || !invoice.customer_id || !invoice.amount) {
-            throw new Error('Customer and amount are required');
+        if (!invoice || !invoice.job_id) {
+            throw new Error('Job ID is required to create an invoice');
         }
-        
+
         try {
             const headers = getAuthHeaders();
-            const response = await fetchWithRetry(`${API_BASE_URL}/invoices`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/invoices/create`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(invoice)

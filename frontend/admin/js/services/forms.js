@@ -174,8 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await API.jobs.create({
                     customer_id: parseInt(formData['job-customer']),
-                    service_name: formData['job-service'],
-                    staff_id: formData['job-staff'] ? parseInt(formData['job-staff']) : null,
+                    service_id: parseInt(formData['job-service']),
+                    assigned_to: formData['job-staff'] ? parseInt(formData['job-staff']) : null,
                     job_date: formData['job-date'],
                     job_time: formData['job-time'],
                     location: formData['job-location'],
