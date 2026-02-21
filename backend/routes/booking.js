@@ -328,10 +328,10 @@ router.post('/book', validateBooking, async (req, res) => {
                 notes: notes ? notes.trim() : ''
             };
 
-            // AI confirmation email to customer
+            // Confirmation email to customer
             if (customer.email) {
                 try {
-                    const aiEmail = await aiAutomation.generateBookingEmail({
+                    await notifications.sendCustomerConfirmation({
                         name: customer.name,
                         email: customer.email,
                         service: service,
@@ -339,35 +339,45 @@ router.post('/book', validateBooking, async (req, res) => {
                         time: time,
                         address: address.trim()
                     });
-                    await notifications.sendEmail({
-                        to: customer.email,
-                        subject: `Booking Confirmed — Stilt Heights`,
-                        body: aiEmail
-                    });
                     console.log('📧 Confirmation email sent to customer');
-                } catch (aiError) {
-                    console.warn('⚠️ AI email failed (non-critical)');
+                } catch (emailErr) {
+                    console.warn('⚠️ Customer email failed (non-critical):', emailErr.message);
                 }
             }
 
-            // AI notification to assigned staff
+            // Admin notification email (always send)
+            try {
+                await notifications.sendAdminNotification({
+                    name: customer.name,
+                    email: customer.email || 'N/A',
+                    phone: customer.phone,
+                    service: service,
+                    date: date,
+                    time: time,
+                    address: address.trim(),
+                    notes: notes ? notes.trim() : ''
+                });
+                console.log('📨 Admin notification email sent');
+            } catch (adminEmailErr) {
+                console.warn('⚠️ Admin email failed (non-critical):', adminEmailErr.message);
+            }
+
+            // Assignment email to staff
             if (assignedStaff.email) {
                 try {
-                    const aiStaffMsg = await aiAutomation.generateJobAssignmentMessage({
-                        customer_name: customer.name,
-                        service_name: service,
-                        job_date: date,
-                        job_time: time,
-                        location: address.trim()
-                    });
                     await notifications.sendEmail({
                         to: assignedStaff.email,
                         subject: `New Job Assignment — ${service}`,
-                        body: aiStaffMsg
+                        html: `<h3>New Job Assigned to You</h3>
+                               <p><strong>Customer:</strong> ${customer.name} (${customer.phone})</p>
+                               <p><strong>Service:</strong> ${service}</p>
+                               <p><strong>Date:</strong> ${date} at ${time}</p>
+                               <p><strong>Location:</strong> ${address.trim()}</p>
+                               <p><strong>Job Ref:</strong> JOB-${String(jobId).padStart(4, '0')}</p>`
                     });
                     console.log('📨 Assignment email sent to staff');
-                } catch (aiError) {
-                    console.warn('⚠️ AI staff notification failed (non-critical)');
+                } catch (staffEmailErr) {
+                    console.warn('⚠️ Staff email failed (non-critical):', staffEmailErr.message);
                 }
             }
 

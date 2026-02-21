@@ -234,22 +234,19 @@ document.addEventListener('DOMContentLoaded', () => {
     FormHandler.initialize(
         'create-invoice-form',
         {
-            'invoice-job': { required: true },
-            'invoice-amount': { required: true, positive: true }
+            'invoice-job': { required: true }
         },
         async (formData) => {
             FormHandler.disable('create-invoice-form');
             try {
                 const response = await API.invoices.create({
                     job_id: parseInt(formData['invoice-job']),
-                    amount: parseFloat(formData['invoice-amount']),
                     notes: formData['invoice-notes'] || null
                 });
-                
+
                 if (response.success) {
                     ui.notify.success('Invoice created successfully');
                     ui.modal.hide('create-invoice-modal');
-                    ui.form.reset('create-invoice-form');
                     loadInvoices();
                 } else {
                     ui.notify.error('Failed to create invoice');

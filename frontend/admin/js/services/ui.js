@@ -108,13 +108,20 @@ const modals = {
             logger.warn(`Modal not found: ${modalId}`);
             return;
         }
-        
+
         modal.classList.remove('active');
         document.body.style.overflow = 'auto';
-        
+
         // Reset form if exists
         const form = modal.querySelector('form');
         if (form) form.reset();
+
+        // Remove overlay if no other modals are active
+        const stillActive = document.querySelectorAll('.modal.active');
+        if (stillActive.length === 0) {
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) overlay.classList.remove('active');
+        }
     },
 
     /**

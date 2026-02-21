@@ -532,39 +532,39 @@
                 <form id="create-job-form">
                     <div class="form-group">
                         <label for="job-customer">Customer *</label>
-                        <select id="job-customer" title="Select customer for job" required>
+                        <select id="job-customer" name="job-customer" title="Select customer for job" required>
                             <option value="">Select Customer</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="job-service">Service Type *</label>
-                        <select id="job-service" title="Select service type" required>
+                        <select id="job-service" name="job-service" title="Select service type" required>
                             <option value="">Select Service</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="job-staff">Staff Member</label>
-                        <select id="job-staff" title="Assign staff member">
+                        <select id="job-staff" name="job-staff" title="Assign staff member">
                             <option value="">Unassigned</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="job-date">Date *</label>
-                            <input type="date" id="job-date" title="Job date" required>
+                            <input type="date" id="job-date" name="job-date" title="Job date" required>
                         </div>
                         <div class="form-group">
                             <label for="job-time">Time *</label>
-                            <input type="time" id="job-time" title="Job start time" required>
+                            <input type="time" id="job-time" name="job-time" title="Job start time" required>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="job-location">Location *</label>
-                        <input type="text" id="job-location" title="Job location" placeholder="Enter job address" required>
+                        <input type="text" id="job-location" name="job-location" title="Job location" placeholder="Enter job address" required>
                     </div>
                     <div class="form-group">
                         <label for="job-notes">Notes</label>
-                        <textarea id="job-notes" title="Additional job notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                        <textarea id="job-notes" name="job-notes" title="Additional job notes" rows="3" placeholder="Enter any additional notes"></textarea>
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('create-job-modal')">Cancel</button>
@@ -586,23 +586,23 @@
                 <form id="add-customer-form">
                     <div class="form-group">
                         <label for="customer-name">Name *</label>
-                        <input type="text" id="customer-name" title="Customer full name" placeholder="Enter customer name" required>
+                        <input type="text" id="customer-name" name="customer-name" title="Customer full name" placeholder="Enter customer name" required>
                     </div>
                     <div class="form-group">
                         <label for="customer-phone">Phone *</label>
-                        <input type="tel" id="customer-phone" title="Customer phone number" placeholder="Enter phone number" required>
+                        <input type="tel" id="customer-phone" name="customer-phone" title="Customer phone number" placeholder="Enter phone number" required>
                     </div>
                     <div class="form-group">
                         <label for="customer-email">Email</label>
-                        <input type="email" id="customer-email" title="Customer email address" placeholder="Enter email address">
+                        <input type="email" id="customer-email" name="customer-email" title="Customer email address" placeholder="Enter email address">
                     </div>
                     <div class="form-group">
                         <label for="customer-address">Address</label>
-                        <input type="text" id="customer-address" title="Customer address" placeholder="Enter customer address">
+                        <input type="text" id="customer-address" name="customer-address" title="Customer address" placeholder="Enter customer address">
                     </div>
                     <div class="form-group">
                         <label for="customer-notes">Notes</label>
-                        <textarea id="customer-notes" title="Additional customer notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                        <textarea id="customer-notes" name="customer-notes" title="Additional customer notes" rows="3" placeholder="Enter any additional notes"></textarea>
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('add-customer-modal')">Cancel</button>
@@ -623,40 +623,19 @@
             <div class="modal-body">
                 <form id="create-invoice-form">
                     <div class="form-group">
-                        <label for="invoice-customer">Customer *</label>
-                        <select id="invoice-customer" required>
-                            <option value="">Select Customer</option>
+                        <label for="invoice-job">Select Job *</label>
+                        <select id="invoice-job" name="invoice-job" required>
+                            <option value="">Select Job to Invoice</option>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="invoice-job">Job (Optional)</label>
-                        <select id="invoice-job">
-                            <option value="">Select Job</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="invoice-number">Invoice Number *</label>
-                        <input type="text" id="invoice-number" required placeholder="INV-001">
-                    </div>
-                    <div class="form-group">
-                        <label for="invoice-amount">Amount ($) *</label>
-                        <input type="number" id="invoice-amount" step="0.01" min="0" required placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label for="invoice-date">Issue Date *</label>
-                        <input type="date" id="invoice-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="invoice-due-date">Due Date *</label>
-                        <input type="date" id="invoice-due-date" required>
+                        <small style="color:#64748b">Invoice amount will be set from the job's service price</small>
                     </div>
                     <div class="form-group">
                         <label for="invoice-notes">Notes</label>
-                        <textarea id="invoice-notes" rows="3" placeholder="Enter any additional notes"></textarea>
+                        <textarea id="invoice-notes" name="invoice-notes" rows="3" placeholder="Enter any additional notes"></textarea>
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('create-invoice-modal')">Cancel</button>
-                        <button type="button" class="btn-primary" onclick="saveInvoice()">Create Invoice</button>
+                        <button type="submit" class="btn-primary">Create Invoice</button>
                     </div>
                 </form>
             </div>
@@ -674,38 +653,38 @@
                 <form id="onboard-staff-form">
                     <div class="form-group">
                         <label for="onboard-name">Full Name *</label>
-                        <input type="text" id="onboard-name" required>
+                        <input type="text" id="onboard-name" name="onboard-name" required>
                     </div>
                     <div class="form-group">
                         <label for="onboard-email">Email Address *</label>
-                        <input type="email" id="onboard-email" required>
+                        <input type="email" id="onboard-email" name="onboard-email" required>
                     </div>
                     <div class="form-group">
                         <label for="onboard-phone">Phone Number</label>
-                        <input type="tel" id="onboard-phone">
+                        <input type="tel" id="onboard-phone" name="onboard-phone">
                     </div>
                     <div class="form-group">
                         <label for="onboard-role">Role *</label>
-                        <select id="onboard-role" required>
-                            <option value="Staff">Staff</option>
-                            <option value="Manager">Manager</option>
-                            <option value="Admin">Admin</option>
+                        <select id="onboard-role" name="onboard-role" required>
+                            <option value="staff">Staff</option>
+                            <option value="admin">Manager</option>
+                            <option value="admin">Admin</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="onboard-password">Temporary Password *</label>
-                        <input type="password" id="onboard-password" required>
+                        <input type="password" id="onboard-password" name="onboard-password" required>
                         <small>Staff member will be prompted to change this on first login</small>
                     </div>
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="staff-active" checked>
+                            <input type="checkbox" id="staff-active" name="staff-active" checked>
                             Active Staff Member
                         </label>
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('onboard-staff-modal')">Cancel</button>
-                        <button type="button" class="btn-primary" onclick="onboardStaff()">Add Staff Member</button>
+                        <button type="submit" class="btn-primary">Add Staff Member</button>
                     </div>
                 </form>
             </div>
@@ -917,7 +896,7 @@
                 <form id="add-automation-form">
                     <div class="form-group">
                         <label for="automation-trigger">Trigger Event *</label>
-                        <select id="automation-trigger" aria-label="Select automation trigger event" required>
+                        <select id="automation-trigger" name="automation-trigger" aria-label="Select automation trigger event" required>
                             <option value="">Select Trigger</option>
                             <option value="Job Created">Job Created</option>
                             <option value="Job Completed">Job Completed</option>
@@ -926,7 +905,7 @@
                     </div>
                     <div class="form-group">
                         <label for="automation-channel">Channel *</label>
-                        <select id="automation-channel" aria-label="Select automation communication channel" required>
+                        <select id="automation-channel" name="automation-channel" aria-label="Select automation communication channel" required>
                             <option value="">Select Channel</option>
                             <option value="WhatsApp">WhatsApp</option>
                             <option value="SMS">SMS</option>
@@ -935,11 +914,11 @@
                     </div>
                     <div class="form-group">
                         <label for="automation-message">Message Template *</label>
-                        <textarea id="automation-message" rows="4" required placeholder="Enter your message template. Use {customer_name}, {job_date}, {service_name} as placeholders." aria-label="Automation message template"></textarea>
+                        <textarea id="automation-message" name="automation-message" rows="4" required placeholder="Enter your message template. Use {customer_name}, {job_date}, {service_name} as placeholders." aria-label="Automation message template"></textarea>
                     </div>
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="automation-enabled" checked>
+                            <input type="checkbox" id="automation-enabled" name="automation-enabled" checked>
                             Enable this automation
                         </label>
                     </div>

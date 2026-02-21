@@ -48,43 +48,12 @@ function setupFilterListeners() {
 
 /**
  * Setup form event handlers
+ * Note: customer, job, invoice, automation, and staff forms are handled by
+ * FormHandler.initialize() in services/forms.js. Only non-FormHandler forms go here.
  */
 function setupFormHandlers() {
-    // Add Customer Form
-    const addCustomerForm = document.getElementById('add-customer-form');
-    if (addCustomerForm) {
-        addCustomerForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            createCustomer();
-        });
-    }
-    
-    // Create Job Form
-    const createJobForm = document.getElementById('create-job-form');
-    if (createJobForm) {
-        createJobForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            createJob();
-        });
-    }
-    
-    // Create Invoice Form
-    const createInvoiceForm = document.getElementById('create-invoice-form');
-    if (createInvoiceForm) {
-        createInvoiceForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            createInvoice();
-        });
-    }
-    
-    // Add Automation Form
-    const addAutomationForm = document.getElementById('add-automation-form');
-    if (addAutomationForm) {
-        addAutomationForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            createAutomation();
-        });
-    }
+    // Forms are handled by FormHandler.initialize() in services/forms.js
+    // This function is intentionally minimal to avoid duplicate submit handlers.
 }
 
 /**
@@ -754,8 +723,6 @@ async function createCustomer() {
     }
     
     try {
-        ui.loading.show('add-customer-modal');
-        
         const response = await API.customers.create({
             name: formData['customer-name'],
             phone: formData['customer-phone'],
@@ -763,14 +730,12 @@ async function createCustomer() {
             address: formData['customer-address'] || null,
             notes: formData['customer-notes'] || null
         });
-        
+
         if (response.success) {
             ui.notify.success('Customer created successfully');
-            // Reset form and close modal
             document.getElementById('add-customer-form')?.reset();
             ui.form.clearErrors('add-customer-form');
             closeModal('add-customer-modal');
-            // Reload customers list
             await loadCustomers();
         } else {
             ui.notify.error(response.error?.message || 'Failed to create customer');
@@ -778,8 +743,6 @@ async function createCustomer() {
     } catch (error) {
         logger.error('Failed to create customer:', error);
         ui.notify.error('Failed to create customer: ' + (error.message || 'Unknown error'));
-    } finally {
-        ui.loading.hide('add-customer-modal');
     }
 }
 
@@ -1012,17 +975,18 @@ async function populateJobSelects() {
  */
 function populateInvoiceSelects() {
     const jobs = store.getState('jobs') || [];
-    
+
     const jobSelect = document.getElementById('invoice-job');
     if (jobSelect) {
-        jobSelect.innerHTML = '<option value="">Select Job</option>';
+        jobSelect.innerHTML = '<option value="">Select Job to Invoice</option>';
         jobs.forEach(job => {
-            if (job && job.id && job.status !== 'Cancelled') {
+            if (job && job.id && job.status !== 'Cancelled' && job.status !== 'cancelled') {
                 const option = document.createElement('option');
                 option.value = job.id;
                 const customerName = job.customer_name || 'Unknown';
                 const serviceName = job.service_name || 'Service';
-                option.textContent = `${customerName} - ${serviceName} (${job.job_date || 'TBD'})`;
+                const ref = `JOB-${String(job.id).padStart(4, '0')}`;
+                option.textContent = `${ref} — ${customerName} | ${serviceName} (${job.job_date || 'TBD'})`;
                 jobSelect.appendChild(option);
             }
         });
@@ -1066,24 +1030,24 @@ function updateStaffStatistics(staff) {
  * Load staff
  */
 async function loadStaff() {
-    ui.loading.show('staff-list');
-    
+    ui.loading.show('staff-management-list');
+
     try {
         const response = await API.staff.getAll();
         const staff = response.success ? response.data : [];
-        
+
         store.setState({ staff });
-        
+
         // Update statistics
         updateStaffStatistics(staff);
-        
+
         // Render list
         renderStaffList(staff);
-        
+
         logger.info('✅ Staff loaded');
     } catch (error) {
         logger.error('Failed to load staff:', error);
-        ui.loading.error('staff-list', 'Failed to load staff');
+        ui.loading.error('staff-management-list', 'Failed to load staff');
     }
 }
 
@@ -1091,11 +1055,11 @@ async function loadStaff() {
  * Render staff list
  */
 function renderStaffList(staff) {
-    const list = document.getElementById('staff-list');
+    const list = document.getElementById('staff-management-list');
     if (!list) return;
-    
+
     if (!staff || staff.length === 0) {
-        ui.loading.empty('staff-list', 'No staff found');
+        ui.loading.empty('staff-management-list', 'No staff found');
         return;
     }
     
@@ -1159,8 +1123,6 @@ async function onboardStaff() {
     }
     
     try {
-        ui.loading.show('onboard-staff-modal');
-        
         const response = await API.staff.create({
             name: formData['onboard-name'],
             email: formData['onboard-email'],
@@ -1168,14 +1130,12 @@ async function onboardStaff() {
             role: formData['onboard-role'],
             password: formData['onboard-password']
         });
-        
+
         if (response.success) {
             ui.notify.success('Staff member onboarded successfully');
-            // Reset form and close modal
             document.getElementById('onboard-staff-form')?.reset();
             ui.form.clearErrors('onboard-staff-form');
             closeModal('onboard-staff-modal');
-            // Reload staff
             await loadStaff();
         } else {
             ui.notify.error(response.error?.message || 'Failed to onboard staff member');
@@ -1183,8 +1143,6 @@ async function onboardStaff() {
     } catch (error) {
         logger.error('Failed to onboard staff:', error);
         ui.notify.error('Failed to onboard staff member: ' + (error.message || 'Unknown error'));
-    } finally {
-        ui.loading.hide('onboard-staff-modal');
     }
 }
 
@@ -1333,37 +1291,26 @@ async function createInvoice() {
     }
     
     const validation = utils.validate.validateForm(
-        {
-            'invoice-job': formData['invoice-job'],
-            'invoice-amount': formData['invoice-amount']
-        },
-        {
-            'invoice-job': { required: true },
-            'invoice-amount': { required: true, positive: true }
-        }
+        { 'invoice-job': formData['invoice-job'] },
+        { 'invoice-job': { required: true } }
     );
-    
+
     if (!validation.isValid) {
         ui.form.setErrors('create-invoice-form', validation.errors);
         return;
     }
-    
+
     try {
-        ui.loading.show('create-invoice-modal');
-        
         const response = await API.invoices.create({
             job_id: parseInt(formData['invoice-job']),
-            amount: parseFloat(formData['invoice-amount']),
             notes: formData['invoice-notes'] || null
         });
-        
+
         if (response.success) {
             ui.notify.success('Invoice created successfully');
-            // Reset form and close modal
             document.getElementById('create-invoice-form')?.reset();
             ui.form.clearErrors('create-invoice-form');
             closeModal('create-invoice-modal');
-            // Reload invoices
             await loadInvoices();
         } else {
             ui.notify.error(response.error?.message || 'Failed to create invoice');
@@ -1371,8 +1318,6 @@ async function createInvoice() {
     } catch (error) {
         logger.error('Failed to create invoice:', error);
         ui.notify.error('Failed to create invoice: ' + (error.message || 'Unknown error'));
-    } finally {
-        ui.loading.hide('create-invoice-modal');
     }
 }
 
@@ -1467,22 +1412,18 @@ async function createAutomation() {
     }
     
     try {
-        ui.loading.show('add-automation-modal');
-        
         const response = await API.automations.create({
             trigger_event: formData['automation-trigger'],
             channel: formData['automation-channel'],
             message_template: formData['automation-message'],
             enabled: document.getElementById('automation-enabled')?.checked || false
         });
-        
+
         if (response.success) {
             ui.notify.success('Automation created successfully');
-            // Reset form and close modal
             document.getElementById('add-automation-form')?.reset();
             ui.form.clearErrors('add-automation-form');
             closeModal('add-automation-modal');
-            // Reload automations
             await loadAutomations();
         } else {
             ui.notify.error(response.error?.message || 'Failed to create automation');
@@ -1490,8 +1431,6 @@ async function createAutomation() {
     } catch (error) {
         logger.error('Failed to create automation:', error);
         ui.notify.error('Failed to create automation: ' + (error.message || 'Unknown error'));
-    } finally {
-        ui.loading.hide('add-automation-modal');
     }
 }
 

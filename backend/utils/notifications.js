@@ -115,9 +115,34 @@ const sendInvoiceNotification = async (invoiceData) => {
     }
 };
 
+/**
+ * Generic email sender
+ * @param {Object} opts - { to, subject, body (plain text) or html }
+ */
+const sendEmail = async ({ to, subject, body, html }) => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn('⚠️ Email skipped: EMAIL_USER / EMAIL_PASS not configured');
+        return;
+    }
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to,
+        subject,
+        html: html || `<pre style="font-family:sans-serif">${body || ''}</pre>`
+    };
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Email sent to ${to}`);
+    } catch (error) {
+        console.error(`Failed to send email to ${to}:`, error.message);
+        throw error;
+    }
+};
+
 module.exports = {
     sendCustomerConfirmation,
     sendAdminNotification,
     sendSMS,
-    sendInvoiceNotification
+    sendInvoiceNotification,
+    sendEmail
 };
