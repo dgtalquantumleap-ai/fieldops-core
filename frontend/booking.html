@@ -3,853 +3,1076 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Book professional cleaning services with Stilt Heights. Easy online booking, competitive prices, and exceptional service.">
-    <title>Book Professional Cleaning Services - Stilt Heights</title>
-    
+    <meta name="description" content="Book professional cleaning services with Stilt Heights. Easy online booking, competitive prices, and exceptional service in Edmonton, AB.">
+    <title>Book a Cleaning — Stilt Heights</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
-    <meta property="og:title" content="Book Professional Cleaning - Stilt Heights">
+    <meta property="og:title" content="Book a Cleaning — Stilt Heights">
     <meta property="og:description" content="Professional cleaning services for your home or office. Book online in minutes!">
-    
+
     <style>
-        /* ==========================================
-           RESET & BASE
-           ========================================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --blue:       #2563eb;
+            --blue-dark:  #1e40af;
+            --blue-light: #3b82f6;
+            --blue-ring:  rgba(37, 99, 235, 0.15);
+            --blue-shadow:rgba(37, 99, 235, 0.3);
+            --green:      #059669;
+            --green-bg:   #d1fae5;
+            --amber:      #d97706;
+            --amber-bg:   #fef3c7;
+            --gray:       #6b7280;
+            --gray-bg:    #f3f4f6;
+            --red:        #dc2626;
+            --red-bg:     #fef2f2;
+            --text:       #1e293b;
+            --muted:      #64748b;
+            --border:     #e5e7eb;
+            --radius:     12px;
         }
 
-        html {
-            scroll-behavior: smooth;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(150deg, var(--blue) 0%, var(--blue-dark) 100%);
             min-height: 100vh;
+            color: var(--text);
             line-height: 1.6;
-            color: #2d3748;
+            padding: 24px 16px 40px;
         }
 
-        /* ==========================================
-           ANIMATIONS
-           ========================================== */
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
-        /* ==========================================
-           CONTAINER
-           ========================================== */
-        .booking-container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            animation: fadeInUp 0.6s ease-out;
+        /* ── WRAPPER ─────────────────────────────────── */
+        .wrap {
+            max-width: 780px;
+            margin: 0 auto;
+            animation: fadeInUp 0.5s ease-out;
         }
 
-        /* ==========================================
-           TRUST BADGES
-           ========================================== */
-        .trust-badges {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
+        /* ── SITE HEADER ─────────────────────────────── */
+        .site-header {
             text-align: center;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
+            margin-bottom: 16px;
+            color: white;
         }
-
-        .trust-badges h3 {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #2d3748;
-        }
-
-        .badges {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #4a5568;
-        }
-
-        /* ==========================================
-           HEADER
-           ========================================== */
-        .booking-header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px 30px;
-            border-radius: 20px 20px 0 0;
-            text-align: center;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .booking-header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .booking-header p {
-            color: #4a5568;
-            font-size: 16px;
-        }
-
-        .rating {
-            margin-top: 15px;
+        .site-logo {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
         }
+        .site-logo span { font-size: 2.2rem; }
+        .site-tagline {
+            font-size: 0.95rem;
+            opacity: 0.88;
+            margin-top: 4px;
+        }
+        .site-phone {
+            display: inline-block;
+            margin-top: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            background: rgba(255,255,255,0.18);
+            padding: 6px 18px;
+            border-radius: 99px;
+            transition: background 0.2s;
+        }
+        .site-phone:hover { background: rgba(255,255,255,0.28); }
 
-        .stars {
-            color: #fbbf24;
-            font-size: 18px;
+        /* ── TRUST BADGES ────────────────────────────── */
+        .trust-strip {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px 24px;
+            background: rgba(255,255,255,0.14);
+            border-radius: 99px;
+            padding: 10px 20px;
+            margin-bottom: 18px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .trust-strip span { white-space: nowrap; }
+
+        /* ── TABS ────────────────────────────────────── */
+        .tabs {
+            display: flex;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 0;
+            gap: 4px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 9px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: rgba(255,255,255,0.8);
+        }
+        .tab-btn.active {
+            background: white;
+            color: var(--blue);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .tab-btn:not(.active):hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
         }
 
-        /* ==========================================
-           FORM SECTION
-           ========================================== */
-        .booking-form {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 0 0 20px 20px;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        /* ==========================================
-           PROGRESS BAR
-           ========================================== */
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 3px;
-            margin-bottom: 30px;
+        /* ── MAIN CARD ───────────────────────────────── */
+        .card {
+            background: white;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
             overflow: hidden;
         }
 
+        /* ── TAB PANELS ──────────────────────────────── */
+        .tab-panel { display: none; padding: 32px 36px; }
+        .tab-panel.active { display: block; }
+
+        @media (max-width: 560px) {
+            .tab-panel { padding: 24px 20px; }
+        }
+
+        /* ── SECTION HEADERS ─────────────────────────── */
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-divider {
+            border: none;
+            border-top: 2px solid #f1f5f9;
+            margin: 28px 0;
+        }
+
+        /* ── SERVICE CARDS ───────────────────────────── */
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .service-card {
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            background: #fafafa;
+            position: relative;
+        }
+        .service-card:hover {
+            border-color: var(--blue-light);
+            box-shadow: 0 4px 14px var(--blue-ring);
+            transform: translateY(-2px);
+        }
+        .service-card.selected {
+            border-color: var(--blue);
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+            color: white;
+        }
+        .service-card.selected .svc-price,
+        .service-card.selected .svc-desc { color: rgba(255,255,255,0.88); }
+
+        .svc-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+        .svc-price {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--blue);
+            margin-bottom: 6px;
+        }
+        .svc-desc {
+            font-size: 0.78rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .svc-check {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 1rem;
+            display: none;
+        }
+        .service-card.selected .svc-check { display: block; }
+
+        /* ── SELECTED SERVICE PILL ───────────────────── */
+        .selected-service-pill {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: #eff6ff;
+            border: 1.5px solid var(--blue-light);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .selected-service-pill.visible { display: flex; }
+        .pill-label { color: var(--muted); font-size: 0.8rem; }
+        .pill-name { font-weight: 700; color: var(--blue); }
+        .pill-change {
+            font-size: 0.8rem;
+            color: var(--blue);
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            background: none;
+            text-decoration: underline;
+        }
+
+        /* ── PROGRESS BAR ────────────────────────────── */
+        .progress-wrap { margin-bottom: 24px; }
+        .progress-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .progress-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, var(--blue), var(--blue-light));
             width: 0%;
             transition: width 0.3s ease;
             border-radius: 3px;
         }
 
-        /* ==========================================
-           MESSAGES
-           ========================================== */
-        .error-message,
-        .success-message {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-            font-weight: 500;
-        }
-
-        .error-message {
-            background: #fee;
-            color: #c53030;
-            border: 1px solid #fed7d7;
-        }
-
-        .success-message {
-            background: #f0fdf4;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-        }
-
-        /* ==========================================
-           SERVICES
-           ========================================== */
-        .services-section {
-            margin-bottom: 30px;
-        }
-
-        .services-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #2d3748;
-        }
-
-        .service-cards {
+        /* ── FORM ────────────────────────────────────── */
+        .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
         }
+        .form-grid .full { grid-column: 1 / -1; }
 
-        .service-card {
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .service-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-        }
-
-        .service-card.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-        }
-
-        .service-name {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .service-price {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #667eea;
-        }
-
-        .service-card.selected .service-price {
-            color: white;
-        }
-
-        .service-description {
-            font-size: 14px;
-            color: #64748b;
-            line-height: 1.4;
-        }
-
-        .service-card.selected .service-description {
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        /* ==========================================
-           FORM GROUPS
-           ========================================== */
-        .form-group {
-            margin-bottom: 25px;
+        @media (max-width: 560px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-grid .full { grid-column: 1; }
         }
 
         .form-group label {
             display: block;
             font-weight: 600;
-            margin-bottom: 8px;
+            font-size: 0.88rem;
             color: #374151;
+            margin-bottom: 6px;
         }
-
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
+            padding: 11px 14px;
+            border: 2px solid var(--border);
             border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-            background: white;
+            font-size: 0.95rem;
             font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: white;
         }
-
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px var(--blue-ring);
         }
-
         .form-hint {
-            font-size: 14px;
-            color: #6b7280;
-            margin-top: 5px;
+            font-size: 0.76rem;
+            color: var(--muted);
+            margin-top: 4px;
         }
 
-        /* ==========================================
-           BUTTONS
-           ========================================== */
+        /* ── MESSAGES ────────────────────────────────── */
+        .msg {
+            padding: 13px 16px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: none;
+        }
+        .msg.error  { background: var(--red-bg);   border: 1px solid #fecaca; color: var(--red); }
+        .msg.success{ background: var(--green-bg);  border: 1px solid #a7f3d0; color: var(--green); }
+
+        /* ── SUBMIT BUTTON ───────────────────────────── */
         .btn-submit {
             width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
             color: white;
             border: none;
-            padding: 16px 32px;
+            padding: 15px;
             border-radius: 8px;
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 1.05rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
+            margin-top: 8px;
+            transition: all 0.2s;
         }
-
         .btn-submit:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px var(--blue-shadow);
         }
-
-        .btn-submit:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .loading-spinner {
+        .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+        .spinner {
             display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 0.8s linear infinite;
             margin-right: 8px;
+            vertical-align: middle;
         }
 
-        /* ==========================================
-           CONTACT INFO
-           ========================================== */
-        .contact-info {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
+        /* ── TRACK TAB ───────────────────────────────── */
+        .track-inner {
+            max-width: 440px;
+            margin: 0 auto;
             text-align: center;
+        }
+        .track-inner .section-title { justify-content: center; }
+        .track-subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+        .input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: border-color 0.2s;
+        }
+        .input-row input:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px var(--blue-ring);
+        }
+        input::placeholder { text-transform: none; letter-spacing: 0; color: #9ca3af; font-family: inherit; }
+        .btn-check {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        .btn-check:disabled { opacity: 0.6; cursor: not-allowed; }
+        .ref-hint { font-size: 0.8rem; color: var(--muted); text-align: left; margin-bottom: 16px; }
+
+        /* ── STATUS RESULT ───────────────────────────── */
+        .result-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
             margin-top: 20px;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            display: none;
         }
-
-        .contact-info h3 {
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: #2d3748;
+        .result-header {
+            padding: 12px 18px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
-
-        .contact-info p {
-            margin-bottom: 10px;
-            color: #4a5568;
+        .result-body { padding: 18px; display: grid; gap: 10px; }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
         }
+        .result-row .rl { color: var(--muted); font-size: 0.88rem; font-weight: 500; }
+        .result-row .rv { font-weight: 600; font-size: 0.9rem; text-align: right; }
+        .rv.ref-val { font-size: 1.05rem; color: var(--blue); font-weight: 800; letter-spacing: 1px; }
 
-        .contact-info a {
-            color: #667eea;
+        .badge-status {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 99px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .st-scheduled   { background: #dbeafe; color: #1d4ed8; }
+        .st-in-progress { background: var(--amber-bg); color: var(--amber); }
+        .st-completed   { background: var(--green-bg); color: var(--green); }
+        .st-cancelled   { background: var(--gray-bg); color: var(--gray); }
+
+        .track-link {
+            display: block;
+            margin-top: 20px;
+            color: var(--blue);
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
             text-decoration: none;
-            font-weight: 600;
         }
+        .track-link:hover { text-decoration: underline; }
 
-        .contact-info a:hover {
-            text-decoration: underline;
+        /* ── CONTACT FOOTER ──────────────────────────── */
+        .contact-footer {
+            background: rgba(255,255,255,0.12);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            text-align: center;
+            margin-top: 16px;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.88rem;
         }
+        .contact-footer a { color: white; font-weight: 600; text-decoration: none; }
+        .contact-footer a:hover { text-decoration: underline; }
+        .contact-footer .cf-row { margin: 4px 0; }
 
-        /* ==========================================
-           ACCESSIBILITY
-           ========================================== */
+        /* ── ACCESSIBILITY ───────────────────────────── */
         *:focus-visible {
-            outline: 2px solid #667eea;
+            outline: 2px solid var(--blue);
             outline-offset: 2px;
         }
 
-        /* ==========================================
-           RESPONSIVE
-           ========================================== */
-        @media (max-width: 768px) {
-            .booking-container {
-                margin: 20px auto;
-                padding: 15px;
-            }
-
-            .booking-header,
-            .booking-form {
-                padding: 25px;
-            }
-
-            .service-cards {
-                grid-template-columns: 1fr;
-            }
-
-            .badges {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .booking-header h1 {
-                font-size: 28px;
-            }
+        /* ── CONFIRMATION SCREEN ─────────────────────── */
+        .confirm-screen {
+            padding: 40px 36px;
+            text-align: center;
+        }
+        .confirm-icon { font-size: 3.5rem; margin-bottom: 12px; }
+        .confirm-title { color: var(--green); font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
+        .confirm-sub { color: var(--muted); margin-bottom: 24px; }
+        .confirm-details {
+            background: #f0fdf4;
+            border: 1px solid #a7f3d0;
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .confirm-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 0;
+            border-bottom: 1px solid #d1fae5;
+            font-size: 0.9rem;
+        }
+        .confirm-row:last-child { border-bottom: none; }
+        .confirm-row .cl { color: var(--muted); font-weight: 500; white-space: nowrap; }
+        .confirm-row .cv { font-weight: 600; text-align: right; }
+        .ref-big { font-size: 1.15rem; color: var(--green); font-weight: 800; letter-spacing: 1px; }
+        .btn-cal {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+            color: white;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+        .confirm-notes {
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .btn-another {
+            margin-top: 16px;
+            background: none;
+            border: 2px solid var(--blue);
+            color: var(--blue);
+            padding: 9px 22px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-block;
         }
 
-        @media (max-width: 480px) {
-            .booking-header,
-            .booking-form {
-                padding: 20px;
-            }
-
-            .booking-header h1 {
-                font-size: 24px;
-            }
-
-            .booking-header p {
-                font-size: 14px;
-            }
+        @media (max-width: 560px) {
+            .confirm-screen { padding: 28px 20px; }
+            body { padding: 16px 12px 32px; }
+            .service-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 380px) {
+            .service-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="booking-container">
-        <!-- Trust Badges -->
-        <div class="trust-badges">
-            <h3>✓ Trusted by Local Families & Businesses</h3>
-            <div class="badges">
-                <div class="badge"><span>✓</span><span>Insured & Bonded</span></div>
-                <div class="badge"><span>✓</span><span>Background Checked</span></div>
-                <div class="badge"><span>✓</span><span>Satisfaction Guaranteed</span></div>
-                <div class="badge"><span>⭐</span><span>4.9/5 Rating</span></div>
+<div class="wrap">
+
+    <!-- ── SITE HEADER ── -->
+    <div class="site-header">
+        <div class="site-logo"><span>🏠</span> Stilt Heights</div>
+        <div class="site-tagline">Professional Cleaning Services — Edmonton, AB</div>
+        <a href="tel:825-994-6606" class="site-phone">📞 825-994-6606</a>
+    </div>
+
+    <!-- ── TRUST STRIP ── -->
+    <div class="trust-strip">
+        <span>✓ Insured &amp; Bonded</span>
+        <span>✓ Background Checked</span>
+        <span>⭐ 4.9/5 Rating</span>
+        <span>✓ Satisfaction Guaranteed</span>
+    </div>
+
+    <!-- ── TABS ── -->
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-btn-book" onclick="switchTab('book')">
+            📋 Book a Service
+        </button>
+        <button class="tab-btn" id="tab-btn-track" onclick="switchTab('track')">
+            🔍 Track My Booking
+        </button>
+    </div>
+
+    <!-- ── MAIN CARD ── -->
+    <div class="card" id="mainCard">
+
+        <!-- ── BOOK TAB ── -->
+        <div class="tab-panel active" id="tab-book">
+
+            <!-- Services showcase -->
+            <div id="services-section">
+                <div class="section-title">🧹 Our Services &amp; Pricing</div>
+                <div class="service-grid" id="serviceCards" role="radiogroup" aria-label="Select a service">
+                    <p style="grid-column:1/-1;color:var(--muted);text-align:center;">Loading services…</p>
+                </div>
             </div>
-        </div>
 
-        <!-- Header -->
-        <div class="booking-header">
-            <h1>Book Professional Cleaning</h1>
-            <p>Expert cleaning services for your home or office</p>
-            <div class="rating">
-                <span class="stars">★★★★★</span>
-                <span>4.9 out of 5 (127 reviews)</span>
-            </div>
-        </div>
+            <hr class="section-divider">
 
-        <!-- Booking Form -->
-        <div class="booking-form">
-            <!-- Progress Bar -->
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Form completion progress"></div>
-            </div>
+            <!-- Booking form -->
+            <div id="booking-form-section">
+                <div class="section-title">📝 Your Details</div>
 
-            <!-- Messages -->
-            <div id="error-msg" class="error-message" role="alert"></div>
-            <div id="success-msg" class="success-message" role="status"></div>
+                <!-- Selected service pill -->
+                <div class="selected-service-pill" id="servicePill">
+                    <div>
+                        <div class="pill-label">Selected service</div>
+                        <div class="pill-name" id="pillName">—</div>
+                    </div>
+                    <button class="pill-change" onclick="scrollToServices()">Change</button>
+                </div>
 
-            <!-- Form -->
-            <form id="bookingForm" novalidate>
-                <!-- Services Section -->
-                <div class="services-section">
-                    <div class="services-title">Select Service Type *</div>
-                    <div class="service-cards" id="serviceCards" role="radiogroup" aria-required="true">
-                        <p style="grid-column: 1 / -1; text-align: center; color: #999;">Loading services...</p>
+                <!-- Progress -->
+                <div class="progress-wrap">
+                    <div class="progress-label">
+                        <span>Form completion</span>
+                        <span id="progressPct">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"
+                             role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
 
-                <!-- Customer Name -->
-                <div class="form-group">
-                    <label for="name">Full Name *</label>
-                    <input type="text" id="name" name="name" required autocomplete="name" placeholder="John Doe">
-                    <div class="form-hint">Please provide your full name</div>
-                </div>
+                <!-- Error -->
+                <div class="msg error" id="error-msg" role="alert"></div>
 
-                <!-- Phone Number -->
-                <div class="form-group">
-                    <label for="phone">Phone Number *</label>
-                    <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="555-123-4567">
-                    <div class="form-hint">Format: 555-123-4567</div>
-                </div>
-
-                <!-- Email -->
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" autocomplete="email" placeholder="your@email.com">
-                    <div class="form-hint">Optional - for booking confirmation</div>
-                </div>
-
-                <!-- Address -->
-                <div class="form-group">
-                    <label for="address">Service Address *</label>
-                    <textarea id="address" name="address" rows="3" required placeholder="123 Main St, City, State 12345"></textarea>
-                    <div class="form-hint">Include apartment/unit number if applicable</div>
-                </div>
-
-                <!-- Date -->
-                <div class="form-group">
-                    <label for="date">Preferred Date *</label>
-                    <input type="date" id="date" name="date" required>
-                    <div class="form-hint">We'll confirm availability via phone</div>
-                </div>
-
-                <!-- Time -->
-                <div class="form-group">
-                    <label for="time">Preferred Time *</label>
-                    <select id="time" name="time" required>
-                        <option value="">Select a time window</option>
-                        <option value="09:00">9:00 AM - 11:00 AM</option>
-                        <option value="11:00">11:00 AM - 1:00 PM</option>
-                        <option value="13:00">1:00 PM - 3:00 PM</option>
-                        <option value="15:00">3:00 PM - 5:00 PM</option>
-                    </select>
-                    <div class="form-hint">2-hour time windows for better service</div>
-                </div>
-
-                <!-- Notes -->
-                <div class="form-group">
-                    <label for="notes">Additional Notes</label>
-                    <textarea id="notes" name="notes" rows="2" placeholder="Any special requests..."></textarea>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="btn-submit" id="submitBtn">
-                    <span id="btnText">Book Now - Get Free Quote</span>
-                </button>
-            </form>
-        </div>
-
-        <!-- Contact Info -->
-        <div class="contact-info">
-            <h3>Need Help? We're Here For You</h3>
-            <p>📞 Call us at <a href="tel:825-994-6606">825-994-6606</a></p>
-            <p>📧 Email us at <a href="mailto:info@stiltheights.com">info@stiltheights.com</a></p>
-            <p>🕐 Available Monday-Friday, 9AM-6PM</p>
-            <p>📍 Serving the greater metropolitan area</p>
-        </div>
-    </div>
-
-    <!-- JavaScript -->
-    <script>
-        let selectedService = '';
-        let selectedServicePrice = 0;
-
-        // ==========================================
-        // HTML ESCAPE (XSS PREVENTION)
-        // ==========================================
-        function escapeHtml(text) {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return String(text || '').replace(/[&<>"']/g, m => map[m]);
-        }
-
-        // ==========================================
-        // LOAD SERVICES
-        // ==========================================
-        async function loadServices() {
-            try {
-                const response = await fetch('/api/booking/services');
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const result = await response.json();
-                const services = result.data || result;
-                const container = document.getElementById('serviceCards');
-
-                if (!services || services.length === 0) {
-                    container.textContent = 'No services available. Please call us at 825-994-6606';
-                    return;
-                }
-
-                container.innerHTML = services.map((svc) => {
-                    const price = svc.price ? `$${svc.price}` : 'Contact for price';
-                    const desc = svc.description || 'Professional cleaning service';
-                    return `
-                        <div class="service-card"
-                             data-id="${svc.id}"
-                             data-name="${escapeHtml(svc.name)}"
-                             data-price="${svc.price || 0}"
-                             role="radio"
-                             aria-checked="false"
-                             tabindex="0">
-                            <div class="service-name">${escapeHtml(svc.name)}</div>
-                            <div class="service-price">${escapeHtml(price)}</div>
-                            <div class="service-description">${escapeHtml(desc)}</div>
-                        </div>`;
-                }).join('');
-
-                // Wire up click/keyboard on service cards (no inline handlers)
-                container.querySelectorAll('.service-card').forEach(card => {
-                    card.addEventListener('click', () => selectServiceCard(card));
-                    card.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectServiceCard(card); }
-                    });
-                });
-            } catch (error) {
-                console.error('Error loading services:', error);
-                const container = document.getElementById('serviceCards');
-                container.textContent = 'Unable to load services. Please refresh or call us.';
-                container.style.color = '#c53030';
-            }
-        }
-
-        function selectServiceCard(card) {
-            document.querySelectorAll('.service-card').forEach(c => {
-                c.classList.remove('selected');
-                c.setAttribute('aria-checked', 'false');
-            });
-            card.classList.add('selected');
-            card.setAttribute('aria-checked', 'true');
-            selectedService = card.dataset.name;
-            selectedServicePrice = parseFloat(card.dataset.price) || 0;
-            updateProgress();
-        }
-
-        // ==========================================
-        // PROGRESS BAR
-        // ==========================================
-        function updateProgress() {
-            const formData = new FormData(document.getElementById('bookingForm'));
-            const progressBar = document.getElementById('progressBar');
-            let completed = 0;
-            if (selectedService) completed++;
-            if (formData.get('name')) completed++;
-            if (formData.get('phone')) completed++;
-            if (formData.get('address')) completed++;
-            if (formData.get('date')) completed++;
-            if (formData.get('time')) completed++;
-            const pct = (completed / 6) * 100;
-            progressBar.style.width = `${pct}%`;
-            progressBar.setAttribute('aria-valuenow', Math.round(pct));
-        }
-
-        // ==========================================
-        // FORM VALIDATION
-        // ==========================================
-        function validateForm(formData) {
-            const errors = [];
-            if (!selectedService) errors.push('Please select a service');
-            if (!formData.get('name')?.trim()) errors.push('Name is required');
-            const phone = formData.get('phone')?.trim();
-            if (!phone) errors.push('Phone is required');
-            if (!formData.get('address')?.trim()) errors.push('Address is required');
-            if (!formData.get('date')) errors.push('Date is required');
-            if (!formData.get('time')) errors.push('Time is required');
-            const email = formData.get('email')?.trim();
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Invalid email format');
-            return errors;
-        }
-
-        // ==========================================
-        // MESSAGES
-        // ==========================================
-        function showError(message) {
-            const el = document.getElementById('error-msg');
-            el.textContent = message;
-            el.style.display = 'block';
-            document.getElementById('success-msg').style.display = 'none';
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        // ==========================================
-        // BOOKING CONFIRMATION SCREEN
-        // ==========================================
-        function showConfirmationScreen(booking, formData) {
-            const ref = `JOB-${String(booking.jobId).padStart(4, '0')}`;
-            const dateObj = new Date(`${booking.jobDate}T${booking.jobTime}:00`);
-            const formattedDate = dateObj.toLocaleDateString('en-US', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
-            const formattedTime = dateObj.toLocaleTimeString('en-US', {
-                hour: 'numeric', minute: '2-digit', hour12: true
-            });
-            const staffName = booking.assignedStaff?.name || 'Our Team';
-
-            // Build ICS calendar file
-            const pad = n => String(n).padStart(2, '0');
-            const endObj = new Date(dateObj.getTime() + 2 * 60 * 60 * 1000);
-            const toICS = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
-            const icsContent = [
-                'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Stilt Heights//EN', 'BEGIN:VEVENT',
-                `UID:${ref}@stiltheights.com`,
-                `DTSTART:${toICS(dateObj)}`,
-                `DTEND:${toICS(endObj)}`,
-                `SUMMARY:${escapeHtml(booking.service)} - Stilt Heights`,
-                `DESCRIPTION:Booking ref: ${ref}. Assigned cleaner: ${escapeHtml(staffName)}.`,
-                `LOCATION:${escapeHtml(formData.address)}`,
-                'END:VEVENT', 'END:VCALENDAR'
-            ].join('\r\n');
-            const icsUrl = URL.createObjectURL(new Blob([icsContent], { type: 'text/calendar' }));
-
-            document.querySelector('.booking-container').innerHTML = `
-                <div style="background:rgba(255,255,255,0.97);border-radius:20px;padding:40px 30px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.12);animation:fadeInUp 0.6s ease-out;">
-                    <div style="font-size:4rem;margin-bottom:1rem;">🎉</div>
-                    <h2 style="color:#16a34a;font-size:1.8rem;margin-bottom:0.5rem;">Booking Confirmed!</h2>
-                    <p style="color:#4a5568;margin-bottom:2rem;font-size:1rem;">Your appointment has been scheduled. Here's your summary:</p>
-
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px 24px;text-align:left;margin-bottom:1.5rem;">
-                        <div style="display:grid;gap:12px;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #d1fae5;">
-                                <span style="color:#64748b;font-weight:500;">Reference #</span>
-                                <span style="font-weight:800;color:#16a34a;font-size:1.15rem;letter-spacing:1px;">${ref}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span style="color:#64748b;font-weight:500;">Service</span>
-                                <span style="font-weight:600;">${escapeHtml(booking.service)}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span style="color:#64748b;font-weight:500;">Date</span>
-                                <span style="font-weight:600;">${formattedDate}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span style="color:#64748b;font-weight:500;">Arrival Window</span>
-                                <span style="font-weight:600;">${formattedTime}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span style="color:#64748b;font-weight:500;">Assigned Cleaner</span>
-                                <span style="font-weight:600;">${escapeHtml(staffName)}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-                                <span style="color:#64748b;font-weight:500;white-space:nowrap;">Address</span>
-                                <span style="font-weight:600;text-align:right;">${escapeHtml(formData.address)}</span>
-                            </div>
+                <!-- Form -->
+                <form id="bookingForm" novalidate>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Full Name *</label>
+                            <input type="text" id="name" name="name" required autocomplete="name" placeholder="Jane Smith">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone *</label>
+                            <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="825-994-0000">
+                        </div>
+                        <div class="form-group full">
+                            <label for="email">Email <span style="font-weight:400;color:var(--muted)">(optional — for confirmation)</span></label>
+                            <input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com">
+                        </div>
+                        <div class="form-group full">
+                            <label for="address">Service Address *</label>
+                            <textarea id="address" name="address" rows="2" required placeholder="123 Main St, Edmonton, AB T5A 0A1"></textarea>
+                            <div class="form-hint">Include unit/suite number if applicable</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="date">Preferred Date *</label>
+                            <input type="date" id="date" name="date" required>
+                            <div class="form-hint">We'll confirm availability</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="time">Arrival Window *</label>
+                            <select id="time" name="time" required>
+                                <option value="">Choose a time</option>
+                                <option value="09:00">9:00 AM – 11:00 AM</option>
+                                <option value="11:00">11:00 AM – 1:00 PM</option>
+                                <option value="13:00">1:00 PM – 3:00 PM</option>
+                                <option value="15:00">3:00 PM – 5:00 PM</option>
+                            </select>
+                        </div>
+                        <div class="form-group full">
+                            <label for="notes">Additional Notes <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+                            <textarea id="notes" name="notes" rows="2" placeholder="Pets, access codes, special requests…"></textarea>
                         </div>
                     </div>
 
-                    <a href="${icsUrl}" download="stilt-heights-appointment.ics"
-                       style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:13px 28px;border-radius:8px;font-weight:600;text-decoration:none;font-size:0.95rem;margin-bottom:1rem;">
-                        📅 Add to Calendar
-                    </a>
-
-                    <p style="color:#64748b;font-size:0.9rem;margin-top:1rem;line-height:1.6;">
-                        We'll call to confirm at <strong>${escapeHtml(formData.phone)}</strong>
-                        ${formData.email ? `<br>Confirmation sent to <strong>${escapeHtml(formData.email)}</strong>` : ''}
-                    </p>
-
-                    <p style="color:#94a3b8;font-size:0.8rem;margin-top:1rem;">
-                        Questions? Call <a href="tel:825-994-6606" style="color:#667eea;">825-994-6606</a>
-                        &nbsp;|&nbsp;
-                        <a href="/booking-status.html?ref=${ref}" style="color:#667eea;">Track this booking</a>
-                    </p>
-
-                    <button onclick="window.location.reload()"
-                            style="margin-top:1.5rem;background:none;border:2px solid #667eea;color:#667eea;padding:10px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.95rem;">
-                        Book Another Service
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <span id="btnText">Book Now — Free Quote</span>
                     </button>
-                </div>`;
-        }
+                </form>
+            </div>
+        </div>
 
-        // ==========================================
-        // FORM SUBMISSION
-        // ==========================================
-        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const errors = validateForm(formData);
-            if (errors.length > 0) {
-                showError('Please fix these issues: ' + errors.join('. '));
+        <!-- ── TRACK TAB ── -->
+        <div class="tab-panel" id="tab-track">
+            <div class="track-inner">
+                <div class="section-title">🔍 Track Your Booking</div>
+                <p class="track-subtitle">Enter your reference number to see the current status of your appointment.</p>
+
+                <div class="input-row">
+                    <input type="text" id="refInput" placeholder="JOB-0001"
+                           maxlength="12" autocomplete="off" aria-label="Booking reference number">
+                    <button class="btn-check" id="lookupBtn" onclick="lookupStatus()">Check</button>
+                </div>
+                <p class="ref-hint">Your reference was on your booking confirmation email (e.g. JOB-0001)</p>
+
+                <div class="msg error" id="trackErrorMsg" role="alert"></div>
+
+                <div class="result-card" id="resultCard">
+                    <div class="result-header" id="resultHeader"></div>
+                    <div class="result-body" id="resultBody"></div>
+                </div>
+
+                <a class="track-link" onclick="switchTab('book')">← Book a new appointment</a>
+            </div>
+        </div>
+
+    </div><!-- /.card -->
+
+    <!-- ── CONTACT FOOTER ── -->
+    <div class="contact-footer">
+        <div class="cf-row">📞 <a href="tel:825-994-6606">825-994-6606</a> &nbsp;·&nbsp;
+             📧 <a href="mailto:info@stiltheights.com">info@stiltheights.com</a></div>
+        <div class="cf-row">🕐 Mon–Fri 9 AM – 6 PM &nbsp;·&nbsp; 📍 Edmonton, AB &amp; surrounding area</div>
+    </div>
+
+</div><!-- /.wrap -->
+
+<script>
+    // ── HELPERS ──────────────────────────────────────────────────────
+    function escapeHtml(t) {
+        return String(t || '').replace(/[&<>"']/g, m =>
+            ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
+    }
+
+    // ── TABS ─────────────────────────────────────────────────────────
+    function switchTab(name) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-btn-' + name).classList.add('active');
+        document.getElementById('tab-' + name).classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── SERVICES ─────────────────────────────────────────────────────
+    let selectedService = '';
+    let selectedServicePrice = 0;
+
+    async function loadServices() {
+        try {
+            const res  = await fetch('/api/booking/services');
+            const json = await res.json();
+            const svcs = json.data || json;
+            const grid = document.getElementById('serviceCards');
+
+            if (!svcs || !svcs.length) {
+                grid.textContent = 'No services available. Please call 825-994-6606.';
                 return;
             }
 
-            const submitBtn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            submitBtn.disabled = true;
-            btnText.innerHTML = '<div class="loading-spinner"></div> Booking your appointment...';
+            grid.innerHTML = svcs.map(s => `
+                <div class="service-card"
+                     data-id="${s.id}"
+                     data-name="${escapeHtml(s.name)}"
+                     data-price="${s.price || 0}"
+                     role="radio" aria-checked="false" tabindex="0">
+                    <span class="svc-check">✓</span>
+                    <div class="svc-name">${escapeHtml(s.name)}</div>
+                    <div class="svc-price">${s.price ? '$' + s.price : 'Call for price'}</div>
+                    <div class="svc-desc">${escapeHtml(s.description || '')}</div>
+                </div>`).join('');
 
-            const data = {
-                name: formData.get('name').trim(),
-                phone: formData.get('phone').trim(),
-                email: formData.get('email')?.trim() || null,
-                address: formData.get('address').trim(),
-                service: selectedService,
-                date: formData.get('date'),
-                time: formData.get('time'),
-                notes: formData.get('notes')?.trim() || ''
-            };
-
-            try {
-                const res = await fetch('/api/booking/book', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+            grid.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('click', () => selectService(card));
+                card.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectService(card); }
                 });
-                const result = await res.json();
+            });
+        } catch (err) {
+            document.getElementById('serviceCards').textContent =
+                'Unable to load services. Please refresh or call us.';
+        }
+    }
 
-                if (result.success) {
-                    showConfirmationScreen(result.data, data);
-                } else {
-                    throw new Error(result.message || result.error || 'Booking failed. Please try again.');
-                }
-            } catch (error) {
-                console.error('Booking error:', error);
-                showError(error.message || 'Something went wrong. Please call us at 825-994-6606');
-                submitBtn.disabled = false;
-                btnText.textContent = 'Book Now - Get Free Quote';
+    function selectService(card) {
+        document.querySelectorAll('.service-card').forEach(c => {
+            c.classList.remove('selected');
+            c.setAttribute('aria-checked', 'false');
+        });
+        card.classList.add('selected');
+        card.setAttribute('aria-checked', 'true');
+        selectedService      = card.dataset.name;
+        selectedServicePrice = parseFloat(card.dataset.price) || 0;
+        // Update pill
+        const pill = document.getElementById('servicePill');
+        document.getElementById('pillName').textContent = selectedService;
+        pill.classList.add('visible');
+        // Scroll to form
+        document.getElementById('booking-form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        updateProgress();
+    }
+
+    function scrollToServices() {
+        document.getElementById('services-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ── PROGRESS ─────────────────────────────────────────────────────
+    function updateProgress() {
+        const fd   = new FormData(document.getElementById('bookingForm'));
+        let done   = 0;
+        if (selectedService)      done++;
+        if (fd.get('name'))       done++;
+        if (fd.get('phone'))      done++;
+        if (fd.get('address'))    done++;
+        if (fd.get('date'))       done++;
+        if (fd.get('time'))       done++;
+        const pct = Math.round((done / 6) * 100);
+        const fill = document.getElementById('progressFill');
+        fill.style.width = pct + '%';
+        fill.setAttribute('aria-valuenow', pct);
+        document.getElementById('progressPct').textContent = pct + '%';
+    }
+
+    // ── FORM VALIDATION ───────────────────────────────────────────────
+    function validateForm(fd) {
+        const errs = [];
+        if (!selectedService)              errs.push('Please select a service above');
+        if (!fd.get('name')?.trim())       errs.push('Full name is required');
+        if (!fd.get('phone')?.trim())      errs.push('Phone number is required');
+        if (!fd.get('address')?.trim())    errs.push('Service address is required');
+        if (!fd.get('date'))               errs.push('Please choose a date');
+        if (!fd.get('time'))               errs.push('Please choose an arrival window');
+        const email = fd.get('email')?.trim();
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.push('Invalid email format');
+        return errs;
+    }
+
+    function showError(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ── BOOKING CONFIRMATION ──────────────────────────────────────────
+    function showConfirmation(booking, data) {
+        const ref  = 'JOB-' + String(booking.jobId).padStart(4, '0');
+        const dtRaw = new Date(booking.jobDate + 'T' + booking.jobTime + ':00');
+        const fDate = dtRaw.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        const fTime = dtRaw.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+        const staff = booking.assignedStaff?.name || 'Our Team';
+
+        // ICS
+        const pad = n => String(n).padStart(2, '0');
+        const endDt = new Date(dtRaw.getTime() + 2 * 3600000);
+        const fICS  = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+        const ics   = [
+            'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Stilt Heights//EN','BEGIN:VEVENT',
+            'UID:' + ref + '@stiltheights.com',
+            'DTSTART:' + fICS(dtRaw), 'DTEND:' + fICS(endDt),
+            'SUMMARY:' + escapeHtml(booking.service) + ' — Stilt Heights',
+            'DESCRIPTION:Booking ref: ' + ref + '. Cleaner: ' + escapeHtml(staff) + '.',
+            'LOCATION:' + escapeHtml(data.address),
+            'END:VEVENT','END:VCALENDAR'
+        ].join('\r\n');
+        const icsUrl = URL.createObjectURL(new Blob([ics], { type:'text/calendar' }));
+
+        document.getElementById('mainCard').innerHTML = `
+            <div class="confirm-screen" style="animation:fadeInUp 0.5s ease-out">
+                <div class="confirm-icon">🎉</div>
+                <div class="confirm-title">Booking Confirmed!</div>
+                <p class="confirm-sub">Your appointment has been scheduled. See you soon!</p>
+                <div class="confirm-details">
+                    <div class="confirm-row">
+                        <span class="cl">Reference</span>
+                        <span class="cv ref-big">${ref}</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="cl">Service</span>
+                        <span class="cv">${escapeHtml(booking.service)}</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="cl">Date</span>
+                        <span class="cv">${fDate}</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="cl">Arrival Window</span>
+                        <span class="cv">${fTime}</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="cl">Cleaner</span>
+                        <span class="cv">${escapeHtml(staff)}</span>
+                    </div>
+                    <div class="confirm-row">
+                        <span class="cl">Address</span>
+                        <span class="cv" style="max-width:60%">${escapeHtml(data.address)}</span>
+                    </div>
+                </div>
+                <a href="${escapeHtml(icsUrl)}" download="stilt-heights-${ref}.ics" class="btn-cal">
+                    📅 Add to Calendar
+                </a>
+                <p class="confirm-notes">
+                    We'll call to confirm at <strong>${escapeHtml(data.phone)}</strong>
+                    ${data.email ? '<br>Confirmation email sent to <strong>' + escapeHtml(data.email) + '</strong>' : ''}
+                    <br><br>
+                    Questions? <a href="tel:825-994-6606" style="color:var(--blue)">825-994-6606</a>
+                    &nbsp;·&nbsp;
+                    <a href="#" onclick="document.getElementById('mainCard').innerHTML='';location.reload()" style="color:var(--blue)">Track this booking (${ref})</a>
+                </p>
+                <button class="btn-another" onclick="location.reload()">Book Another Service</button>
+            </div>`;
+    }
+
+    // ── FORM SUBMIT ───────────────────────────────────────────────────
+    document.getElementById('bookingForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const errs = validateForm(fd);
+        if (errs.length) {
+            showError('error-msg', errs.join(' · '));
+            return;
+        }
+        document.getElementById('error-msg').style.display = 'none';
+
+        const btn = document.getElementById('submitBtn');
+        const txt = document.getElementById('btnText');
+        btn.disabled = true;
+        txt.innerHTML = '<span class="spinner"></span> Booking your appointment…';
+
+        const payload = {
+            name:    fd.get('name').trim(),
+            phone:   fd.get('phone').trim(),
+            email:   fd.get('email')?.trim() || null,
+            address: fd.get('address').trim(),
+            service: selectedService,
+            date:    fd.get('date'),
+            time:    fd.get('time'),
+            notes:   fd.get('notes')?.trim() || ''
+        };
+
+        try {
+            const res    = await fetch('/api/booking/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            if (result.success) {
+                showConfirmation(result.data, payload);
+            } else {
+                throw new Error(result.message || result.error || 'Booking failed — please try again.');
             }
-        });
+        } catch (err) {
+            showError('error-msg', err.message || 'Something went wrong. Please call 825-994-6606.');
+            btn.disabled = false;
+            txt.textContent = 'Book Now — Free Quote';
+        }
+    });
 
-        // ==========================================
-        // PHONE AUTO-FORMAT
-        // ==========================================
-        document.getElementById('phone').addEventListener('input', function (e) {
-            let v = e.target.value.replace(/\D/g, '');
-            if (v.length >= 6) v = v.slice(0, 3) + '-' + v.slice(3, 6) + '-' + v.slice(6, 10);
-            else if (v.length >= 3) v = v.slice(0, 3) + '-' + v.slice(3);
-            e.target.value = v;
-        });
+    // ── PHONE AUTO-FORMAT ─────────────────────────────────────────────
+    document.getElementById('phone').addEventListener('input', function() {
+        let v = this.value.replace(/\D/g, '');
+        if (v.length >= 6) v = v.slice(0,3) + '-' + v.slice(3,6) + '-' + v.slice(6,10);
+        else if (v.length >= 3) v = v.slice(0,3) + '-' + v.slice(3);
+        this.value = v;
+    });
 
-        // ==========================================
-        // DATE CONSTRAINTS
-        // ==========================================
-        const dateInput = document.querySelector('input[type="date"]');
-        const today = new Date();
-        const maxDate = new Date();
-        maxDate.setMonth(maxDate.getMonth() + 3);
-        dateInput.min = today.toISOString().split('T')[0];
-        dateInput.max = maxDate.toISOString().split('T')[0];
-        dateInput.value = today.toISOString().split('T')[0];
+    // ── DATE CONSTRAINTS ──────────────────────────────────────────────
+    (function() {
+        const di  = document.getElementById('date');
+        const now = new Date();
+        const max = new Date(); max.setDate(max.getDate() + 90);
+        di.min   = now.toISOString().split('T')[0];
+        di.max   = max.toISOString().split('T')[0];
+        // Default to tomorrow
+        const tmr = new Date(now); tmr.setDate(tmr.getDate() + 1);
+        di.value = tmr.toISOString().split('T')[0];
+    })();
 
-        // ==========================================
-        // PROGRESS BAR UPDATE ON INPUT
-        // ==========================================
-        document.getElementById('bookingForm').addEventListener('change', updateProgress);
-        document.getElementById('bookingForm').addEventListener('input', updateProgress);
+    // ── PROGRESS UPDATE ON INPUT ──────────────────────────────────────
+    document.getElementById('bookingForm').addEventListener('input', updateProgress);
+    document.getElementById('bookingForm').addEventListener('change', updateProgress);
 
-        // ==========================================
-        // PRE-SELECT SERVICE FROM URL PARAM
-        // ==========================================
-        function preselectServiceFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            const serviceName = params.get('service');
-            if (!serviceName) return;
-            // Wait for service cards to render, then select the matching one
-            const interval = setInterval(() => {
-                const cards = document.querySelectorAll('.service-card[data-name]');
-                if (cards.length === 0) return;
-                clearInterval(interval);
-                cards.forEach(card => {
-                    if (card.dataset.name === serviceName) selectServiceCard(card);
-                });
-            }, 100);
-            // Give up after 5 seconds
-            setTimeout(() => clearInterval(interval), 5000);
+    // ── TRACK: REF INPUT AUTO-FORMAT ─────────────────────────────────
+    document.getElementById('refInput').addEventListener('input', function() {
+        let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (v.startsWith('JOB')) {
+            const d = v.slice(3).replace(/\D/g,'').slice(0,4);
+            this.value = d.length ? 'JOB-' + d : 'JOB-';
+        } else {
+            this.value = v;
+        }
+    });
+    document.getElementById('refInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') lookupStatus();
+    });
+
+    // ── STATUS LOOKUP ─────────────────────────────────────────────────
+    async function lookupStatus() {
+        const ref   = document.getElementById('refInput').value.trim().toUpperCase();
+        const errEl = document.getElementById('trackErrorMsg');
+        const resEl = document.getElementById('resultCard');
+        const btn   = document.getElementById('lookupBtn');
+
+        errEl.style.display = 'none';
+        resEl.style.display = 'none';
+
+        if (!/^JOB-\d{1,4}$/.test(ref)) {
+            showError('trackErrorMsg', 'Please enter a valid reference like JOB-0001');
+            return;
         }
 
-        // ==========================================
-        // INITIALIZE
-        // ==========================================
-        loadServices().then(preselectServiceFromUrl);
-    </script>
+        btn.disabled = true;
+        btn.textContent = 'Looking up…';
+
+        try {
+            const res    = await fetch('/api/booking/status/' + encodeURIComponent(ref));
+            const result = await res.json();
+            if (!result.success) {
+                showError('trackErrorMsg', result.error || 'Booking not found. Check the reference and try again.');
+                return;
+            }
+            renderStatusResult(result.data);
+        } catch (err) {
+            showError('trackErrorMsg', 'Could not connect. Please try again or call 825-994-6606.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Check';
+        }
+    }
+
+    function renderStatusResult(d) {
+        const statusStyles = {
+            'Scheduled':   { cls: 'st-scheduled',   hdr: 'background:#dbeafe;color:#1d4ed8' },
+            'In Progress': { cls: 'st-in-progress',  hdr: 'background:#fef3c7;color:#d97706' },
+            'Completed':   { cls: 'st-completed',    hdr: 'background:#d1fae5;color:#059669' },
+            'Cancelled':   { cls: 'st-cancelled',    hdr: 'background:#f3f4f6;color:#6b7280' }
+        };
+        const st  = statusStyles[d.status] || { cls: 'st-scheduled', hdr: '' };
+        const hdr = document.getElementById('resultHeader');
+        hdr.style.cssText = st.hdr;
+        hdr.textContent   = 'Booking ' + escapeHtml(d.reference);
+
+        const dateStr = d.date
+            ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+            : '—';
+        const timeStr = d.time
+            ? new Date('2000-01-01T' + d.time + ':00').toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true })
+            : '—';
+
+        document.getElementById('resultBody').innerHTML = `
+            <div class="result-row"><span class="rl">Reference</span><span class="rv ref-val">${escapeHtml(d.reference)}</span></div>
+            <div class="result-row"><span class="rl">Status</span><span class="badge-status ${st.cls}">${escapeHtml(d.status)}</span></div>
+            <div class="result-row"><span class="rl">Service</span><span class="rv">${escapeHtml(d.service)}</span></div>
+            <div class="result-row"><span class="rl">Date</span><span class="rv">${dateStr}</span></div>
+            <div class="result-row"><span class="rl">Arrival Window</span><span class="rv">${timeStr}</span></div>
+            <div class="result-row"><span class="rl">Assigned Cleaner</span><span class="rv">${escapeHtml(d.assignedStaff)}</span></div>`;
+
+        document.getElementById('resultCard').style.display = 'block';
+    }
+
+    // ── URL PARAMS ────────────────────────────────────────────────────
+    (function handleUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const ref    = params.get('ref');
+        const svc    = params.get('service');
+        const hash   = window.location.hash;
+
+        // ?ref=JOB-XXXX → open Track tab and auto-lookup
+        if (ref) {
+            switchTab('track');
+            document.getElementById('refInput').value = ref.toUpperCase();
+            lookupStatus();
+            return;
+        }
+
+        // #track hash → open Track tab
+        if (hash === '#track') {
+            switchTab('track');
+            return;
+        }
+
+        // ?service=X → preselect service once cards load
+        if (svc) {
+            const iv = setInterval(() => {
+                const cards = document.querySelectorAll('.service-card[data-name]');
+                if (!cards.length) return;
+                clearInterval(iv);
+                cards.forEach(c => { if (c.dataset.name === svc) selectService(c); });
+            }, 100);
+            setTimeout(() => clearInterval(iv), 5000);
+        }
+    })();
+
+    // ── INIT ─────────────────────────────────────────────────────────
+    loadServices();
+</script>
 </body>
 </html>
