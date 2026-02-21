@@ -248,79 +248,71 @@ router.post('/book', validateBooking, async (req, res) => {
         }
         
         // ============================================
-        // REDIRECT TO SCHEDULING LAYER
+        // FIND AVAILABLE STAFF (direct DB — no self-HTTP)
         // ============================================
-        
-        console.log('📋 Redirecting to scheduling layer for validation...');
-        
-        // Create scheduling validation request WITH CUSTOMER ID
-        const schedulingResponse = await fetch(`${process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`}/api/scheduling/validate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                customer_id: customer.id,
-                name: name.trim(),
-                phone: phone.trim(),
-                email: email ? email.trim() : null,
-                address: address.trim(),
-                service: service.trim(),
-                date: date,
-                time: time,
-                notes: notes ? notes.trim() : null
-            })
-        });
-        
-        if (!schedulingResponse.ok) {
-            const errorData = await schedulingResponse.json();
-            return res.status(schedulingResponse.status).json(errorData);
+
+        console.log('📋 Finding available staff for', date, time);
+
+        // Pick the least-loaded staff member who has no conflict at this exact slot
+        const assignedStaff = db.prepare(`
+            SELECT u.id, u.name, u.email, u.phone,
+                   COUNT(j2.id) AS week_jobs
+            FROM users u
+            LEFT JOIN jobs j2 ON u.id = j2.assigned_to
+                AND j2.job_date >= date('now', '-7 days')
+                AND j2.status NOT IN ('Cancelled', 'completed')
+                AND j2.deleted_at IS NULL
+            WHERE u.is_active = 1
+              AND u.role IN ('staff', 'admin', 'owner')
+              AND u.id NOT IN (
+                  SELECT assigned_to FROM jobs
+                  WHERE job_date = ? AND job_time = ?
+                    AND status NOT IN ('Cancelled', 'completed')
+                    AND deleted_at IS NULL
+                    AND assigned_to IS NOT NULL
+              )
+            GROUP BY u.id
+            ORDER BY week_jobs ASC
+            LIMIT 1
+        `).get(date, time);
+
+        if (!assignedStaff) {
+            return res.status(409).json({
+                success: false,
+                error: 'No staff available for this time slot',
+                code: 'NO_STAFF_AVAILABLE',
+                message: 'All staff are busy at the selected time. Please choose a different time window.'
+            });
         }
-        
-        const schedulingResult = await schedulingResponse.json();
-        
-        if (!schedulingResult.success) {
-            return res.status(400).json(schedulingResult);
-        }
-        
+
+        console.log(`👷 Assigning to: ${assignedStaff.name}`);
+
         // ============================================
-        // PROCEED WITH SCHEDULING CONFIRMATION
+        // CREATE JOB
         // ============================================
-        
-        console.log('✅ Scheduling validation passed, confirming booking...');
-        
-        // Confirm booking with staff assignment
-        const confirmResponse = await fetch(`${process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`}/api/scheduling/confirm-booking`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                customer_id: customer.id,
-                service_id: schedulingResult.data.service.id,
-                date: date,
-                time: time,
-                address: address.trim(),
-                notes: notes ? notes.trim() : null,
-                staff_id: schedulingResult.data.recommendedStaff.id,
-                estimated_duration: schedulingResult.data.service.duration || 2
-            })
-        });
-        
-        if (!confirmResponse.ok) {
-            const errorData = await confirmResponse.json();
-            return res.status(confirmResponse.status).json(errorData);
-        }
-        
-        const confirmResult = await confirmResponse.json();
-        
-        if (!confirmResult.success) {
-            return res.status(400).json(confirmResult);
-        }
-        
-        console.log(`🎉 Booking confirmed via scheduling layer: Job ID ${confirmResult.data.jobId}`);
-        
+
+        const now = new Date().toISOString();
+        const jobResult = db.prepare(`
+            INSERT INTO jobs (
+                customer_id, service_id, assigned_to,
+                job_date, job_time, location, status, notes,
+                estimated_duration, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Scheduled', ?, ?, ?, ?)
+        `).run(
+            customer.id, serviceRecord.id, assignedStaff.id,
+            date, time, address.trim(),
+            notes ? notes.trim() : '',
+            serviceRecord.duration || 2,
+            now, now
+        );
+
+        const jobId = jobResult.lastInsertRowid;
+        console.log(`🎉 Job #${jobId} created — ${customer.name} → ${assignedStaff.name}`);
+
         // ============================================
-        // AI-POWERED AUTOMATIONS
+        // AUTOMATIONS (non-critical)
         // ============================================
-        
-        // Trigger automations (with AI-generated messages if applicable)
+
         try {
             const automationData = {
                 customer_id: customer.id,
@@ -331,12 +323,12 @@ router.post('/book', validateBooking, async (req, res) => {
                 date: date,
                 time: time,
                 address: address.trim(),
-                staff_name: schedulingResult.data.recommendedStaff?.name || 'Our Team',
-                job_id: confirmResult.data.jobId,
+                staff_name: assignedStaff.name || 'Our Team',
+                job_id: jobId,
                 notes: notes ? notes.trim() : ''
             };
-            
-            // Generate AI booking confirmation email
+
+            // AI confirmation email to customer
             if (customer.email) {
                 try {
                     const aiEmail = await aiAutomation.generateBookingEmail({
@@ -347,21 +339,19 @@ router.post('/book', validateBooking, async (req, res) => {
                         time: time,
                         address: address.trim()
                     });
-                    
                     await notifications.sendEmail({
                         to: customer.email,
-                        subject: `🎉 Booking Confirmed - FieldOps`,
+                        subject: `Booking Confirmed — Stilt Heights`,
                         body: aiEmail
                     });
-                    
-                    console.log('📧 AI-generated booking confirmation sent to customer');
+                    console.log('📧 Confirmation email sent to customer');
                 } catch (aiError) {
-                    console.warn('⚠️ AI email generation failed, falling back to standard confirmation');
+                    console.warn('⚠️ AI email failed (non-critical)');
                 }
             }
-            
-            // Generate AI staff notification
-            if (schedulingResult.data.recommendedStaff?.email) {
+
+            // AI notification to assigned staff
+            if (assignedStaff.email) {
                 try {
                     const aiStaffMsg = await aiAutomation.generateJobAssignmentMessage({
                         customer_name: customer.name,
@@ -370,43 +360,49 @@ router.post('/book', validateBooking, async (req, res) => {
                         job_time: time,
                         location: address.trim()
                     });
-                    
                     await notifications.sendEmail({
-                        to: schedulingResult.data.recommendedStaff.email,
-                        subject: `📋 New Job Assignment - ${service}`,
+                        to: assignedStaff.email,
+                        subject: `New Job Assignment — ${service}`,
                         body: aiStaffMsg
                     });
-                    
-                    console.log('📨 AI-generated job assignment notification sent to staff');
+                    console.log('📨 Assignment email sent to staff');
                 } catch (aiError) {
-                    console.warn('⚠️ AI staff notification failed');
+                    console.warn('⚠️ AI staff notification failed (non-critical)');
                 }
             }
-            
-            // Trigger regular automations
+
+            // Push notification to assigned staff
+            try {
+                const push = require('../utils/pushNotifications');
+                await push.notifyJobAssigned(assignedStaff.id, {
+                    jobId, service: service,
+                    customerName: customer.name, date, time
+                });
+            } catch (pushError) {
+                console.warn('⚠️ Push notification failed (non-critical)');
+            }
+
             await triggerAutomations('Booking Confirmed', automationData);
-            console.log('⚙️ Automations triggered for booking confirmation');
-            
+            console.log('⚙️ Automations triggered');
+
         } catch (automationError) {
             console.warn('⚠️ Automation error (non-critical):', automationError.message);
-            // Don't fail the booking if automations fail
         }
-        
+
         // ============================================
         // RESPONSE
         // ============================================
-        
+
         res.status(201).json({
             success: true,
             message: 'Booking confirmed! Job scheduled with optimal staff assignment.',
             data: {
-                jobId: confirmResult.data.jobId,
+                jobId: jobId,
                 jobDate: date,
                 jobTime: time,
                 service: service,
                 customerPhone: phone.trim(),
-                assignedStaff: schedulingResult.data.recommendedStaff,
-                schedulingDetails: schedulingResult.data
+                assignedStaff: assignedStaff
             }
         });
         
