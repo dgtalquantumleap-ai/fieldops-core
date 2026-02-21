@@ -69,6 +69,7 @@ const setupDatabase = () => {
                 status TEXT DEFAULT 'scheduled',
                 notes TEXT,
                 estimated_duration REAL DEFAULT 2,
+                follow_up_sent INTEGER DEFAULT 0,
                 deleted_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -161,6 +162,10 @@ const setupDatabase = () => {
         if (!jobCols.includes('estimated_duration')) {
             db.exec('ALTER TABLE jobs ADD COLUMN estimated_duration REAL DEFAULT 2');
             console.log('✅ Migration: added estimated_duration to jobs');
+        }
+        if (!jobCols.includes('follow_up_sent')) {
+            db.exec('ALTER TABLE jobs ADD COLUMN follow_up_sent INTEGER DEFAULT 0');
+            console.log('✅ Migration: added follow_up_sent to jobs');
         }
 
         // Insert default services if empty
