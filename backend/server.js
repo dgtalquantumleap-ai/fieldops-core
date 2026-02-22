@@ -204,6 +204,7 @@ app.use('/api/services',         requireAuth,  require('./routes/services-enhanc
 app.use('/api/analytics',        requireAuth,  require('./routes/analytics'));
 app.use('/api/wp',               requireAuth,  require('./routes/wordpress'));
 app.use('/api/push',             requireAuth,  require('./routes/push'));
+app.use('/api/accounting',       requireAuth,  require('./routes/accounting'));
 
 // Admin-only routes
 app.use('/api/staff-management', requireAdmin, require('./routes/staff-management'));

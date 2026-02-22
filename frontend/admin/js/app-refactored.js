@@ -350,8 +350,8 @@ async function loadSectionData(sectionName) {
         case 'automations':
             await loadAutomations();
             break;
-        case 'audit-dashboard':
-            await loadAuditLogs();
+        case 'accounting':
+            await loadAccounting();
             break;
         case 'settings':
             loadSettings();
@@ -1077,7 +1077,12 @@ function renderStaffList(staff) {
         const status = member.is_active ? 'Active' : 'Inactive';
         const statusClass = member.is_active ? 'status-active' : 'status-inactive';
         const id = member.id || 0;
-        
+
+        // Availability badge
+        const avail = member.availability_status || 'available';
+        const availLabel = { available: '🟢 Available', unavailable: '🔴 Unavailable', on_leave: '🟡 On Leave' }[avail] || avail;
+        const availStyle = { available: 'color:#16a34a', unavailable: 'color:#dc2626', on_leave: 'color:#d97706' }[avail] || '';
+
         return `
             <div class="staff-card">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
@@ -1087,9 +1092,15 @@ function renderStaffList(staff) {
                 <p><strong>Email:</strong> ${email}</p>
                 <p><strong>Role:</strong> ${role}</p>
                 <p><strong>Phone:</strong> ${phone}</p>
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                <p style="margin-top:0.35rem;font-size:0.85rem;${availStyle}"><strong>Availability:</strong> ${availLabel}</p>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap:wrap;">
                     <button class="btn-small" onclick="viewStaffDetails(${id})">View</button>
                     <button class="btn-small" onclick="editStaff(${id})">Edit</button>
+                    <select style="font-size:0.75rem;padding:0.2rem 0.4rem;border:1px solid #d1d5db;border-radius:4px;" onchange="setStaffAvailability(${id}, this.value)" title="Set availability">
+                        <option value="available"   ${avail==='available'   ? 'selected':''}>🟢 Available</option>
+                        <option value="unavailable" ${avail==='unavailable' ? 'selected':''}>🔴 Unavailable</option>
+                        <option value="on_leave"    ${avail==='on_leave'    ? 'selected':''}>🟡 On Leave</option>
+                    </select>
                 </div>
             </div>
         `;
@@ -1934,45 +1945,211 @@ async function updateAutomation() {
 }
 
 // ============================================================
-// AUDIT LOGS
+// ACCOUNTING MODULE
 // ============================================================
 
-async function loadAuditLogs() {
-    const container = document.getElementById('audit-logs-container');
-    if (!container) return;
+let accountingChart = null;
 
-    container.innerHTML = '<p style="color:var(--text-secondary)">Loading audit logs...</p>';
-
+async function loadAccounting() {
     try {
         const token = getAuthToken();
-        const res = await fetch('/api/admin-audit/audit-logs?limit=100', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
+        const headers = { 'Authorization': `Bearer ${token}` };
 
-        const logs = data.success ? (Array.isArray(data.data) ? data.data : data.data?.items || []) : [];
+        // Load summary + monthly data in parallel
+        const [sumRes, monthRes, expRes] = await Promise.all([
+            fetch('/api/accounting/summary', { headers }),
+            fetch('/api/accounting/monthly', { headers }),
+            fetch('/api/accounting/expenses?limit=50', { headers }),
+        ]);
 
-        if (logs.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-secondary)">No audit logs yet. Logs are recorded as actions are taken.</p>';
-            return;
-        }
+        const [sumData, monthData, expData] = await Promise.all([
+            sumRes.json(), monthRes.json(), expRes.json()
+        ]);
 
-        container.innerHTML = logs.map(log => `
-            <div style="padding:0.75rem 1rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
-                <div>
-                    <strong>${utils.sanitize ? utils.sanitize(log.user_name || 'System') : (log.user_name || 'System')}</strong>
-                    <span style="color:var(--text-secondary);margin:0 0.3rem;">${log.action || 'performed action on'}</span>
-                    <strong>${log.entity_type || ''}</strong>
-                    ${log.entity_name ? `<span style="color:var(--text-secondary)"> &ldquo;${log.entity_name}&rdquo;</span>` : ''}
-                </div>
-                <span style="color:var(--text-secondary);font-size:0.8rem;white-space:nowrap;">${utils.format.date(log.created_at)}</span>
-            </div>
-        `).join('');
+        if (sumData.success) renderAccountingSummary(sumData.data);
+        if (monthData.success) renderAccountingChart(monthData.data);
+        if (expData.success) renderExpensesList(expData.data);
+
     } catch (error) {
-        logger.error('Failed to load audit logs:', error);
-        container.innerHTML = '<p style="color:var(--danger-color,#e53e3e)">Failed to load audit logs.</p>';
+        logger.error('Failed to load accounting:', error);
+        const el = document.getElementById('expenses-list');
+        if (el) el.innerHTML = '<p style="color:#e53e3e">Failed to load accounting data.</p>';
     }
 }
+
+function renderAccountingSummary(data) {
+    const fmt = (n) => '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    setEl('acct-revenue',       fmt(data.revenue.paid));
+    setEl('acct-unpaid',        fmt(data.revenue.unpaid + data.revenue.overdue));
+    setEl('acct-expenses',      fmt(data.expenses.total));
+    setEl('acct-profit',        fmt(data.profit.net));
+    setEl('acct-month-revenue', fmt(data.this_month.revenue));
+    setEl('acct-month-invoices',data.this_month.invoices);
+    setEl('acct-paid-count',    data.revenue.paid_count);
+    setEl('acct-unpaid-count',  data.revenue.unpaid_count);
+    setEl('acct-margin',        data.profit.margin + '%');
+
+    // Colour profit green/red
+    const profitEl = document.getElementById('acct-profit');
+    if (profitEl) profitEl.style.color = data.profit.net >= 0 ? '#16a34a' : '#dc2626';
+}
+
+function renderAccountingChart(rows) {
+    const canvas = document.getElementById('accounting-chart');
+    if (!canvas) return;
+
+    const labels   = rows.map(r => r.month);
+    const revenue  = rows.map(r => r.revenue);
+    const expenses = rows.map(r => r.expenses);
+    const profit   = rows.map(r => r.profit);
+
+    if (accountingChart) { accountingChart.destroy(); accountingChart = null; }
+
+    accountingChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Revenue',  data: revenue,  backgroundColor: 'rgba(13,148,136,0.75)', borderRadius: 4 },
+                { label: 'Expenses', data: expenses, backgroundColor: 'rgba(220,38,38,0.6)',  borderRadius: 4 },
+                { label: 'Profit',   data: profit,   type: 'line', borderColor: '#d97706', backgroundColor: 'rgba(217,119,6,0.1)', tension: 0.4, fill: true, pointRadius: 4 },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v } } },
+        },
+    });
+}
+
+function renderExpensesList(expenses) {
+    const el = document.getElementById('expenses-list');
+    if (!el) return;
+
+    if (!expenses || expenses.length === 0) {
+        el.innerHTML = '<p style="color:#64748b;padding:1rem 0;">No expenses recorded yet. Click "+ Add Expense" to record one.</p>';
+        return;
+    }
+
+    const fmt = (n) => '$' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    el.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+            <thead>
+                <tr style="background:var(--background-light,#f1f5f9);text-align:left;">
+                    <th style="padding:0.6rem 0.8rem;">Date</th>
+                    <th style="padding:0.6rem 0.8rem;">Description</th>
+                    <th style="padding:0.6rem 0.8rem;">Category</th>
+                    <th style="padding:0.6rem 0.8rem;">Amount</th>
+                    <th style="padding:0.6rem 0.8rem;">Notes</th>
+                    <th style="padding:0.6rem 0.8rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                ${expenses.map(e => `
+                    <tr style="border-bottom:1px solid var(--border-color,#e2e8f0);">
+                        <td style="padding:0.6rem 0.8rem;">${e.expense_date || ''}</td>
+                        <td style="padding:0.6rem 0.8rem;font-weight:500;">${e.description}</td>
+                        <td style="padding:0.6rem 0.8rem;"><span style="background:#f1f5f9;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.8rem;">${e.category}</span></td>
+                        <td style="padding:0.6rem 0.8rem;font-weight:700;color:#dc2626;">${fmt(e.amount)}</td>
+                        <td style="padding:0.6rem 0.8rem;color:#64748b;font-size:0.82rem;">${e.notes || '—'}</td>
+                        <td style="padding:0.6rem 0.8rem;">
+                            <button class="btn-small" style="background:#fee2e2;color:#dc2626;border-color:#fca5a5;" onclick="deleteExpense(${e.id})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function showAddExpenseModal() {
+    // Set today's date as default
+    const dateEl = document.getElementById('expense-date');
+    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+    showModal('add-expense-modal');
+}
+
+async function submitAddExpense(e) {
+    e.preventDefault();
+    const token = getAuthToken();
+
+    const payload = {
+        description:  document.getElementById('expense-description').value.trim(),
+        amount:       parseFloat(document.getElementById('expense-amount').value),
+        category:     document.getElementById('expense-category').value,
+        expense_date: document.getElementById('expense-date').value,
+        notes:        document.getElementById('expense-notes').value.trim(),
+    };
+
+    try {
+        const res = await fetch('/api/accounting/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+            closeModal('add-expense-modal');
+            document.getElementById('add-expense-form').reset();
+            ui.notifications?.show?.('Expense recorded', 'success');
+            await loadAccounting();
+        } else {
+            alert('Failed to save expense: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+async function deleteExpense(id) {
+    if (!confirm('Delete this expense record?')) return;
+    const token = getAuthToken();
+    try {
+        const res = await fetch(`/api/accounting/expenses/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) {
+            await loadAccounting();
+        } else {
+            alert('Failed to delete expense');
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Staff availability update (called from staff card dropdown)
+async function setStaffAvailability(staffId, status) {
+    const token = getAuthToken();
+    try {
+        const res = await fetch(`/api/staff/${staffId}/availability`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ availability_status: status }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            ui.notifications?.show?.(`Availability updated to ${status}`, 'success');
+            await loadStaff(); // Refresh staff list
+        } else {
+            alert('Failed to update availability: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Wire expense form submit
+document.addEventListener('DOMContentLoaded', () => {
+    const expenseForm = document.getElementById('add-expense-form');
+    if (expenseForm) expenseForm.addEventListener('submit', submitAddExpense);
+});
 
 // ============================================================
 // CUSTOMER SEARCH

@@ -72,9 +72,9 @@
                 <span class="nav-icon">🤖</span>
                 <span>Automations</span>
             </a>
-            <a href="#audit" class="nav-item" onclick="showSection('audit')">
-                <span class="nav-icon">🔍</span>
-                <span>Audit</span>
+            <a href="#accounting" class="nav-item" onclick="showSection('accounting')">
+                <span class="nav-icon">📈</span>
+                <span>Accounting</span>
             </a>
             <a href="#settings" class="nav-item" onclick="showSection('settings')">
                 <span class="nav-icon">⚙️</span>
@@ -357,44 +357,75 @@
             </div>
         </section>
 
-        <!-- Audit Section -->
-        <section id="audit" class="content-section">
+        <!-- Accounting Section -->
+        <section id="accounting" class="content-section">
             <div class="section-header">
-                <h2>🔍 System Audit & Monitoring</h2>
+                <h2>📈 Accounting & Finance</h2>
                 <div class="header-actions">
-                    <button class="btn-secondary" onclick="loadAuditLogs()">View Audit Logs</button>
-                    <button class="btn-secondary" onclick="loadSystemHealth()">System Health</button>
+                    <button class="btn-primary" onclick="showAddExpenseModal()">+ Add Expense</button>
+                    <button class="btn-secondary" onclick="loadAccounting()">🔄 Refresh</button>
                 </div>
             </div>
-            
-            <div class="audit-dashboard" id="audit-dashboard" hidden>
-                <div class="audit-filters">
-                    <div class="filter-group">
-                        <label for="audit-action">Action:</label>
-                        <select id="audit-action" onchange="loadAuditLogs()">
-                            <option value="">All Actions</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="audit-entity">Entity:</label>
-                        <select id="audit-entity" onchange="loadAuditLogs()">
-                            <option value="">All Entities</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="audit-date-from">From:</label>
-                        <input type="date" id="audit-date-from" onchange="loadAuditLogs()">
-                    </div>
-                    <div class="filter-group">
-                        <label for="audit-date-to">To:</label>
-                        <input type="date" id="audit-date-to" onchange="loadAuditLogs()">
+
+            <!-- Summary Cards -->
+            <div class="stats-grid" id="accounting-summary">
+                <div class="stat-card revenue">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <h3 id="acct-revenue">$0</h3>
+                        <p>Revenue Collected</p>
                     </div>
                 </div>
-                
-                <div class="audit-content">
-                    <div id="audit-logs-container">
-                        <div class="loading">Loading audit logs...</div>
+                <div class="stat-card pending-jobs">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-content">
+                        <h3 id="acct-unpaid">$0</h3>
+                        <p>Outstanding Invoices</p>
                     </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💸</div>
+                    <div class="stat-content">
+                        <h3 id="acct-expenses">$0</h3>
+                        <p>Total Expenses</p>
+                    </div>
+                </div>
+                <div class="stat-card completed-jobs">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <h3 id="acct-profit">$0</h3>
+                        <p>Net Profit</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Revenue Chart -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Monthly Revenue vs Expenses (Last 6 Months)</h3>
+                    <div class="chart-container">
+                        <canvas id="accounting-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>This Month</h3>
+                    <div class="stat-content" style="padding:1.5rem 0;">
+                        <div class="info-grid">
+                            <div class="info-item"><label>Monthly Revenue:</label><span id="acct-month-revenue">$0</span></div>
+                            <div class="info-item"><label>Monthly Invoices:</label><span id="acct-month-invoices">0</span></div>
+                            <div class="info-item"><label>Paid Invoices:</label><span id="acct-paid-count">0</span></div>
+                            <div class="info-item"><label>Unpaid Invoices:</label><span id="acct-unpaid-count">0</span></div>
+                            <div class="info-item"><label>Profit Margin:</label><span id="acct-margin">0%</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Table -->
+            <div class="activity-section">
+                <h3>Expense Records</h3>
+                <div class="expenses-list" id="expenses-list">
+                    <div class="loading">Loading expenses...</div>
                 </div>
             </div>
         </section>
@@ -418,7 +449,7 @@
                         </div>
                         <div class="form-group">
                             <label for="business-email">Email</label>
-                            <input type="email" value="dgtalquantumleap@gmail.com" id="business-email" title="Business email" placeholder="Enter business email">
+                            <input type="email" value="stiltheights@gmail.com" id="business-email" title="Business email" placeholder="Enter business email">
                         </div>
                         <button class="btn-primary" onclick="saveBusinessSettings()">Save Changes</button>
                     </div>
@@ -1156,6 +1187,59 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="add-expense-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Record New Expense</h3>
+                <button class="close-btn" onclick="closeModal('add-expense-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-expense-form">
+                    <div class="form-group">
+                        <label for="expense-description">Description *</label>
+                        <input type="text" id="expense-description" placeholder="e.g. Cleaning supplies" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expense-amount">Amount ($) *</label>
+                            <input type="number" id="expense-amount" min="0.01" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expense-date">Date *</label>
+                            <input type="date" id="expense-date" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-category">Category</label>
+                        <select id="expense-category">
+                            <option value="General">General</option>
+                            <option value="Supplies">Supplies</option>
+                            <option value="Equipment">Equipment</option>
+                            <option value="Fuel">Fuel / Transport</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Wages">Wages / Payroll</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-notes">Notes</label>
+                        <textarea id="expense-notes" rows="2" placeholder="Optional additional details"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('add-expense-modal')">Cancel</button>
+                        <button type="submit" class="btn-primary">Record Expense</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Service Layer Scripts (must load in order) -->
     <script src="/admin/js/services/logger.js"></script>
     

@@ -25,7 +25,10 @@
                 <h1>🏠 Stilt Heights</h1>
                 <p class="header-subtitle">My Jobs</p>
             </div>
-            <button onclick="logout()" class="btn-logout">Logout</button>
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div id="availability-widget" style="position:relative;"></div>
+                <button onclick="logout()" class="btn-logout">Logout</button>
+            </div>
         </header>
         
         <main class="jobs-container" id="jobs-list"></main>

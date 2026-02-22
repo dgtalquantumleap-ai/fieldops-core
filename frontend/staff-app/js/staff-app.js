@@ -640,9 +640,111 @@ function urlBase64ToUint8Array(base64String) {
     return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
+// ─────────────────────────────────────────
+// Staff Availability Toggle
+// ─────────────────────────────────────────
+
+// Decode JWT payload to get logged-in user info
+function getStaffUser() {
+    const token = localStorage.getItem('staffToken');
+    if (!token) return null;
+    try {
+        return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+        return null;
+    }
+}
+
+// Fetch current availability from server and render the widget
+async function loadAvailability() {
+    const user = getStaffUser();
+    if (!user || !user.id) return;
+
+    try {
+        const res = await fetch(`/api/staff/${user.id}`, { headers: staffAuthHeaders() });
+        if (!res.ok) return;
+        const staff = await res.json();
+        renderAvailabilityWidget(staff.availability_status || 'available');
+    } catch (e) {
+        console.warn('Could not load availability:', e.message);
+    }
+}
+
+// Render the availability pill + dropdown
+function renderAvailabilityWidget(status) {
+    const widget = document.getElementById('availability-widget');
+    if (!widget) return;
+
+    const labels = { available: '🟢 Available', unavailable: '🔴 Unavailable', on_leave: '🟡 On Leave' };
+    const colors = { available: '#16a34a', unavailable: '#dc2626', on_leave: '#d97706' };
+    const col = colors[status] || '#64748b';
+    const lbl = labels[status] || status;
+
+    widget.innerHTML = `
+        <button id="avail-btn" onclick="toggleAvailMenu()"
+            style="display:flex;align-items:center;gap:5px;padding:5px 11px;
+                   background:${col}1a;color:${col};border:1.5px solid ${col};
+                   border-radius:20px;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap;">
+            ${lbl} <span style="font-size:0.6rem;">▼</span>
+        </button>
+        <div id="avail-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);
+             background:#fff;border:1px solid #e2e8f0;border-radius:10px;
+             box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:9999;min-width:160px;overflow:hidden;">
+            ${Object.entries(labels).map(([val, txt]) => `
+                <button onclick="setAvailability('${val}')"
+                    style="display:block;width:100%;text-align:left;padding:10px 14px;
+                           background:${val === status ? '#f0fdf4' : 'transparent'};
+                           border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;
+                           font-size:0.85rem;font-weight:${val === status ? '700' : '500'};color:#1e293b;">
+                    ${txt}
+                </button>`).join('')}
+        </div>
+    `;
+}
+
+function toggleAvailMenu() {
+    const menu = document.getElementById('avail-menu');
+    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// PATCH availability to server
+async function setAvailability(status) {
+    const user = getStaffUser();
+    if (!user || !user.id) return;
+
+    const menu = document.getElementById('avail-menu');
+    if (menu) menu.style.display = 'none';
+
+    try {
+        const res = await fetch(`/api/staff/${user.id}/availability`, {
+            method: 'PATCH',
+            headers: staffAuthHeaders(),
+            body: JSON.stringify({ availability_status: status })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.success) {
+            renderAvailabilityWidget(status);
+            showNotification(`Status: ${status.replace('_', ' ')}`, 'success');
+        }
+    } catch (e) {
+        showNotification('Failed to update status', 'error');
+    }
+}
+
+// Close availability menu when clicking outside
+document.addEventListener('click', (e) => {
+    const widget = document.getElementById('availability-widget');
+    if (widget && !widget.contains(e.target)) {
+        const menu = document.getElementById('avail-menu');
+        if (menu) menu.style.display = 'none';
+    }
+});
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     initializeSocket();
     loadJobs();
+    loadAvailability();
     setupPushNotifications();
 });

@@ -248,6 +248,27 @@ const setupDatabase = () => {
             console.log('✅ Migration: added last_engagement_sent to customers');
         }
 
+        // Migration: staff availability_status
+        const userCols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+        if (!userCols.includes('availability_status')) {
+            db.exec("ALTER TABLE users ADD COLUMN availability_status TEXT DEFAULT 'available'");
+            console.log('✅ Migration: added availability_status to users');
+        }
+
+        // Expenses table for accounting module
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                amount REAL NOT NULL,
+                category TEXT DEFAULT 'General',
+                expense_date DATE DEFAULT (date('now')),
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Expenses table ready');
+
         // Insert default services if empty
         const serviceCount = db.prepare('SELECT COUNT(*) as count FROM services').get().count;
         if (serviceCount === 0) {

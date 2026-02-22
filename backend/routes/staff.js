@@ -28,8 +28,8 @@ router.get('/jobs', requireAuth, async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { page, limit } = req.query;
-        
-        const baseQuery = "SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE role != 'admin' ORDER BY name";
+
+        const baseQuery = "SELECT id, name, email, phone, role, is_active, availability_status, created_at FROM users WHERE role != 'admin' ORDER BY name";
         const countQuery = "SELECT COUNT(*) as count FROM users WHERE role != 'admin'";
         
         const result = paginate(baseQuery, countQuery, page, limit);
@@ -130,10 +130,43 @@ router.patch('/jobs/:jobId/status', async (req, res) => {
     }
 });
 
+// Update staff availability status (called by staff app)
+router.patch('/:id/availability', requireAuth, async (req, res) => {
+    try {
+        const staffId = req.params.id;
+        const { availability_status } = req.body;
+
+        if (!['available', 'unavailable', 'on_leave'].includes(availability_status)) {
+            return res.status(400).json({ error: 'Invalid availability_status. Use: available, unavailable, on_leave' });
+        }
+
+        // Staff can only update their own availability; admin can update any
+        if (req.user.role !== 'admin' && String(req.user.id) !== String(staffId)) {
+            return res.status(403).json({ error: 'Not authorised' });
+        }
+
+        const result = db.prepare('UPDATE users SET availability_status = ? WHERE id = ?').run(availability_status, staffId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Staff member not found' });
+        }
+
+        const updated = db.prepare('SELECT id, name, availability_status FROM users WHERE id = ?').get(staffId);
+
+        // Notify admin in real-time
+        const io = req.app.get('io');
+        io.to('admin').emit('staff-availability-changed', { staff: updated });
+
+        res.json({ success: true, staff: updated, message: `Availability set to ${availability_status}` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Get staff member by ID
 router.get('/:id', async (req, res) => {
     try {
-        const staff = db.prepare('SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE id = ?').get(req.params.id);
+        const staff = db.prepare('SELECT id, name, email, phone, role, is_active, availability_status, created_at FROM users WHERE id = ?').get(req.params.id);
         if (!staff) {
             return res.status(404).json({ error: 'Staff member not found' });
         }
