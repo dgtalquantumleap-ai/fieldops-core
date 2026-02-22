@@ -3,288 +3,577 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stilt Heights - Professional Cleaning Services</title>
+    <title>Stilt Heights Professional Cleaning | Calgary, Alberta</title>
+    <meta name="description" content="Calgary's premier professional cleaning service. Residential, commercial, move-in/out and deep cleaning. Fully insured, background-checked team. Book online today!">
+    <meta name="keywords" content="cleaning service Calgary, house cleaning Calgary, professional cleaners Alberta, commercial cleaning Calgary, Stilt Heights">
+    <meta property="og:title" content="Stilt Heights Professional Cleaning | Calgary, AB">
+    <meta property="og:description" content="Calgary's trusted cleaning experts. Insured, reliable, satisfaction guaranteed.">
+    <meta property="og:type" content="website">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <!-- Favicon: SVG logo icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 90'><rect x='4' y='60' width='17' height='28' rx='1' fill='%231B2A72'/><rect x='79' y='60' width='17' height='28' rx='1' fill='%231B2A72'/><polygon points='12.5,60 50,8 87.5,60 76,60 50,24 24,60' fill='%231B2A72'/><polygon points='37,2 63,2 50,20' fill='%23CC2936'/><polygon points='50,14 54,20 46,20' fill='%231B2A72'/></svg>">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
+
+    <!-- ===== ANNOUNCEMENT BAR ===== -->
+    <div class="announcement-bar">
+        <div class="ann-container">
+            <span>📍 Proudly Serving Calgary &amp; Surrounding Areas</span>
+            <span class="bar-sep">|</span>
+            <span>☎ <a href="tel:8259946606">825-994-6606</a></span>
+            <span class="bar-sep">|</span>
+            <span>✓ Free Estimates Available</span>
+        </div>
+    </div>
+
+    <!-- ===== STICKY HEADER ===== -->
+    <header class="header" id="header">
         <nav class="nav">
             <div class="nav-container">
-                <div class="nav-logo">
-                    <span class="logo-icon">🏠</span>
+
+                <!-- Logo -->
+                <a href="#home" class="nav-logo">
+                    <svg class="logo-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-label="Stilt Heights Logo">
+                        <rect x="4"  y="60" width="17" height="28" rx="1.5" fill="#1B2A72"/>
+                        <rect x="79" y="60" width="17" height="28" rx="1.5" fill="#1B2A72"/>
+                        <polygon points="12.5,60 50,8 87.5,60 76,60 50,24 24,60" fill="#1B2A72"/>
+                        <polygon points="37,2 63,2 50,20" fill="#CC2936"/>
+                        <polygon points="50,14 54,20 46,20" fill="#1B2A72"/>
+                    </svg>
                     <span class="logo-text">Stilt Heights</span>
-                </div>
-                <ul class="nav-menu">
+                </a>
+
+                <!-- Desktop Nav Links -->
+                <ul class="nav-menu" id="nav-menu">
                     <li><a href="#home">Home</a></li>
+                    <li><a href="#services">Services</a></li>
                     <li><a href="#about">About</a></li>
-                    <li><a href="#testimonials">Testimonials</a></li>
-                    <li><a href="#ceo-story">Our Story</a></li>
                     <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#testimonials">Reviews</a></li>
+                    <li><a href="#faq">FAQ</a></li>
                     <li><a href="#contact">Contact</a></li>
                     <li><a href="/booking.html#track">Track Booking</a></li>
                 </ul>
-                <div class="nav-cta" style="display:flex;gap:0.75rem;align-items:center;">
-                    <a href="tel:8259946606" class="phone-btn">📞 8259946606</a>
-                    <a href="/booking.html" class="btn-primary" style="padding:8px 18px;font-size:0.9rem;white-space:nowrap;">Book Now</a>
+
+                <!-- Right Actions -->
+                <div class="nav-actions">
+                    <a href="tel:8259946606" class="nav-phone">📞 825-994-6606</a>
+                    <a href="/booking.html" class="btn-book">Book Now</a>
+                    <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
                 </div>
+
             </div>
         </nav>
     </header>
 
-    <!-- Hero Section -->
+    <!-- ===== MOBILE NAV OVERLAY ===== -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+    <div class="mobile-nav-drawer" id="mobile-nav-drawer" aria-hidden="true">
+        <div class="mobile-nav-top">
+            <div class="mobile-logo">
+                <svg class="logo-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4"  y="60" width="17" height="28" rx="1.5" fill="#1B2A72"/>
+                    <rect x="79" y="60" width="17" height="28" rx="1.5" fill="#1B2A72"/>
+                    <polygon points="12.5,60 50,8 87.5,60 76,60 50,24 24,60" fill="#1B2A72"/>
+                    <polygon points="37,2 63,2 50,20" fill="#CC2936"/>
+                    <polygon points="50,14 54,20 46,20" fill="#1B2A72"/>
+                </svg>
+                <span class="logo-text">Stilt Heights</span>
+            </div>
+            <button class="mobile-close" id="mobile-close" aria-label="Close menu">✕</button>
+        </div>
+        <ul class="mobile-menu">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#testimonials">Reviews</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="/booking.html#track">Track My Booking</a></li>
+        </ul>
+        <div class="mobile-cta">
+            <a href="/booking.html" class="btn-teal-full">Book a Clean</a>
+            <a href="tel:8259946606" class="mobile-call-link">📞 825-994-6606</a>
+        </div>
+    </div>
+
+    <!-- ===== HERO ===== -->
     <section id="home" class="hero">
+        <div class="hero-overlay"></div>
         <div class="hero-container">
             <div class="hero-content">
-                <h1 class="hero-title">Professional Cleaning Services</h1>
-                <p class="hero-subtitle">Experience the difference with our tailored cleaning solutions designed to meet your unique needs.</p>
-                <p class="hero-description">At Stilt Heights, we prioritize your satisfaction and deliver exceptional results every time. Discover a cleaner, healthier space with our professional team dedicated to exceeding your expectations.</p>
-                <div class="hero-actions">
-                    <button class="btn-primary" onclick="scrollToBooking()">Book Now</button>
-                    <button class="btn-secondary" onclick="scrollToServices()">View Services</button>
+                <div class="hero-eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    Calgary's #1 Rated Cleaning Service
+                </div>
+                <h1 class="hero-title">
+                    A Spotless Home<br>
+                    <span class="hero-accent">Starts Here.</span>
+                </h1>
+                <p class="hero-sub">
+                    Professional cleaning services for homes and businesses across Calgary, AB.
+                    Trusted by 500+ families. Fully insured. Satisfaction guaranteed.
+                </p>
+                <div class="hero-btns">
+                    <a href="/booking.html" class="btn-gold btn-lg">
+                        Book Your Clean
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="tel:8259946606" class="btn-ghost btn-lg">📞 Call Now</a>
+                </div>
+                <div class="trust-row">
+                    <div class="trust-badge"><span class="t-check">✓</span> Fully Insured</div>
+                    <div class="trust-badge"><span class="t-check">✓</span> Background Checked</div>
+                    <div class="trust-badge"><span class="t-check">✓</span> Satisfaction Guaranteed</div>
+                    <div class="trust-badge"><span class="t-check">✓</span> No Hidden Fees</div>
                 </div>
             </div>
-            <div class="hero-image">
-                <div class="hero-illustration">
-                    <div class="cleaning-icon">🧹</div>
-                    <div class="sparkle">✨</div>
-                    <div class="sparkle">✨</div>
-                    <div class="sparkle">✨</div>
+
+            <div class="hero-visual">
+                <div class="hero-card">
+                    <div class="hero-card-sparkle">✨</div>
+                    <h3>We Make It Shine</h3>
+                    <p>Professional · Reliable · Spotless</p>
+                    <div class="hero-card-rating">
+                        <span class="gold-stars">★★★★★</span>
+                        <span>4.9 / 5 · 200+ Reviews</span>
+                    </div>
+                    <div class="hero-card-badges">
+                        <span class="hc-badge teal">🛡️ Insured</span>
+                        <span class="hc-badge gold">✅ Guaranteed</span>
+                    </div>
                 </div>
+                <div class="hero-float f1">🧹</div>
+                <div class="hero-float f2">🪣</div>
+                <div class="hero-float f3">✨</div>
             </div>
         </div>
+        <div class="scroll-hint"><div class="scroll-dot"></div></div>
     </section>
 
-    <!-- Services Overview -->
-    <section id="services" class="services-overview">
+    <!-- ===== STATS STRIP ===== -->
+    <section class="stats-strip">
         <div class="container">
-            <h2 class="section-title">Our Services</h2>
-            <div class="services-grid" id="services-grid">
-                <!-- Services will be loaded dynamically -->
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-val-row">
+                        <span class="stat-num counter" data-target="500">0</span>
+                        <span class="stat-suf">+</span>
+                    </div>
+                    <div class="stat-lbl">Happy Clients</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val-row">
+                        <span class="stat-num">4.9</span>
+                        <span class="stat-suf">★</span>
+                    </div>
+                    <div class="stat-lbl">Average Rating</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val-row">
+                        <span class="stat-num counter" data-target="5">0</span>
+                        <span class="stat-suf">+</span>
+                    </div>
+                    <div class="stat-lbl">Years Experience</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val-row">
+                        <span class="stat-num counter" data-target="20">0</span>
+                        <span class="stat-suf">+</span>
+                    </div>
+                    <div class="stat-lbl">Team Members</div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Testimonials Section -->
+    <!-- ===== SERVICES ===== -->
+    <section id="services" class="services-section">
+        <div class="container">
+            <div class="section-head">
+                <div class="section-tag">What We Offer</div>
+                <h2 class="section-title">Professional Cleaning <span class="text-teal">Services</span></h2>
+                <p class="section-sub">From routine housekeeping to full deep-clean transformations — we handle it all across Calgary and surrounding areas.</p>
+            </div>
+            <div class="services-grid" id="services-grid">
+                <!-- Loaded dynamically by app.js -->
+            </div>
+            <div class="section-cta">
+                <a href="/booking.html" class="btn-teal">View All Services &amp; Book</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== HOW IT WORKS ===== -->
+    <section class="how-section">
+        <div class="container">
+            <div class="section-head">
+                <div class="section-tag">Simple Process</div>
+                <h2 class="section-title">Booking Is <span class="text-gold">Easy</span></h2>
+                <p class="section-sub">Three simple steps to a sparkling clean space</p>
+            </div>
+            <div class="steps-row">
+                <div class="step-card">
+                    <div class="step-num">01</div>
+                    <div class="step-icon">📅</div>
+                    <h3>Book Online</h3>
+                    <p>Choose your service, pick a date and time, and enter your Calgary address. Takes under 2 minutes.</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step-card">
+                    <div class="step-num">02</div>
+                    <div class="step-icon">🤝</div>
+                    <h3>We Confirm</h3>
+                    <p>Our team reviews your booking and sends confirmation with your assigned cleaner's details.</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step-card">
+                    <div class="step-num">03</div>
+                    <div class="step-icon">✨</div>
+                    <h3>Enjoy the Shine</h3>
+                    <p>Relax while our professionals transform your space. We're not done until you're 100% satisfied.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== WHY CHOOSE US ===== -->
+    <section class="why-section">
+        <div class="container">
+            <div class="section-head light">
+                <div class="section-tag light">Our Promise</div>
+                <h2 class="section-title light">Why Calgary Chooses <span class="text-teal-light">Stilt Heights</span></h2>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feat-icon teal">🏆</div>
+                    <h3>Expert &amp; Experienced</h3>
+                    <p>Every cleaner on our team is rigorously vetted, trained, and has 5+ years of professional cleaning experience.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon gold">🛡️</div>
+                    <h3>Fully Insured &amp; Bonded</h3>
+                    <p>We carry full liability insurance and worker's compensation. Your home and belongings are always fully protected.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon teal">🌿</div>
+                    <h3>Eco-Friendly Products</h3>
+                    <p>We use safe, environmentally friendly cleaning products — tough on grime, gentle on your family and pets.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon gold">⭐</div>
+                    <h3>Satisfaction Guarantee</h3>
+                    <p>Not happy? We come back and make it right at no extra cost. Your satisfaction is non-negotiable to us.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== TESTIMONIALS ===== -->
     <section id="testimonials" class="testimonials-section">
         <div class="container">
-            <h2 class="section-title">What Our Customers Say</h2>
+            <div class="section-head">
+                <div class="section-tag">Real Reviews</div>
+                <h2 class="section-title">What Calgary Clients <span class="text-gold">Say</span></h2>
+                <p class="section-sub">Don't take our word for it — here's what our clients across Calgary think.</p>
+            </div>
             <div class="testimonials-grid" id="testimonials-grid">
-                <!-- Testimonials will be loaded dynamically -->
+                <!-- Loaded dynamically by app.js -->
             </div>
         </div>
     </section>
 
-    <!-- CEO Story Section -->
-    <section id="ceo-story" class="ceo-story-section">
-        <div class="container">
-            <h2 class="section-title">Our Journey</h2>
-            <div class="ceo-story-container">
-                <div class="ceo-story-content">
-                    <div class="story-header">
-                        <div class="ceo-info">
-                            <h3>John Heights</h3>
-                            <p>Founder & CEO</p>
-                        </div>
-                        <div class="story-date">Founded 2020</div>
-                    </div>
-                    <div class="story-timeline" id="story-timeline">
-                        <!-- CEO stories will be loaded dynamically -->
-                    </div>
-                </div>
-                <div class="ceo-image">
-                    <div style="width:220px;height:220px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 8px 32px rgba(37,99,235,0.3);">
-                        <div style="font-size:4.5rem;line-height:1;">👤</div>
-                        <div style="color:white;font-weight:700;font-size:0.95rem;margin-top:0.5rem;">John Heights</div>
-                        <div style="color:rgba(255,255,255,0.8);font-size:0.75rem;">Founder &amp; CEO</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- About Section -->
+    <!-- ===== ABOUT / CEO ===== -->
     <section id="about" class="about-section">
         <div class="container">
-            <div class="about-content">
-                <h2 class="section-title">About Stilt Heights</h2>
-                <div class="about-grid">
-                    <div class="about-text">
-                        <p class="about-intro">Stilt Heights was founded with a simple mission: to provide exceptional cleaning services that people could trust. We saw how many cleaning companies cut corners, and we knew there was a better way.</p>
-                        <p>Today, we're a family of 20+ professionals who share the same values: integrity, excellence, and customer satisfaction. Every team member is trained not just in cleaning techniques, but in customer service and communication.</p>
-                        <p>We're not just cleaning houses - we're building relationships. Our goal is to become the most trusted cleaning service in the region, known for reliability, quality, and exceptional customer care.</p>
+            <div class="about-grid">
+                <div class="about-visual">
+                    <div class="ceo-circle">
+                        <span class="ceo-initials">RK</span>
                     </div>
-                    <div class="about-stats">
-                        <div class="stat-item">
-                            <div class="stat-number">500+</div>
-                            <div class="stat-label">Happy Customers</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">4.9★</div>
-                            <div class="stat-label">Average Rating</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">20+</div>
-                            <div class="stat-label">Team Members</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">5+</div>
-                            <div class="stat-label">Years Experience</div>
+                    <div class="about-float-card">
+                        <div class="afc-icon">🏅</div>
+                        <div>
+                            <div class="afc-title">Founded 2020</div>
+                            <div class="afc-sub">Calgary, Alberta</div>
                         </div>
                     </div>
+                </div>
+                <div class="about-body">
+                    <div class="section-tag" style="text-align:left;">Our Story</div>
+                    <h2 class="section-title" style="text-align:left;">Built on <span class="text-teal">Trust</span>,<br>Driven by <span class="text-gold">Excellence</span></h2>
+                    <p class="about-lead">My name is <strong>Ranti Keshinro</strong>, and I founded Stilt Heights with one mission: to deliver cleaning services that people in Calgary could genuinely trust.</p>
+                    <p>I saw how many cleaning companies cut corners, undervalued their staff, and left clients disappointed. I knew there was a better way. Stilt Heights started with two team members and an uncompromising commitment to quality.</p>
+                    <p>Today, we're a family of 20+ professionals who share the same values — integrity, excellence, and genuine care for every client. We're not just cleaning homes; we're building lasting relationships and setting a new standard for what a Calgary cleaning service can be.</p>
+                    <div class="about-vals">
+                        <div class="val-row"><span class="val-dot teal">✓</span><span>Integrity in everything we do</span></div>
+                        <div class="val-row"><span class="val-dot gold">✓</span><span>Respect for your home and privacy</span></div>
+                        <div class="val-row"><span class="val-dot teal">✓</span><span>Excellence in every clean, every time</span></div>
+                    </div>
+                    <a href="/booking.html" class="btn-teal">Experience the Difference</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features">
+    <!-- ===== PRICING ===== -->
+    <section id="pricing" class="pricing-section">
         <div class="container">
-            <h2 class="section-title">What You Can Expect From Us</h2>
-            <div class="features-grid">
-                <div class="feature-item">
-                    <div class="feature-icon">🏆</div>
-                    <h3>Trusted & Experienced</h3>
-                    <p>Years of experience in professional cleaning services with satisfied customers across the region</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🛡️</div>
-                    <h3>Reliable & Fully Insured</h3>
-                    <p>Fully insured and bonded for your peace of mind. We show up on time, every time</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📋</div>
-                    <h3>No Contracts</h3>
-                    <p>Flexible service options with no long-term contracts required. Pay as you go</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">✨</div>
-                    <h3>Satisfaction Guaranteed</h3>
-                    <p>Your satisfaction is our priority. We'll make it right if you're not completely happy</p>
-                </div>
+            <div class="section-head">
+                <div class="section-tag">Transparent Pricing</div>
+                <h2 class="section-title">Clear, Honest <span class="text-gold">Pricing</span></h2>
+                <p class="section-sub">No hidden fees. No surprises. Just spotless results — every time.</p>
             </div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <h2 class="section-title">Our Pricing Plans</h2>
             <div class="pricing-grid" id="pricing-grid">
-                <!-- Pricing plans will be loaded dynamically -->
+                <!-- Loaded dynamically by app.js -->
             </div>
         </div>
     </section>
 
-    <!-- Contact Section -->
+    <!-- ===== FAQ ===== -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <div class="section-head">
+                <div class="section-tag">Got Questions?</div>
+                <h2 class="section-title">Frequently Asked <span class="text-teal">Questions</span></h2>
+            </div>
+            <div class="faq-list">
+
+                <div class="faq-item">
+                    <button class="faq-q">
+                        Do I need to be home during the cleaning?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-a">
+                        <p>No, you don't need to be home! Many of our clients provide access via key, lockbox, or door code and let us work independently. Our team is fully insured and background-checked for your complete peace of mind.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q">
+                        Do you bring your own cleaning supplies and equipment?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-a">
+                        <p>Yes! We bring all professional-grade, eco-friendly cleaning products and equipment. If you have preferred products or specific requirements (e.g. allergies, pets), just let us know when booking and we'll accommodate you.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q">
+                        What areas in Calgary do you serve?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-a">
+                        <p>We serve Calgary and surrounding communities including Airdrie, Cochrane, Chestermere, Okotoks, and more. Not sure if we cover your area? Give us a call at <a href="tel:8259946606">825-994-6606</a> and we'll confirm.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q">
+                        How do I reschedule or cancel a booking?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-a">
+                        <p>We ask for 24 hours' notice to reschedule or cancel at no charge. You can make changes by calling <a href="tel:8259946606">825-994-6606</a> or emailing <a href="mailto:stiltheights@gmail.com">stiltheights@gmail.com</a>. We're always happy to work with you.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q">
+                        Is Stilt Heights insured?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-a">
+                        <p>Absolutely. We carry full general liability insurance and all team members are bonded. In the unlikely event of any issue while we're in your home, you are fully covered — no stress, no hassle.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q">
+                        What if I'm not satisfied with the clean?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-a">
+                        <p>We stand behind our work with a <strong>100% satisfaction guarantee</strong>. If something isn't right, let us know within 24 hours and we'll return to make it right — at absolutely no additional cost to you.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q">
+                        Do you offer recurring cleaning plans?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-a">
+                        <p>Yes! We offer weekly, bi-weekly, and monthly recurring cleaning plans at discounted rates. Recurring clients get priority scheduling and a dedicated cleaning team that learns your home's specific needs.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CONTACT ===== -->
     <section id="contact" class="contact-section">
         <div class="container">
-            <h2 class="section-title">Get In Touch</h2>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <div class="contact-icon">📞</div>
-                        <div class="contact-details">
-                            <h3>Phone</h3>
-                            <p>825-994-6606</p>
+            <div class="section-head light">
+                <div class="section-tag light">Get In Touch</div>
+                <h2 class="section-title light">Ready for a <span class="text-teal-light">Spotless</span> Space?</h2>
+                <p class="section-sub light">Request a free quote or book directly online — it only takes 2 minutes.</p>
+            </div>
+            <div class="contact-grid">
+                <div class="contact-info-panel">
+                    <h3>Contact Information</h3>
+                    <div class="c-items">
+                        <div class="c-item">
+                            <div class="c-icon">📞</div>
+                            <div>
+                                <div class="c-label">Phone</div>
+                                <a href="tel:8259946606" class="c-val">825-994-6606</a>
+                            </div>
+                        </div>
+                        <div class="c-item">
+                            <div class="c-icon">📧</div>
+                            <div>
+                                <div class="c-label">Email</div>
+                                <a href="mailto:stiltheights@gmail.com" class="c-val">stiltheights@gmail.com</a>
+                            </div>
+                        </div>
+                        <div class="c-item">
+                            <div class="c-icon">📍</div>
+                            <div>
+                                <div class="c-label">Service Area</div>
+                                <div class="c-val">Calgary, Alberta &amp; Surrounding Area</div>
+                            </div>
+                        </div>
+                        <div class="c-item">
+                            <div class="c-icon">🕒</div>
+                            <div>
+                                <div class="c-label">Hours</div>
+                                <div class="c-val">Mon–Fri: 8AM–6PM<br>Sat: 9AM–4PM</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="contact-item">
-                        <div class="contact-icon">📧</div>
-                        <div class="contact-details">
-                            <h3>Email</h3>
-                            <p>dgtalquantumleap@gmail.com</p>
-                        </div>
-                    </div>
-                    <div class="contact-item">
-                        <div class="contact-icon">📍</div>
-                        <div class="contact-details">
-                            <h3>Service Area</h3>
-                            <p>Metropolitan Area</p>
-                        </div>
+                    <div class="contact-book-box">
+                        <p>Prefer to book directly?</p>
+                        <a href="/booking.html" class="btn-gold-full">Book Online Now</a>
                     </div>
                 </div>
-                <div class="contact-form">
-                    <h3>Quick Quote</h3>
+
+                <div class="contact-form-panel">
+                    <h3>Get a Free Quote</h3>
                     <form id="quick-quote-form">
-                        <div class="form-group">
-                            <label for="quick-name">Name</label>
-                            <input type="text" id="quick-name" required>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="quick-name">Your Name</label>
+                                <input type="text" id="quick-name" placeholder="Jane Smith" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="quick-phone">Phone Number</label>
+                                <input type="tel" id="quick-phone" placeholder="403-xxx-xxxx" required>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="quick-phone">Phone</label>
-                            <input type="tel" id="quick-phone" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="quick-service">Service</label>
+                            <label for="quick-service">Service Needed</label>
                             <select id="quick-service" required>
-                                <option value="">Select a service</option>
+                                <option value="">Select a service...</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="quick-message">Message</label>
-                            <textarea id="quick-message" rows="3"></textarea>
+                            <label for="quick-message">Anything else we should know?</label>
+                            <textarea id="quick-message" rows="4" placeholder="Property size, specific requirements, preferred dates..."></textarea>
                         </div>
-                        <button type="submit" class="btn-primary">Get Quote</button>
+                        <button type="submit" class="btn-teal-full">Request My Free Quote →</button>
                     </form>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
+    <!-- ===== FOOTER ===== -->
     <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <div class="footer-logo">
-                        <span class="logo-icon">🏠</span>
-                        <span class="logo-text">Stilt Heights</span>
+        <div class="footer-inner">
+            <div class="container">
+                <div class="footer-grid">
+                    <div class="footer-brand">
+                        <a href="#home" class="footer-logo">
+                            <svg class="logo-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="4"  y="60" width="17" height="28" rx="1.5" fill="white"/>
+                                <rect x="79" y="60" width="17" height="28" rx="1.5" fill="white"/>
+                                <polygon points="12.5,60 50,8 87.5,60 76,60 50,24 24,60" fill="white"/>
+                                <polygon points="37,2 63,2 50,20" fill="#CC2936"/>
+                                <polygon points="50,14 54,20 46,20" fill="#1B2A72"/>
+                            </svg>
+                            <span>Stilt Heights</span>
+                        </a>
+                        <p class="footer-tagline">Calgary's trusted professional cleaning service since 2020. Fully insured, reliable, and dedicated to your satisfaction.</p>
+                        <div class="footer-socials">
+                            <a href="mailto:stiltheights@gmail.com" class="soc-link" aria-label="Email us">📧</a>
+                            <a href="tel:8259946606" class="soc-link" aria-label="Call us">📞</a>
+                        </div>
                     </div>
-                    <p class="footer-tagline">Professional Cleaning Services</p>
-                </div>
-                
-                <div class="footer-links">
-                    <div class="footer-column">
-                        <h4>Quick Links</h4>
-                        <ul>
-                            <li><a href="#home">Home</a></li>
-                            <li><a href="#services">Services</a></li>
-                            <li><a href="#testimonials">Testimonials</a></li>
-                            <li><a href="#contact">Contact</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="footer-column">
+
+                    <div class="footer-col">
                         <h4>Services</h4>
                         <ul>
-                            <li><a href="#services">Residential Cleaning</a></li>
-                            <li><a href="#services">Commercial Cleaning</a></li>
-                            <li><a href="#services">Deep Cleaning</a></li>
-                            <li><a href="#services">Move In/Out</a></li>
+                            <li><a href="/booking.html?service=Regular+Housekeeping">Regular Housekeeping</a></li>
+                            <li><a href="/booking.html?service=One-time+Cleaning">One-time Deep Clean</a></li>
+                            <li><a href="/booking.html?service=Commercial+Cleaning">Commercial Cleaning</a></li>
+                            <li><a href="/booking.html?service=Move+In+%26+Out+Cleaning">Move In / Out Cleaning</a></li>
+                            <li><a href="/booking.html?service=Carpet+Cleaning">Carpet Cleaning</a></li>
+                            <li><a href="/booking.html?service=Window+Cleaning">Window Cleaning</a></li>
                         </ul>
                     </div>
-                    
-                    <div class="footer-column">
-                        <h4>Contact</h4>
+
+                    <div class="footer-col">
+                        <h4>Company</h4>
                         <ul>
-                            <li>📞 8259946606</li>
-                            <li>📧 dgtalquantumleap@gmail.com</li>
-                            <li>📍 Metropolitan Area</li>
-                            <li>🕒 Mon-Fri: 8AM-6PM</li>
+                            <li><a href="#about">About Us</a></li>
+                            <li><a href="#testimonials">Client Reviews</a></li>
+                            <li><a href="#faq">FAQ</a></li>
+                            <li><a href="#pricing">Pricing</a></li>
+                            <li><a href="#contact">Contact</a></li>
+                            <li><a href="/booking.html#track">Track My Booking</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>Contact</h4>
+                        <ul class="footer-contact">
+                            <li>📞 <a href="tel:8259946606">825-994-6606</a></li>
+                            <li>📧 <a href="mailto:stiltheights@gmail.com">stiltheights@gmail.com</a></li>
+                            <li>📍 Calgary, Alberta</li>
+                            <li>🕒 Mon–Fri 8AM–6PM</li>
+                            <li>🕒 Sat 9AM–4PM</li>
                         </ul>
                     </div>
                 </div>
             </div>
-            
-            <div class="footer-bottom">
-                <p>&copy; 2024 Stilt Heights. Professional Cleaning Services</p>
-                <p>Powered by FieldOps Core - Professional Operations Management</p>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <p>© 2026 Stilt Heights Professional Cleaning Services · Calgary, Alberta · All rights reserved.</p>
             </div>
         </div>
     </footer>
+
+    <!-- ===== MOBILE STICKY CTA ===== -->
+    <div class="sticky-cta" id="sticky-cta">
+        <a href="tel:8259946606" class="sticky-call">📞 Call</a>
+        <a href="/booking.html" class="sticky-book">Book Now</a>
+    </div>
 
     <script src="js/app.js"></script>
 </body>

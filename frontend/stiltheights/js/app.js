@@ -1,553 +1,473 @@
-// Stilt Heights Website
-const API_URL = '/api'; // Relative path — works in dev and production
+/* ============================================================
+   STILT HEIGHTS — Main Website JS
+   Calgary's Premier Professional Cleaning Service
+   stiltheights@gmail.com | 825-994-6606
+   ============================================================ */
 
-// Initialize page
+const API_URL = '/api';
+
+// ============================================================
+// INIT
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+    initMobileNav();
+    initHeaderScroll();
+    initFAQ();
+    initStatCounters();
+    initSmoothScroll();
     loadServices();
     loadTestimonials();
-    loadCEOStories();
     loadPricingPlans();
-    setupQuickQuoteForm();
-    setupSmoothScrolling();
+    loadServicesIntoQuoteForm();
+    setupQuoteForm();
+    initStickyCTA();
 });
 
-// Escape HTML to prevent XSS
-function escapeHtml(str) {
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return String(str || '').replace(/[&<>"']/g, m => map[m]);
-}
+// ============================================================
+// MOBILE NAV DRAWER
+// ============================================================
+function initMobileNav() {
+    const hamburger = document.getElementById('hamburger');
+    const drawer    = document.getElementById('mobile-nav-drawer');
+    const overlay   = document.getElementById('mobile-nav-overlay');
+    const closeBtn  = document.getElementById('mobile-close');
 
-// Load services from FieldOps API
-async function loadServices() {
-    try {
-        const response = await fetch(`${API_URL}/booking/services`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const result = await response.json();
-        const services = result.data || result;
+    if (!hamburger) return;
 
-        const servicesGrid = document.getElementById('services-grid');
-        if (!servicesGrid) return;
-        if (!services || services.length === 0) { loadStaticServices(); return; }
-
-        servicesGrid.innerHTML = services.map(service => `
-            <div class="service-card">
-                <div class="service-icon">${getServiceIcon(service.name)}</div>
-                <h3>${escapeHtml(service.name)}</h3>
-                <p>${escapeHtml(service.description || 'Professional cleaning service')}</p>
-                <div class="service-price">$${service.price || 80}</div>
-                <a href="/booking.html?service=${encodeURIComponent(service.name)}" class="btn-primary" style="display:inline-block;text-decoration:none;text-align:center;">Book Now</a>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading services:', error);
-        loadStaticServices();
+    function openNav() {
+        hamburger.classList.add('open');
+        drawer.classList.add('active');
+        overlay.classList.add('active');
+        hamburger.setAttribute('aria-expanded', 'true');
+        drawer.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
     }
-}
 
-// Load testimonials from WordPress integration
-async function loadTestimonials() {
-    try {
-        const response = await fetch(`${API_URL}/wp/testimonials`);
-        const testimonials = await response.json();
-        
-        const testimonialsGrid = document.getElementById('testimonials-grid');
-        if (testimonialsGrid) {
-            testimonialsGrid.innerHTML = testimonials.map(testimonial => `
-                <div class="testimonial-card">
-                    <div class="testimonial-header">
-                        <div class="testimonial-avatar">${testimonial.avatar}</div>
-                        <div class="testimonial-rating">
-                            ${generateStars(testimonial.rating)}
-                        </div>
-                    </div>
-                    <div class="testimonial-content">
-                        <p>"${testimonial.content}"</p>
-                    </div>
-                    <div class="testimonial-footer">
-                        <div class="testimonial-author">
-                            <strong>${testimonial.customer_name}</strong>
-                            <span>${testimonial.service}</span>
-                        </div>
-                        <div class="testimonial-date">${formatDate(testimonial.date)}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Error loading testimonials:', error);
-        // Fallback to static testimonials
-        loadStaticTestimonials();
+    function closeNav() {
+        hamburger.classList.remove('open');
+        drawer.classList.remove('active');
+        overlay.classList.remove('active');
+        hamburger.setAttribute('aria-expanded', 'false');
+        drawer.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
     }
+
+    hamburger.addEventListener('click', () => {
+        const isOpen = drawer.classList.contains('active');
+        isOpen ? closeNav() : openNav();
+    });
+
+    if (closeBtn)  closeBtn.addEventListener('click', closeNav);
+    if (overlay)   overlay.addEventListener('click', closeNav);
+
+    // Close on nav link click
+    drawer.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', closeNav);
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && drawer.classList.contains('active')) closeNav();
+    });
 }
 
-// Load CEO stories
-async function loadCEOStories() {
-    try {
-        const response = await fetch(`${API_URL}/wp/ceo-stories`);
-        const stories = await response.json();
-        
-        const storyTimeline = document.getElementById('story-timeline');
-        if (storyTimeline) {
-            storyTimeline.innerHTML = stories.map(story => `
-                <div class="story-item ${story.featured ? 'featured' : ''}">
-                    <div class="story-date">${formatDate(story.date)}</div>
-                    <h3>${story.title}</h3>
-                    <p>${story.content}</p>
-                    <div class="story-author">- ${story.author}</div>
-                </div>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Error loading CEO stories:', error);
-        // Fallback to static stories
-        loadStaticCEOStories();
-    }
+// ============================================================
+// HEADER SCROLL SHADOW
+// ============================================================
+function initHeaderScroll() {
+    const header = document.getElementById('header');
+    if (!header) return;
+    window.addEventListener('scroll', () => {
+        header.classList.toggle('scrolled', window.scrollY > 20);
+    }, { passive: true });
 }
 
-// Load pricing plans
-async function loadPricingPlans() {
-    try {
-        // For now, use static pricing plans
-        const pricingGrid = document.getElementById('pricing-grid');
-        if (pricingGrid) {
-            pricingGrid.innerHTML = `
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Regular Housekeeping</h3>
-                        <div class="price">$200<span>/mo</span></div>
-                    </div>
-                    <div class="pricing-features">
-                        <p>✓ Weekly cleaning</p>
-                        <p>✓ Kitchen & bathrooms</p>
-                        <p>✓ Living areas</p>
-                        <p>✓ Dusting & vacuuming</p>
-                        <p>✓ Trash removal</p>
-                    </div>
-                    <button class="btn-primary" onclick="bookService('Regular Housekeeping')">Get Started</button>
-                </div>
-                
-                <div class="pricing-card featured">
-                    <div class="pricing-header">
-                        <h3>One-time Cleaning</h3>
-                        <div class="price">$80<span>/hr</span></div>
-                    </div>
-                    <div class="pricing-features">
-                        <p>✓ Deep cleaning</p>
-                        <p>✓ All rooms included</p>
-                        <p>✓ Kitchen & bathrooms</p>
-                        <p>✓ Windows & mirrors</p>
-                        <p>✓ Floor cleaning</p>
-                    </div>
-                    <button class="btn-primary" onclick="bookService('One-time Cleaning')">Book Now</button>
-                </div>
-                
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Commercial Cleaning</h3>
-                        <div class="price">$120<span>/hr</span></div>
-                    </div>
-                    <div class="pricing-features">
-                        <p>✓ Office spaces</p>
-                        <p>✓ Restrooms & kitchens</p>
-                        <p>✓ Common areas</p>
-                        <p>✓ Trash removal</p>
-                        <p>✓ Flexible scheduling</p>
-                    </div>
-                    <button class="btn-primary" onclick="bookService('Commercial Cleaning')">Get Quote</button>
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error('Error loading pricing:', error);
-    }
-}
+// ============================================================
+// FAQ ACCORDION
+// ============================================================
+function initFAQ() {
+    document.querySelectorAll('.faq-q').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.closest('.faq-item');
+            const isOpen = item.classList.contains('open');
 
-// Setup quick quote form — redirects to booking page with pre-filled service
-function setupQuickQuoteForm() {
-    const form = document.getElementById('quick-quote-form');
-    if (form) {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const service = document.getElementById('quick-service').value;
-            window.location.href = `/booking.html${service ? '?service=' + encodeURIComponent(service) : ''}`;
+            // Close all
+            document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+
+            // Open clicked (unless it was already open)
+            if (!isOpen) item.classList.add('open');
         });
-    }
-    loadServicesIntoQuickQuote();
+    });
 }
 
-// Load services into quick quote dropdown
-async function loadServicesIntoQuickQuote() {
-    try {
-        const response = await fetch(`${API_URL}/booking/services`);
-        if (!response.ok) return;
-        const result = await response.json();
-        const services = result.data || result;
-        const serviceSelect = document.getElementById('quick-service');
-        if (serviceSelect && services && services.length) {
-            serviceSelect.innerHTML = '<option value="">Select a service</option>' +
-                services.map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
-        }
-    } catch (error) {
-        console.error('Error loading services for quick quote:', error);
-    }
+// ============================================================
+// STAT COUNTERS (Intersection Observer)
+// ============================================================
+function initStatCounters() {
+    const counters = document.querySelectorAll('.counter[data-target]');
+    if (!counters.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounter(entry.target);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    counters.forEach(el => observer.observe(el));
 }
 
-// Setup smooth scrolling
-function setupSmoothScrolling() {
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = anchor.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'smooth' });
+function animateCounter(el) {
+    const target   = parseInt(el.dataset.target, 10);
+    const duration = 1600;
+    const start    = performance.now();
+
+    function tick(now) {
+        const elapsed  = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased    = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(eased * target);
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.textContent = target;
+    }
+    requestAnimationFrame(tick);
+}
+
+// ============================================================
+// SMOOTH SCROLL (for anchor links outside the drawer)
+// ============================================================
+function initSmoothScroll() {
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', (e) => {
+            const id = a.getAttribute('href').slice(1);
+            const target = document.getElementById(id);
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth' });
             }
         });
     });
 }
 
-// Helper functions
-function getServiceIcon(serviceName) {
-    const icons = {
-        'Regular Housekeeping': '🏠',
-        'One-time Cleaning': '🧼',
-        'Commercial Cleaning': '🏢',
-        'Event Cleanup': '🎉',
-        'Dish Washing': '🍽️',
-        'Carpet Cleaning': '🟦',
-        'Window Cleaning': '🪟',
-        'Move In & Out Cleaning': '📦',
-        'Laundry Services': '👔',
-        'Trash Removal': '🗑️',
-        'Outdoor Furniture': '🪑',
-        'Dry Cleaning': '👔',
-        'Appliance Deep Clean': '🔌'
-    };
-    return icons[serviceName] || '🧹';
+// ============================================================
+// STICKY CTA — show after scrolling past hero
+// ============================================================
+function initStickyCTA() {
+    const bar  = document.getElementById('sticky-cta');
+    const hero = document.getElementById('home');
+    if (!bar || !hero) return;
+
+    // On mobile the sticky bar is always visible (CSS grid display:none → grid)
+    // We only need to show it after user scrolls past hero on desktop — but CSS
+    // already handles display via media query, so nothing extra needed here.
 }
 
-function generateStars(rating) {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-    let stars = '';
-    
-    for (let i = 0; i < fullStars; i++) {
-        stars += '⭐';
+// ============================================================
+// LOAD SERVICES FROM API
+// ============================================================
+async function loadServices() {
+    const grid = document.getElementById('services-grid');
+    if (!grid) return;
+
+    try {
+        const res     = await fetch(`${API_URL}/booking/services`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const result  = await res.json();
+        const services = result.data || result;
+
+        if (!Array.isArray(services) || services.length === 0) {
+            renderStaticServices();
+            return;
+        }
+
+        grid.innerHTML = services.map(s => `
+            <div class="service-card">
+                <div class="service-icon">${serviceIcon(s.name)}</div>
+                <h3>${escHtml(s.name)}</h3>
+                <p>${escHtml(s.description || 'Professional cleaning service tailored to your needs')}</p>
+                <div class="service-price">${s.price ? '$' + s.price : 'Get a quote'}</div>
+                <a href="/booking.html?service=${encodeURIComponent(s.name)}" class="btn-book-link">Book Now</a>
+            </div>
+        `).join('');
+    } catch {
+        renderStaticServices();
     }
-    
-    if (hasHalfStar) {
-        stars += '⭐';
-    }
-    
-    for (let i = stars.length; i < 5; i++) {
-        stars += '☆';
-    }
-    
-    return stars;
 }
 
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+function renderStaticServices() {
+    const grid = document.getElementById('services-grid');
+    if (!grid) return;
+    grid.innerHTML = [
+        { icon: '🏠', name: 'Regular Housekeeping',    desc: 'Consistent weekly or bi-weekly home cleaning tailored to your routine.',            price: '$200/mo' },
+        { icon: '🧼', name: 'One-time Deep Clean',      desc: 'A thorough top-to-bottom deep clean for any occasion or time of year.',             price: '$80/hr'  },
+        { icon: '🏢', name: 'Commercial Cleaning',      desc: 'Professional office and commercial space cleaning for a healthy workplace.',         price: '$120/hr' },
+        { icon: '📦', name: 'Move In / Out Cleaning',   desc: 'Leave your old place spotless or start fresh in your new one — we handle it all.',  price: 'Custom'  },
+        { icon: '🪟', name: 'Window Cleaning',          desc: 'Crystal-clear interior and exterior window cleaning for homes and businesses.',      price: 'Custom'  },
+        { icon: '🟦', name: 'Carpet Cleaning',          desc: 'Deep carpet extraction cleaning to remove stains, allergens, and odours.',           price: 'Custom'  },
+    ].map(s => `
+        <div class="service-card">
+            <div class="service-icon">${s.icon}</div>
+            <h3>${s.name}</h3>
+            <p>${s.desc}</p>
+            <div class="service-price">${s.price}</div>
+            <a href="/booking.html?service=${encodeURIComponent(s.name)}" class="btn-book-link">Book Now</a>
+        </div>
+    `).join('');
+}
+
+// ============================================================
+// LOAD TESTIMONIALS
+// ============================================================
+async function loadTestimonials() {
+    const grid = document.getElementById('testimonials-grid');
+    if (!grid) return;
+
+    // Try the API first (WordPress or local endpoint)
+    try {
+        const res = await fetch(`${API_URL}/wp/testimonials`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) throw new Error();
+
+        grid.innerHTML = data.map(t => `
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">${initials(t.customer_name)}</div>
+                    <div class="t-rating">${'★'.repeat(Math.round(t.rating || 5))}</div>
+                </div>
+                <div class="testimonial-content">
+                    <p>${escHtml(t.content)}</p>
+                </div>
+                <div class="testimonial-footer">
+                    <div class="t-author">
+                        <strong>${escHtml(t.customer_name)}</strong>
+                        <span>${escHtml(t.service || '')}</span>
+                    </div>
+                    <div class="t-date">${formatDate(t.date)}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch {
+        renderStaticTestimonials();
+    }
+}
+
+function renderStaticTestimonials() {
+    const grid = document.getElementById('testimonials-grid');
+    if (!grid) return;
+    const reviews = [
+        {
+            initials: 'SJ',
+            name: 'Sarah Johnson',
+            service: 'Regular Housekeeping',
+            rating: 5,
+            text: 'Stilt Heights completely transformed our home! Their attention to detail and professionalism is outstanding. I trust them with my house every single week — absolutely worth every penny.',
+            date: 'Jan 2025',
+        },
+        {
+            initials: 'MC',
+            name: 'Michael Chen',
+            service: 'Commercial Cleaning',
+            rating: 5,
+            text: 'As a business owner, I needed a cleaning service I could count on. Stilt Heights delivers consistent, high-quality results every visit. Our office has genuinely never looked better.',
+            date: 'Dec 2024',
+        },
+        {
+            initials: 'ER',
+            name: 'Emily Rodriguez',
+            service: 'Move In & Out Cleaning',
+            rating: 5,
+            text: 'The move-out cleaning was exceptional — the landlord was amazed. They got my full deposit back for me! Fast, thorough, and incredibly professional from start to finish.',
+            date: 'Nov 2024',
+        },
+    ];
+    grid.innerHTML = reviews.map(r => `
+        <div class="testimonial-card">
+            <div class="testimonial-header">
+                <div class="testimonial-avatar">${r.initials}</div>
+                <div class="t-rating">${'★'.repeat(r.rating)}</div>
+            </div>
+            <div class="testimonial-content">
+                <p>${r.text}</p>
+            </div>
+            <div class="testimonial-footer">
+                <div class="t-author">
+                    <strong>${r.name}</strong>
+                    <span>${r.service}</span>
+                </div>
+                <div class="t-date">${r.date}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ============================================================
+// LOAD PRICING PLANS
+// ============================================================
+function loadPricingPlans() {
+    const grid = document.getElementById('pricing-grid');
+    if (!grid) return;
+
+    const plans = [
+        {
+            name: 'Regular Housekeeping',
+            price: '200',
+            per: '/mo',
+            featured: false,
+            service: 'Regular Housekeeping',
+            feats: ['Weekly or bi-weekly visits', 'Kitchen & bathrooms', 'All living areas', 'Dusting & vacuuming', 'Trash removal', 'Dedicated cleaner'],
+        },
+        {
+            name: 'One-time Deep Clean',
+            price: '80',
+            per: '/hr',
+            featured: true,
+            badge: 'Most Popular',
+            service: 'One-time Cleaning',
+            feats: ['Full top-to-bottom clean', 'All rooms included', 'Inside cabinets & appliances', 'Windows & mirrors', 'Baseboards & vents', '100% satisfaction guarantee'],
+        },
+        {
+            name: 'Commercial Cleaning',
+            price: '120',
+            per: '/hr',
+            featured: false,
+            service: 'Commercial Cleaning',
+            feats: ['Office & retail spaces', 'Restrooms & kitchens', 'Common areas', 'Trash removal', 'Flexible scheduling', 'Fully insured team'],
+        },
+    ];
+
+    grid.innerHTML = plans.map(p => `
+        <div class="pricing-card${p.featured ? ' featured' : ''}">
+            ${p.badge ? `<div class="pricing-badge">${p.badge}</div>` : ''}
+            <div class="pricing-head">
+                <h3>${p.name}</h3>
+                <div class="price-row">
+                    <span class="price-dollar">$</span>
+                    <span class="price-amount">${p.price}</span>
+                    <span class="price-per">${p.per}</span>
+                </div>
+            </div>
+            <div class="pricing-feats">
+                ${p.feats.map(f => `<p>${f}</p>`).join('')}
+            </div>
+            <a href="/booking.html?service=${encodeURIComponent(p.service)}" class="${p.featured ? 'btn-gold' : 'btn-teal'}">
+                ${p.featured ? 'Book Now' : 'Get Started'}
+            </a>
+        </div>
+    `).join('');
+}
+
+// ============================================================
+// QUICK QUOTE FORM
+// ============================================================
+async function loadServicesIntoQuoteForm() {
+    const sel = document.getElementById('quick-service');
+    if (!sel) return;
+
+    try {
+        const res    = await fetch(`${API_URL}/booking/services`);
+        if (!res.ok) throw new Error();
+        const result = await res.json();
+        const list   = result.data || result;
+        if (!Array.isArray(list) || list.length === 0) throw new Error();
+
+        sel.innerHTML = '<option value="">Select a service...</option>' +
+            list.map(s => `<option value="${escHtml(s.name)}">${escHtml(s.name)}</option>`).join('');
+    } catch {
+        // Static fallback
+        const defaults = [
+            'Regular Housekeeping', 'One-time Deep Clean', 'Commercial Cleaning',
+            'Move In / Out Cleaning', 'Carpet Cleaning', 'Window Cleaning', 'Event Cleanup',
+        ];
+        sel.innerHTML = '<option value="">Select a service...</option>' +
+            defaults.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+    }
+}
+
+function setupQuoteForm() {
+    const form = document.getElementById('quick-quote-form');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const service = document.getElementById('quick-service').value;
+        // Redirect to booking page with service pre-selected
+        window.location.href = `/booking.html${service ? '?service=' + encodeURIComponent(service) : ''}`;
     });
 }
 
-// Booking functions
-function bookService(serviceName) {
-    const url = serviceName
-        ? `/booking.html?service=${encodeURIComponent(serviceName)}`
+// ============================================================
+// HELPER UTILITIES
+// ============================================================
+function escHtml(str) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(str || '').replace(/[&<>"']/g, m => map[m]);
+}
+
+function initials(name) {
+    if (!name) return '?';
+    return name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
+function formatDate(str) {
+    if (!str) return '';
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? str : d.toLocaleDateString('en-CA', { month: 'short', year: 'numeric' });
+}
+
+function serviceIcon(name) {
+    const icons = {
+        'Regular Housekeeping':    '🏠',
+        'One-time Cleaning':       '🧼',
+        'One-time Deep Clean':     '🧼',
+        'Commercial Cleaning':     '🏢',
+        'Event Cleanup':           '🎉',
+        'Dish Washing':            '🍽️',
+        'Carpet Cleaning':         '🟦',
+        'Window Cleaning':         '🪟',
+        'Move In & Out Cleaning':  '📦',
+        'Move In / Out Cleaning':  '📦',
+        'Laundry Services':        '👕',
+        'Trash Removal':           '🗑️',
+        'Outdoor Furniture':       '🪑',
+        'Dry Cleaning':            '👔',
+        'Appliance Deep Clean':    '🔌',
+        'Post-Construction':       '🏗️',
+    };
+    return icons[name] || '🧹';
+}
+
+// ============================================================
+// BOOKING SHORTCUT (called from outside if needed)
+// ============================================================
+function bookService(name) {
+    window.location.href = name
+        ? `/booking.html?service=${encodeURIComponent(name)}`
         : '/booking.html';
-    window.location.href = url;
 }
 
-function scrollToBooking() {
-    window.location.href = '/booking.html';
-}
+// ============================================================
+// TOAST NOTIFICATIONS (success / error)
+// ============================================================
+function showToast(type, title, message) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
 
-function scrollToServices() {
-    const servicesSection = document.getElementById('services');
-    if (servicesSection) {
-        servicesSection.scrollIntoView({ behavior: 'smooth' });
-    }
-}
-
-// Success and error messages
-function showQuoteSuccess(quoteData) {
-    const successMessage = document.createElement('div');
-    successMessage.className = 'success-message';
-    successMessage.innerHTML = `
-        <div class="success-content">
-            <div class="success-icon">✅</div>
-            <h3>Quote Request Received!</h3>
-            <p>Thank you ${quoteData.name}, we'll get back to you within 24 hours with your custom quote for ${quoteData.service}.</p>
-            <div class="quote-details">
-                <p><strong>Phone:</strong> ${quoteData.phone}</p>
-                <p><strong>Service:</strong> ${quoteData.service}</p>
-                ${quoteData.message ? `<p><strong>Message:</strong> ${quoteData.message}</p>` : ''}
-            </div>
-            <button class="btn-primary" onclick="closeMessage(this)">Got it!</button>
+    const icon = type === 'success' ? '✅' : '❌';
+    const div  = document.createElement('div');
+    div.className = `toast${type === 'error' ? ' error' : ''}`;
+    div.innerHTML = `
+        <div class="toast-body">
+            <div class="toast-icon">${icon}</div>
+            <h3>${escHtml(title)}</h3>
+            <p>${escHtml(message)}</p>
+            <button class="btn-teal" onclick="this.closest('.toast').remove()">Got it</button>
         </div>
     `;
-    
-    document.body.appendChild(successMessage);
-    successMessage.scrollIntoView({ behavior: 'smooth' });
-    
-    // Auto-remove after 10 seconds
-    setTimeout(() => {
-        if (successMessage.parentNode) {
-            successMessage.parentNode.removeChild(successMessage);
-        }
-    }, 10000);
+    document.body.appendChild(div);
+
+    setTimeout(() => { if (div.parentNode) div.remove(); }, 8000);
 }
-
-function showQuoteError(message) {
-    const errorMessage = document.createElement('div');
-    errorMessage.className = 'error-message';
-    errorMessage.innerHTML = `
-        <div class="error-content">
-            <div class="error-icon">❌</div>
-            <h3>Request Failed</h3>
-            <p>${message}</p>
-            <p>Please try again or call us directly at <strong>825-994-6606</strong>.</p>
-            <button class="btn-primary" onclick="closeMessage(this)">Try Again</button>
-        </div>
-    `;
-    
-    document.body.appendChild(errorMessage);
-    errorMessage.scrollIntoView({ behavior: 'smooth' });
-    
-    // Auto-remove after 10 seconds
-    setTimeout(() => {
-        if (errorMessage.parentNode) {
-            errorMessage.parentNode.removeChild(errorMessage);
-        }
-    }, 10000);
-}
-
-function closeMessage(element) {
-    const message = element.closest('.success-message, .error-message');
-    if (message) {
-        message.remove();
-    }
-}
-
-// Fallback functions for static content
-function loadStaticServices() {
-    const servicesGrid = document.getElementById('services-grid');
-    if (servicesGrid) {
-        servicesGrid.innerHTML = `
-            <div class="service-card">
-                <div class="service-icon">🏠</div>
-                <h3>Residential Cleaning</h3>
-                <p>Complete home cleaning solutions tailored to your needs</p>
-                <div class="service-price">$80/hr</div>
-                <button class="btn-primary" onclick="bookService('Residential Cleaning')">Book Now</button>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">🏢</div>
-                <h3>Commercial Cleaning</h3>
-                <p>Professional cleaning for offices and commercial spaces</p>
-                <div class="service-price">$120/hr</div>
-                <button class="btn-primary" onclick="bookService('Commercial Cleaning')">Book Now</button>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">🎉</div>
-                <h3>Event Cleanup</h3>
-                <p>Pre and post-event cleaning services</p>
-                <div class="service-price">$150/hr</div>
-                <button class="btn-primary" onclick="bookService('Event Cleanup')">Book Now</button>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">🧼</div>
-                <h3>One-time Cleaning</h3>
-                <p>Deep cleaning for special occasions</p>
-                <div class="service-price">$80/hr</div>
-                <button class="btn-primary" onclick="bookService('One-time Cleaning')">Book Now</button>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">🔄</div>
-                <h3>Regular Cleaning</h3>
-                <p>Ongoing maintenance cleaning services</p>
-                <div class="service-price">$200/mo</div>
-                <button class="btn-primary" onclick="bookService('Regular Cleaning')">Book Now</button>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">🏡</div>
-                <h3>Housekeeping</h3>
-                <p>Comprehensive housekeeping solutions</p>
-                <div class="service-price">$180/mo</div>
-                <button class="btn-primary" onclick="bookService('Housekeeping')">Book Now</button>
-            </div>
-        `;
-    }
-}
-
-function loadStaticTestimonials() {
-    const testimonialsGrid = document.getElementById('testimonials-grid');
-    if (testimonialsGrid) {
-        testimonialsGrid.innerHTML = `
-            <div class="testimonial-card">
-                <div class="testimonial-header">
-                    <div class="testimonial-avatar">👩‍🦰</div>
-                    <div class="testimonial-rating">⭐⭐⭐⭐⭐</div>
-                </div>
-                <div class="testimonial-content">
-                    <p>"Stilt Heights transformed our home! Their attention to detail and professional approach exceeded our expectations. Highly recommended!"</p>
-                </div>
-                <div class="testimonial-footer">
-                    <div class="testimonial-author">
-                        <strong>Sarah Johnson</strong>
-                        <span>Regular Housekeeping</span>
-                    </div>
-                    <div class="testimonial-date">January 15, 2024</div>
-                </div>
-            </div>
-            
-            <div class="testimonial-card">
-                <div class="testimonial-header">
-                    <div class="testimonial-avatar">👨‍💼</div>
-                    <div class="testimonial-rating">⭐⭐⭐⭐⭐</div>
-                </div>
-                <div class="testimonial-content">
-                    <p>"As a business owner, I needed reliable cleaning services. Stilt Heights delivers consistent quality every time. Our office has never looked better!"</p>
-                </div>
-                <div class="testimonial-footer">
-                    <div class="testimonial-author">
-                        <strong>Michael Chen</strong>
-                        <span>Commercial Cleaning</span>
-                    </div>
-                    <div class="testimonial-date">January 10, 2024</div>
-                </div>
-            </div>
-            
-            <div class="testimonial-card">
-                <div class="testimonial-header">
-                    <div class="testimonial-avatar">👩‍🦰</div>
-                    <div class="testimonial-rating">⭐⭐⭐⭐⭐</div>
-                </div>
-                <div class="testimonial-content">
-                    <p>"The move-in cleaning service was exceptional. They made our new home spotless and ready for move-in day. Worth every penny!"</p>
-                </div>
-                <div class="testimonial-footer">
-                    <div class="testimonial-author">
-                        <strong>Emily Rodriguez</strong>
-                        <span>Move In & Out Cleaning</span>
-                    </div>
-                    <div class="testimonial-date">January 5, 2024</div>
-                </div>
-            </div>
-        `;
-    }
-}
-
-function loadStaticCEOStories() {
-    const storyTimeline = document.getElementById('story-timeline');
-    if (storyTimeline) {
-        storyTimeline.innerHTML = `
-            <div class="story-item featured">
-                <div class="story-date">January 15, 2020</div>
-                <h3>Our Journey Begins</h3>
-                <p>Stilt Heights started with a simple mission: to provide exceptional cleaning services that people could trust. I saw how many cleaning companies cut corners, and I knew there was a better way. We started with just two employees and a commitment to quality.</p>
-                <div class="story-author">- John Heights, Founder & CEO</div>
-            </div>
-            
-            <div class="story-item featured">
-                <div class="story-date">June 20, 2021</div>
-                <h3>Building Trust Through Quality</h3>
-                <p>Our first year taught us that quality speaks for itself. We didn't advertise much - our customers did it for us. Word of mouth spread because we showed up on time, did exceptional work, and treated every home like it was our own.</p>
-                <div class="story-author">- John Heights, Founder & CEO</div>
-            </div>
-            
-            <div class="story-item featured">
-                <div class="story-date">November 10, 2022</div>
-                <h3>Growing Our Family</h3>
-                <p>Today, Stilt Heights is a family of 20+ professionals who share the same values: integrity, excellence, and customer satisfaction. Every team member is trained not just in cleaning techniques, but in customer service and communication.</p>
-                <div class="story-author">- John Heights, Founder & CEO</div>
-            </div>
-            
-            <div class="story-item">
-                <div class="story-date">December 1, 2023</div>
-                <h3>Looking to the Future</h3>
-                <p>We're not just cleaning houses - we're building relationships. Our goal is to become the most trusted cleaning service in the region, known for reliability, quality, and exceptional customer care. The future is bright!</p>
-                <div class="story-author">- John Heights, Founder & CEO</div>
-            </div>
-        `;
-    }
-}
-
-// Add CSS for success/error messages
-const messageStyles = `
-    .success-message, .error-message {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        max-width: 500px;
-        animation: slideIn 0.3s ease-out;
-    }
-    
-    .success-message {
-        border-left: 4px solid #10b981;
-    }
-    
-    .error-message {
-        border-left: 4px solid #ef4444;
-    }
-    
-    .success-content, .error-content {
-        text-align: center;
-    }
-    
-    .success-icon, .error-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-    
-    .success-content h3 {
-        color: #10b981;
-        margin-bottom: 1rem;
-    }
-    
-    .error-content h3 {
-        color: #ef4444;
-        margin-bottom: 1rem;
-    }
-    
-    .quote-details {
-        background: #f8fafc;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        text-align: left;
-    }
-    
-    .quote-details p {
-        margin: 0.5rem 0;
-        font-size: 0.875rem;
-    }
-    
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-`;
-
-// Add styles to head
-const styleSheet = document.createElement('style');
-styleSheet.textContent = messageStyles;
-document.head.appendChild(styleSheet);
