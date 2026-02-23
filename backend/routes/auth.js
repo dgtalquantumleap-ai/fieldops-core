@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -7,9 +7,9 @@ const db = require('../config/database');
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        
-        // Find user in database
-        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+        const { rows } = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = rows[0];
 
         if (!user || !await bcrypt.compare(password, user.password)) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -24,12 +24,7 @@ router.post('/login', async (req, res) => {
         res.json({
             success: true,
             token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
+            user: { id: user.id, name: user.name, email: user.email, role: user.role }
         });
     } catch (error) {
         console.error('Login error:', error);
@@ -40,50 +35,31 @@ router.post('/login', async (req, res) => {
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone, role = 'staff' } = req.body;
-        
-        // Validate input
+
         if (!name || !email || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Name, email, and password are required' 
-            });
+            return res.status(400).json({ success: false, error: 'Name, email, and password are required' });
         }
-        
-        // Check if user already exists
-        const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-        if (existingUser) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'User with this email already exists' 
-            });
+
+        const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (existing.rows[0]) {
+            return res.status(400).json({ success: false, error: 'User with this email already exists' });
         }
-        
-        // Hash password
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Insert new user
-        const result = db.prepare(`
-            INSERT INTO users (name, email, password, phone, role)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(name, email, hashedPassword, phone, role);
-        
+
+        const result = await db.query(
+            'INSERT INTO users (name, email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+            [name, email, hashedPassword, phone, role]
+        );
+
         res.status(201).json({
             success: true,
             message: 'User created successfully',
-            data: {
-                id: result.lastInsertRowid,
-                name,
-                email,
-                role
-            }
+            data: { id: result.rows[0].id, name, email, role }
         });
-        
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Internal server error' 
-        });
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 
@@ -92,34 +68,30 @@ router.post('/create-admin', async (req, res) => {
     try {
         const { email, password, name, setup_secret } = req.body;
 
-        // Require a secret key to prevent unauthorized use
         const requiredSecret = process.env.SETUP_SECRET;
         if (!requiredSecret || setup_secret !== requiredSecret) {
-            return res.status(403).json({
-                success: false,
-                error: 'Forbidden: invalid or missing setup_secret'
-            });
+            return res.status(403).json({ success: false, error: 'Forbidden: invalid or missing setup_secret' });
         }
 
         if (!email || !password) {
             return res.status(400).json({ success: false, error: 'email and password are required' });
         }
 
-        const existingAdmin = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+        const { rows } = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const existing = rows[0];
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        if (existingAdmin) {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hashedPassword, email);
+        if (existing) {
+            await db.query('UPDATE users SET password = $1 WHERE email = $2', [hashedPassword, email]);
             return res.json({ success: true, message: 'Admin password updated', email });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const result = db.prepare(
-            'INSERT INTO users (name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)'
-        ).run(name || 'System Administrator', email, hashedPassword, '', 'admin');
+        const result = await db.query(
+            "INSERT INTO users (name, email, password, phone, role) VALUES ($1, $2, $3, '', 'admin') RETURNING id",
+            [name || 'System Administrator', email, hashedPassword]
+        );
 
-        res.json({ success: true, message: 'Admin user created', email, id: result.lastInsertRowid });
-
+        res.json({ success: true, message: 'Admin user created', email, id: result.rows[0].id });
     } catch (error) {
         console.error('Create admin error:', error);
         res.status(500).json({ success: false, error: error.message });

@@ -20,9 +20,10 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 async function sendToUser(userId, payload) {
     if (!process.env.VAPID_PUBLIC_KEY) return;
 
-    const subscriptions = db.prepare(
-        'SELECT * FROM push_subscriptions WHERE user_id = ?'
-    ).all(userId);
+    const { rows: subscriptions } = await db.query(
+        'SELECT * FROM push_subscriptions WHERE user_id = $1',
+        [userId]
+    );
 
     if (!subscriptions.length) return;
 
@@ -39,10 +40,10 @@ async function sendToUser(userId, payload) {
                 endpoint: sub.endpoint,
                 keys: { p256dh: sub.p256dh, auth: sub.auth }
             };
-            return webpush.sendNotification(pushSub, message).catch(err => {
+            return webpush.sendNotification(pushSub, message).catch(async err => {
                 // 410 Gone = subscription expired, remove it
                 if (err.statusCode === 410) {
-                    db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(sub.id);
+                    await db.query('DELETE FROM push_subscriptions WHERE id = $1', [sub.id]);
                     console.log(`🗑️  Removed expired push subscription for user ${userId}`);
                 } else {
                     console.warn(`⚠️  Push failed for user ${userId}:`, err.message);

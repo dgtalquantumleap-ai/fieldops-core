@@ -6,16 +6,18 @@ router.get('/stats', async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
 
-        const todayJobs = db.prepare("SELECT COUNT(*) as count FROM jobs WHERE job_date = ? AND deleted_at IS NULL").get(today);
-        const pending = db.prepare("SELECT COUNT(*) as count FROM jobs WHERE status = 'Scheduled' AND deleted_at IS NULL").get();
-        const completed = db.prepare("SELECT COUNT(*) as count FROM jobs WHERE status = 'Completed' AND deleted_at IS NULL").get();
-        const revenue = db.prepare("SELECT SUM(amount) as sum FROM invoices WHERE LOWER(status) = 'paid' AND deleted_at IS NULL").get();
+        const [todayJobs, pending, completed, revenue] = await Promise.all([
+            db.query('SELECT COUNT(*) as count FROM jobs WHERE job_date = $1 AND deleted_at IS NULL', [today]),
+            db.query("SELECT COUNT(*) as count FROM jobs WHERE status = 'Scheduled' AND deleted_at IS NULL"),
+            db.query("SELECT COUNT(*) as count FROM jobs WHERE status = 'Completed' AND deleted_at IS NULL"),
+            db.query("SELECT SUM(amount) as sum FROM invoices WHERE LOWER(status) = 'paid' AND deleted_at IS NULL"),
+        ]);
 
         res.json({
-            todayJobs: todayJobs.count,
-            pendingJobs: pending.count,
-            completedJobs: completed.count,
-            totalRevenue: revenue.sum || 0
+            todayJobs:     parseInt(todayJobs.rows[0].count),
+            pendingJobs:   parseInt(pending.rows[0].count),
+            completedJobs: parseInt(completed.rows[0].count),
+            totalRevenue:  parseFloat(revenue.rows[0].sum) || 0
         });
     } catch (error) {
         console.error('Dashboard stats error:', error);

@@ -4,21 +4,19 @@ const db = require('../config/database');
 const { paginate } = require('../utils/dbHelper');
 const { requireAuth } = require('../middleware/auth');
 
-// Get jobs assigned to this staff member (for mobile staff app)
+// Staff app: get jobs assigned to this staff member
 router.get('/jobs', requireAuth, async (req, res) => {
     try {
-        const stmt = db.prepare(`
+        const { rows } = await db.query(`
             SELECT j.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
                    s.name as service_name, s.price as service_price
             FROM jobs j
             LEFT JOIN customers c ON j.customer_id = c.id
             LEFT JOIN services s ON j.service_id = s.id
-            WHERE j.assigned_to = ?
-            AND j.status NOT IN ('Completed', 'Cancelled')
+            WHERE j.assigned_to = $1 AND j.status NOT IN ('Completed','Cancelled')
             ORDER BY j.job_date ASC, j.job_time ASC
-        `);
-        const jobs = stmt.all(req.user.id);
-        res.json(jobs);
+        `, [req.user.id]);
+        res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -28,23 +26,15 @@ router.get('/jobs', requireAuth, async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { page, limit } = req.query;
-
-        const baseQuery = "SELECT id, name, email, phone, role, is_active, availability_status, created_at FROM users WHERE role != 'admin' ORDER BY name";
-        const countQuery = "SELECT COUNT(*) as count FROM users WHERE role != 'admin'";
-        
-        const result = paginate(baseQuery, countQuery, page, limit);
-        
-        if (!result.success) {
-            return res.status(result.status || 500).json(result);
-        }
-        
+        const result = await paginate(
+            "SELECT id, name, email, phone, role, is_active, availability_status, created_at FROM users WHERE role != 'admin' ORDER BY name",
+            "SELECT COUNT(*) as count FROM users WHERE role != 'admin'",
+            page, limit
+        );
+        if (!result.success) return res.status(result.status || 500).json(result);
         res.json(result);
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to fetch staff',
-            code: 'FETCH_ERROR'
-        });
+        res.status(500).json({ success: false, error: 'Failed to fetch staff', code: 'FETCH_ERROR' });
     }
 });
 
@@ -53,26 +43,12 @@ router.patch('/jobs/:jobId/assign', async (req, res) => {
     try {
         const { jobId } = req.params;
         const { staff_id } = req.body;
-        
-        const updateJob = db.prepare('UPDATE jobs SET assigned_to = ? WHERE id = ?');
-        const result = updateJob.run(staff_id, jobId);
-        
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Job not found' });
-        }
-        
-        const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
-        
-        // Emit real-time update to staff
+        const result = await db.query('UPDATE jobs SET assigned_to = $1 WHERE id = $2', [staff_id, jobId]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Job not found' });
+        const job = (await db.query('SELECT * FROM jobs WHERE id = $1', [jobId])).rows[0];
         const io = req.app.get('io');
-        io.to('staff').emit('job-assigned', { job });
-        
-        res.json({
-            success: true,
-            job,
-            message: 'Job assigned successfully'
-        });
-        
+        if (io) io.to('staff').emit('job-assigned', { job });
+        res.json({ success: true, job, message: 'Job assigned successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -83,80 +59,44 @@ router.patch('/jobs/:jobId/status', async (req, res) => {
     try {
         const { jobId } = req.params;
         const { status } = req.body;
-        
-        if (!['Scheduled', 'In Progress', 'Completed', 'Cancelled'].includes(status)) {
+        if (!['Scheduled','In Progress','Completed','Cancelled'].includes(status)) {
             return res.status(400).json({ error: 'Invalid status' });
         }
-        
-        const updateJob = db.prepare('UPDATE jobs SET status = ? WHERE id = ?');
-        const result = updateJob.run(status, jobId);
-        
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Job not found' });
-        }
-        
-        const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
-        
-        // Emit real-time update
+        const result = await db.query('UPDATE jobs SET status = $1 WHERE id = $2', [status, jobId]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Job not found' });
+        const job = (await db.query('SELECT * FROM jobs WHERE id = $1', [jobId])).rows[0];
         const io = req.app.get('io');
-        io.to('staff').emit('job-updated', { job });
-        io.to('admin').emit('job-updated', { job });
-        
-        // Log activity
-        const { emitRealTimeUpdate, logActivity, triggerAutomations } = require('../utils/realtime');
-        logActivity(null, 'Staff', 'updated status to', 'job', jobId, status);
-        
-        // Trigger automations for job completion
+        if (io) { io.to('staff').emit('job-updated', { job }); io.to('admin').emit('job-updated', { job }); }
+
         if (status === 'Completed') {
-            const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(job.customer_id);
-            const service = db.prepare('SELECT * FROM services WHERE id = ?').get(job.service_id);
-            
-            await triggerAutomations('Job Completed', {
-                customer_name: customer.name,
-                customer_email: customer.email,
-                service_name: service.name,
-                job_id: jobId
-            }, io);
+            const { triggerAutomations } = require('../utils/realtime');
+            const customer = (await db.query('SELECT * FROM customers WHERE id = $1', [job.customer_id])).rows[0];
+            const service  = (await db.query('SELECT * FROM services WHERE id = $1', [job.service_id])).rows[0];
+            await triggerAutomations('Job Completed', { customer_name: customer?.name, customer_email: customer?.email, service_name: service?.name, job_id: jobId }, io);
         }
-        
-        res.json({
-            success: true,
-            job,
-            message: `Job status updated to ${status}`
-        });
-        
+
+        res.json({ success: true, job, message: `Job status updated to ${status}` });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Update staff availability status (called by staff app)
+// Update staff availability status
 router.patch('/:id/availability', requireAuth, async (req, res) => {
     try {
         const staffId = req.params.id;
         const { availability_status } = req.body;
-
-        if (!['available', 'unavailable', 'on_leave'].includes(availability_status)) {
+        if (!['available','unavailable','on_leave'].includes(availability_status)) {
             return res.status(400).json({ error: 'Invalid availability_status. Use: available, unavailable, on_leave' });
         }
-
-        // Staff can only update their own availability; admin can update any
         if (req.user.role !== 'admin' && String(req.user.id) !== String(staffId)) {
             return res.status(403).json({ error: 'Not authorised' });
         }
-
-        const result = db.prepare('UPDATE users SET availability_status = ? WHERE id = ?').run(availability_status, staffId);
-
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Staff member not found' });
-        }
-
-        const updated = db.prepare('SELECT id, name, availability_status FROM users WHERE id = ?').get(staffId);
-
-        // Notify admin in real-time
+        const result = await db.query('UPDATE users SET availability_status = $1 WHERE id = $2', [availability_status, staffId]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Staff member not found' });
+        const updated = (await db.query('SELECT id, name, availability_status FROM users WHERE id = $1', [staffId])).rows[0];
         const io = req.app.get('io');
-        io.to('admin').emit('staff-availability-changed', { staff: updated });
-
+        if (io) io.to('admin').emit('staff-availability-changed', { staff: updated });
         res.json({ success: true, staff: updated, message: `Availability set to ${availability_status}` });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -166,11 +106,9 @@ router.patch('/:id/availability', requireAuth, async (req, res) => {
 // Get staff member by ID
 router.get('/:id', async (req, res) => {
     try {
-        const staff = db.prepare('SELECT id, name, email, phone, role, is_active, availability_status, created_at FROM users WHERE id = ?').get(req.params.id);
-        if (!staff) {
-            return res.status(404).json({ error: 'Staff member not found' });
-        }
-        res.json(staff);
+        const { rows } = await db.query('SELECT id, name, email, phone, role, is_active, availability_status, created_at FROM users WHERE id = $1', [req.params.id]);
+        if (!rows[0]) return res.status(404).json({ error: 'Staff member not found' });
+        res.json(rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -179,46 +117,24 @@ router.get('/:id', async (req, res) => {
 // Add new staff member
 router.post('/', async (req, res) => {
     try {
-        const { name, email, phone, role, password, notes } = req.body;
-        
-        // Validate required fields
-        if (!name || !email || !role || !password) {
-            return res.status(400).json({ error: 'Name, email, role, and password are required' });
-        }
-        
-        // Check if email already exists
-        const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-        if (existingUser) {
-            return res.status(400).json({ error: 'Email already exists' });
-        }
-        
-        // Hash password (simple hash for demo - in production use bcrypt)
+        const { name, email, phone, role, password } = req.body;
+        if (!name || !email || !role || !password) return res.status(400).json({ error: 'Name, email, role, and password are required' });
+
+        const existing = (await db.query('SELECT id FROM users WHERE email = $1', [email])).rows[0];
+        if (existing) return res.status(400).json({ error: 'Email already exists' });
+
         const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Insert new staff member
-        const insertStaff = db.prepare(`
-            INSERT INTO users (name, email, phone, password, role, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-        `);
-        
-        const result = insertStaff.run(name, email, phone, hashedPassword, role, 1);
-        
-        // Get created staff member
-        const newStaff = db.prepare('SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
-        
-        console.log(`👤 New staff member added: ${name} (${role})`);
-        
-        // Emit real-time update
+
+        const result = await db.query(
+            'INSERT INTO users (name, email, phone, password, role, is_active, created_at) VALUES ($1, $2, $3, $4, $5, 1, NOW()) RETURNING id',
+            [name, email, phone, hashedPassword, role]
+        );
+        const newStaff = (await db.query('SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE id = $1', [result.rows[0].id])).rows[0];
+
         const io = req.app.get('io');
-        io.to('admin').emit('staff-added', { staff: newStaff });
-        
-        res.json({
-            success: true,
-            staff: newStaff,
-            message: 'Staff member added successfully'
-        });
-        
+        if (io) io.to('admin').emit('staff-added', { staff: newStaff });
+        res.json({ success: true, staff: newStaff, message: 'Staff member added successfully' });
     } catch (error) {
         console.error('Add staff error:', error);
         res.status(500).json({ error: 'Failed to add staff member' });
@@ -230,98 +146,37 @@ router.patch('/:id', async (req, res) => {
     try {
         const staffId = req.params.id;
         const { name, email, phone, role, is_active } = req.body;
-        
-        // Build update query dynamically
-        const updates = [];
-        const values = [];
-        
-        if (name) {
-            updates.push('name = ?');
-            values.push(name);
-        }
-        if (email) {
-            updates.push('email = ?');
-            values.push(email);
-        }
-        if (phone) {
-            updates.push('phone = ?');
-            values.push(phone);
-        }
-        if (role) {
-            updates.push('role = ?');
-            values.push(role);
-        }
-        if (is_active !== undefined) {
-            updates.push('is_active = ?');
-            values.push(is_active ? 1 : 0);
-        }
-        
-        if (updates.length === 0) {
-            return res.status(400).json({ error: 'No valid fields to update' });
-        }
-        
+        const updates = []; const values = []; let idx = 1;
+
+        if (name)              { updates.push(`name = $${idx++}`);      values.push(name); }
+        if (email)             { updates.push(`email = $${idx++}`);     values.push(email); }
+        if (phone)             { updates.push(`phone = $${idx++}`);     values.push(phone); }
+        if (role)              { updates.push(`role = $${idx++}`);      values.push(role); }
+        if (is_active !== undefined) { updates.push(`is_active = $${idx++}`); values.push(is_active ? 1 : 0); }
+
+        if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
         values.push(staffId);
-        
-        const updateStaff = db.prepare(`
-            UPDATE users 
-            SET ${updates.join(', ')}
-            WHERE id = ?
-        `);
-        
-        const result = updateStaff.run(...values);
-        
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Staff member not found' });
-        }
-        
-        const updatedStaff = db.prepare('SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE id = ?').get(staffId);
-        
-        console.log(`👤 Staff member updated: ${updatedStaff.name}`);
-        
-        res.json({
-            success: true,
-            staff: updatedStaff,
-            message: 'Staff member updated successfully'
-        });
-        
+
+        const result = await db.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`, values);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Staff member not found' });
+
+        const updatedStaff = (await db.query('SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE id = $1', [staffId])).rows[0];
+        res.json({ success: true, staff: updatedStaff, message: 'Staff member updated successfully' });
     } catch (error) {
         console.error('Update staff error:', error);
         res.status(500).json({ error: 'Failed to update staff member' });
     }
 });
 
-// Delete staff member (soft delete)
+// Delete staff member (soft delete — mark inactive)
 router.delete('/:id', async (req, res) => {
     try {
-        const staffId = req.params.id;
-        
-        // Soft delete staff member (mark inactive)
-        const result = db.prepare(
-            "UPDATE users SET is_active = 0 WHERE id = ? AND role != 'admin'"
-        ).run(staffId);
-        
-        if (result.changes === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Staff member not found',
-                code: 'NOT_FOUND'
-            });
-        }
-        
-        console.log(`👤 Staff member deleted: ID ${staffId}`);
-        
-        res.json({
-            success: true,
-            message: 'Staff member deleted successfully'
-        });
-        
+        const result = await db.query("UPDATE users SET is_active = 0 WHERE id = $1 AND role != 'admin'", [req.params.id]);
+        if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Staff member not found', code: 'NOT_FOUND' });
+        res.json({ success: true, message: 'Staff member deleted successfully' });
     } catch (error) {
         console.error('Delete staff error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to delete staff member',
-            code: 'DELETE_ERROR'
-        });
+        res.status(500).json({ success: false, error: 'Failed to delete staff member', code: 'DELETE_ERROR' });
     }
 });
 
