@@ -8,6 +8,11 @@
 
 const cron = require('node-cron');
 const db = require('../config/database');
+
+// Simple HTML escaper — prevents HTML injection via user-supplied fields in emails
+const esc = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+}[c]));
 const aiAutomation = require('./aiAutomation');
 const notifications = require('./notifications');
 
@@ -168,9 +173,9 @@ function initSchedulers() {
                     try {
                         // Send customer reminder
                         if (job.customer_email) {
-                            const customerReminder = `Hi ${job.customer_name},\n\n` +
-                                `Just a friendly reminder that ${job.staff_name} will be at ${job.location} ` +
-                                `tomorrow at ${job.job_date} for your ${job.service_name} service.\n\n` +
+                            const customerReminder = `Hi ${esc(job.customer_name)},\n\n` +
+                                `Just a friendly reminder that ${esc(job.staff_name)} will be at ${esc(job.location)} ` +
+                                `tomorrow at ${esc(job.job_date)} for your ${esc(job.service_name)} service.\n\n` +
                                 `If you need to reschedule, please let us know ASAP.\n\n` +
                                 `Cheers,\nFieldOps Team`;
 
@@ -190,10 +195,10 @@ function initSchedulers() {
                             ).get(job.assigned_to)?.email;
 
                             if (staffEmail) {
-                                const staffReminder = `Hey ${job.staff_name},\n\n` +
-                                    `You have a ${job.service_name} scheduled for ` +
-                                    `${job.job_date} at ${job.job_time} with ${job.customer_name} ` +
-                                    `at ${job.location}.\n\n` +
+                                const staffReminder = `Hey ${esc(job.staff_name)},\n\n` +
+                                    `You have a ${esc(job.service_name)} scheduled for ` +
+                                    `${esc(job.job_date)} at ${esc(job.job_time)} with ${esc(job.customer_name)} ` +
+                                    `at ${esc(job.location)}.\n\n` +
                                     `Make sure you're prepared and on time!\n\nThanks!`;
 
                                 await notifications.sendEmail({
@@ -250,7 +255,7 @@ function initSchedulers() {
                     try {
                         if (customer.email) {
                             const reEngagementMsg = 
-                                `Hi ${customer.name},\n\n` +
+                                `Hi ${esc(customer.name)},\n\n` +
                                 `We miss you! It's been a while since we've served you.\n\n` +
                                 `We'd love to help with your next cleaning project. ` +
                                 `Book now and get 15% off your next service!\n\n` +
