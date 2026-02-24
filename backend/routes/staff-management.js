@@ -276,7 +276,7 @@ router.post('/:id/reset-password', requireAdmin, async (req, res) => {
     await db.query('UPDATE staff_sessions SET revoked_at=NOW() WHERE staff_id=$1 AND revoked_at IS NULL', [req.params.id]);
     await logActivity(req.params.id, 'PASSWORD_RESET', req.user.id, 'Password reset by admin', null);
 
-    res.json({ message: 'Password reset successfully', temporary_password: new_password });
+    res.json({ message: 'Password reset successfully' });
   } catch (error) {
     console.error('Password reset error:', error);
     res.status(500).json({ error: 'Failed to reset password' });

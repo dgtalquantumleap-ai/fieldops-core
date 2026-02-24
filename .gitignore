@@ -15,7 +15,6 @@ yarn-error.log*
 # Database
 *.db
 *.sqlite
-*.sqlite
 
 # Logs
 logs
@@ -27,77 +26,44 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage
 coverage/
 *.lcov
-
-# nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
+# Build artifacts
 .grunt
-
-# Bower dependency directory (https://bower.io/)
 bower_components
-
-# node-waf configuration
-.node_repl_history
-
-# Compiled binary addons (https://nodejs.org/api/addons/)
 build/Release
-
-# Dependency directories
 jspm_packages/
-
-# Optional npm cache directory
 .npm
-
-# Optional eslint cache
 .eslintcache
 
-# dotenv environment variables file
-.env.test
-
-# parcel-bundler cache (https://parceljs.org/)
+# Parcel / Next / Nuxt / Vuepress / Serverless / FuseBox / DynamoDB
 .cache
 .parcel-cache
-
-# next.js build output
 .next
-
-# nuxt.js build output
 .nuxt
-
-# vuepress build output
 .vuepress/dist
-
-# Serverless directories
 .serverless
-
-# FuseBox cache
 .fusebox/
-
-# DynamoDB Local
 .dynamodb/
-
-# TernJS port file
 .tern-port
-
-# Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
-# Temporary folders
+# Temp
 tmp/
 temp/
+uploads/
 
-# Editor directories and files
+# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS generated files
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -106,11 +72,48 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# IDE files
+# IDE
 *.sublime-project
 *.sublime-workspace
 *.settings.json
-
-# Project files
 *.code-workspace
-*.settings.json
+
+# ============================================
+# FieldOps-specific: dev/debug/test artifacts
+# These were dev tools — do not ship to client
+# ============================================
+
+# Debug and check scripts in root
+/check-*.js
+/debug-*.js
+/test-*.js
+/test-*.bat
+/create-*.js
+/reset-*.js
+/set-*.js
+/add-*.js
+/get-*.js
+/provide-*.js
+/diagnostic.js
+/emergency-fix.js
+/comprehensive-test.js
+
+# Development scripts directory — never ship to client
+backend/scripts/
+
+# One-off fix/patch scripts
+/admin-FIXED.js
+/auth-FIXED.js
+/server-FIXED.js
+/booking-routes-FIXED.js
+/booking-FINAL-CLEAN.html
+*.backup
+
+# Backup folders
+/FieldOps-Fixed/
+
+# Plugin zip artifact
+*.zip
+
+# Stale SQLite database
+fieldops.db

@@ -16,7 +16,7 @@ router.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, role: user.role, is_active: user.is_active },
+            { id: user.id, email: user.email, role: user.role, is_active: user.is_active },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -34,7 +34,9 @@ router.post('/login', async (req, res) => {
 
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password, phone, role = 'staff' } = req.body;
+        const { name, email, password, phone } = req.body;
+        // Role is always 'staff' on public registration — use /create-admin for admin accounts
+        const role = 'staff';
 
         if (!name || !email || !password) {
             return res.status(400).json({ success: false, error: 'Name, email, and password are required' });

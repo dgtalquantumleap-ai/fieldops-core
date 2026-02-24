@@ -23,7 +23,7 @@ router.get('/jobs', requireAuth, async (req, res) => {
 });
 
 // Get all staff members
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
         const { page, limit } = req.query;
         const result = await paginate(
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
 });
 
 // Assign job to staff
-router.patch('/jobs/:jobId/assign', async (req, res) => {
+router.patch('/jobs/:jobId/assign', requireAuth, async (req, res) => {
     try {
         const { jobId } = req.params;
         const { staff_id } = req.body;
@@ -55,7 +55,7 @@ router.patch('/jobs/:jobId/assign', async (req, res) => {
 });
 
 // Update job status (for staff app)
-router.patch('/jobs/:jobId/status', async (req, res) => {
+router.patch('/jobs/:jobId/status', requireAuth, async (req, res) => {
     try {
         const { jobId } = req.params;
         const { status } = req.body;
@@ -104,7 +104,7 @@ router.patch('/:id/availability', requireAuth, async (req, res) => {
 });
 
 // Get staff member by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
     try {
         const { rows } = await db.query('SELECT id, name, email, phone, role, is_active, availability_status, created_at FROM users WHERE id = $1', [req.params.id]);
         if (!rows[0]) return res.status(404).json({ error: 'Staff member not found' });
@@ -115,7 +115,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Add new staff member
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { name, email, phone, role, password } = req.body;
         if (!name || !email || !role || !password) return res.status(400).json({ error: 'Name, email, role, and password are required' });
@@ -142,7 +142,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update staff member
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAuth, async (req, res) => {
     try {
         const staffId = req.params.id;
         const { name, email, phone, role, is_active } = req.body;
@@ -169,7 +169,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete staff member (soft delete — mark inactive)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
     try {
         const result = await db.query("UPDATE users SET is_active = 0 WHERE id = $1 AND role != 'admin'", [req.params.id]);
         if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Staff member not found', code: 'NOT_FOUND' });

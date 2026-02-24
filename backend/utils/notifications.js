@@ -1,6 +1,11 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
+// Simple HTML escaper — prevents HTML injection via user-supplied fields in emails
+const esc = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+}[c]));
+
 // Create email transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -24,13 +29,13 @@ const sendCustomerConfirmation = async (bookingData) => {
         subject: 'Booking Confirmation - Stilt Heights',
         html: `
             <h2>Booking Confirmed!</h2>
-            <p>Hi ${name},</p>
+            <p>Hi ${esc(name)},</p>
             <p>Your booking has been confirmed. Here are the details:</p>
             <ul>
-                <li><strong>Service:</strong> ${service}</li>
-                <li><strong>Date:</strong> ${date}</li>
-                <li><strong>Time:</strong> ${time || '09:00'}</li>
-                <li><strong>Location:</strong> ${address}</li>
+                <li><strong>Service:</strong> ${esc(service)}</li>
+                <li><strong>Date:</strong> ${esc(date)}</li>
+                <li><strong>Time:</strong> ${esc(time || '09:00')}</li>
+                <li><strong>Location:</strong> ${esc(address)}</li>
             </ul>
             <p>We'll see you soon!</p>
             <p>Best regards,<br>Stilt Heights Team</p>
@@ -62,14 +67,14 @@ const sendAdminNotification = async (bookingData) => {
             <h2>New Booking Received!</h2>
             <p>A new booking has been made:</p>
             <ul>
-                <li><strong>Customer:</strong> ${name}</li>
-                <li><strong>Email:</strong> ${email}</li>
-                <li><strong>Phone:</strong> ${phone}</li>
-                <li><strong>Service:</strong> ${service}</li>
-                <li><strong>Date:</strong> ${date}</li>
-                <li><strong>Time:</strong> ${time || '09:00'}</li>
-                <li><strong>Location:</strong> ${address}</li>
-                <li><strong>Notes:</strong> ${notes || 'None'}</li>
+                <li><strong>Customer:</strong> ${esc(name)}</li>
+                <li><strong>Email:</strong> ${esc(email)}</li>
+                <li><strong>Phone:</strong> ${esc(phone)}</li>
+                <li><strong>Service:</strong> ${esc(service)}</li>
+                <li><strong>Date:</strong> ${esc(date)}</li>
+                <li><strong>Time:</strong> ${esc(time || '09:00')}</li>
+                <li><strong>Location:</strong> ${esc(address)}</li>
+                <li><strong>Notes:</strong> ${esc(notes || 'None')}</li>
             </ul>
             <p>Please check your system for the full booking details.</p>
         `
@@ -101,13 +106,13 @@ const sendInvoiceNotification = async (invoiceData) => {
         subject: `Invoice ${invoice_number} from Stilt Heights`,
         html: `
             <h2>Invoice Generated</h2>
-            <p>Hi ${customer_name},</p>
+            <p>Hi ${esc(customer_name)},</p>
             <p>Your invoice for the completed service is now available:</p>
             <ul>
-                <li><strong>Invoice Number:</strong> ${invoice_number}</li>
-                <li><strong>Service:</strong> ${service_name}</li>
-                <li><strong>Amount:</strong> $${amount}</li>
-                <li><strong>Due Date:</strong> ${new Date(due_date).toLocaleDateString()}</li>
+                <li><strong>Invoice Number:</strong> ${esc(invoice_number)}</li>
+                <li><strong>Service:</strong> ${esc(service_name)}</li>
+                <li><strong>Amount:</strong> $${esc(amount)}</li>
+                <li><strong>Due Date:</strong> ${esc(new Date(due_date).toLocaleDateString())}</li>
             </ul>
             <p>Payment is due within 30 days. Thank you for your business!</p>
             <p>Best regards,<br>Stilt Heights Team</p>

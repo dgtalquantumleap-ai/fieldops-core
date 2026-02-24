@@ -181,8 +181,8 @@ router.patch('/:id/status', async (req, res) => {
                         'SELECT id FROM invoices WHERE job_id = $1 AND deleted_at IS NULL', [req.params.id]
                     )).rows[0];
                     if (!existing) {
-                        const maxRes = await db.query('SELECT MAX(id) as maxid FROM invoices');
-                        const nextId = (parseInt(maxRes.rows[0].maxid) || 0) + 1;
+                        const seqRes = await db.query("SELECT nextval('invoice_number_seq') AS n");
+                        const nextId = seqRes.rows[0].n;
                         const invoiceNumber = 'INV-' + String(nextId).padStart(6, '0');
                         await db.query(
                             "INSERT INTO invoices (invoice_number, job_id, customer_id, amount, status, issued_at) VALUES ($1, $2, $3, $4, 'unpaid', NOW())",

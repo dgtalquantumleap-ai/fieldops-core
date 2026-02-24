@@ -77,9 +77,9 @@ router.post('/create', async (req, res) => {
         const existing = (await db.query('SELECT id FROM invoices WHERE job_id = $1 AND deleted_at IS NULL', [job_id])).rows[0];
         if (existing) return res.status(400).json({ success: false, error: 'Invoice already exists for this job', code: 'INVOICE_EXISTS' });
 
-        const maxRes = await db.query('SELECT MAX(id) as maxid FROM invoices');
-        const nextId = (parseInt(maxRes.rows[0].maxid) || 0) + 1;
-        const invoiceNumber = 'INV-' + String(nextId).padStart(6, '0');
+        // Use PostgreSQL sequence for atomic, race-condition-free invoice numbering
+        const seqRes = await db.query("SELECT nextval('invoice_number_seq') AS n");
+        const invoiceNumber = 'INV-' + String(seqRes.rows[0].n).padStart(6, '0');
         const amount = job.service_price || 0;
 
         const invoiceResult = await db.query(

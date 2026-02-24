@@ -108,6 +108,10 @@ const setupDatabase = async () => {
         `);
         console.log('✅ Job media table ready');
 
+        // Invoice number sequence — guarantees unique, race-condition-free invoice numbers
+        await client.query(`CREATE SEQUENCE IF NOT EXISTS invoice_number_seq START 1`);
+        console.log('✅ Invoice number sequence ready');
+
         // Invoices table
         await client.query(`
             CREATE TABLE IF NOT EXISTS invoices (
@@ -115,7 +119,7 @@ const setupDatabase = async () => {
                 job_id INTEGER REFERENCES jobs(id),
                 customer_id INTEGER REFERENCES customers(id),
                 invoice_number TEXT UNIQUE NOT NULL,
-                amount REAL NOT NULL,
+                amount REAL NOT NULL CHECK (amount >= 0),
                 status TEXT DEFAULT 'unpaid',
                 issued_at TIMESTAMP DEFAULT NOW(),
                 paid_date TIMESTAMP,

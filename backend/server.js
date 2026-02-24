@@ -95,6 +95,8 @@ app.set('trust proxy', 1);
 // ============================================
 // SOCKET.IO SETUP
 // ============================================
+const jwt = require('jsonwebtoken');
+
 const io = socketIo(server, {
     cors: {
         origin: allowedOrigins,
@@ -103,15 +105,39 @@ const io = socketIo(server, {
     }
 });
 
+// Authenticate Socket.IO connections via JWT
+io.use((socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
+    if (!token) {
+        // Allow unauthenticated connections but mark them as guests
+        socket.user = null;
+        return next();
+    }
+    try {
+        socket.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+        socket.user = null;
+    }
+    next();
+});
+
 // WebSocket connection for real-time updates
 io.on('connection', (socket) => {
     console.log('🔌 Client connected for real-time updates');
-    
+
     socket.on('join-room', (room) => {
+        // Only authenticated users with admin/owner role can join the admin room
+        if (room === 'admin') {
+            const role = socket.user?.role;
+            if (role !== 'admin' && role !== 'owner') {
+                console.warn(`🚫 Unauthorized attempt to join admin room`);
+                return;
+            }
+        }
         socket.join(room);
         console.log(`📱 Client joined room: ${room}`);
     });
-    
+
     socket.on('disconnect', () => {
         console.log('🔌 Client disconnected');
     });
