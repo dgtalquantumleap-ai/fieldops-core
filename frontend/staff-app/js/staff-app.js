@@ -589,6 +589,8 @@ function showNotification(message, type) {
 
 function logout() {
     if (confirm('Logout from staff app?')) {
+        localStorage.removeItem('staffToken');
+        localStorage.removeItem('staffUser');
         window.location.href = '/staff/login.html';
     }
 }

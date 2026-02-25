@@ -49,6 +49,10 @@ router.post('/book', validateBooking, async (req, res) => {
                 'INSERT INTO customers (name, phone, email, address, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *',
                 [name.trim(), phone.trim(), email ? email.trim() : null, address.trim(), 'Online booking']
             )).rows[0];
+        } else if (email?.trim() && !customer.email) {
+            // Returning customer provided an email we don't have stored — save it
+            await db.query('UPDATE customers SET email = $1 WHERE id = $2', [email.trim(), customer.id]);
+            customer.email = email.trim();
         }
 
         const serviceRecord = (await db.query('SELECT * FROM services WHERE name = $1', [service.trim()])).rows[0];
@@ -93,9 +97,20 @@ router.post('/book', validateBooking, async (req, res) => {
 
         const automationData = { customer_id: customer.id, customer_name: customer.name, customer_email: customer.email, customer_phone: customer.phone, service, date, time, address: address.trim(), staff_name: assignedStaff.name || 'Our Team', job_id: jobId, notes: notes?.trim() || '' };
 
-        if (customer.email) {
-            notifications.sendCustomerConfirmation({ name: customer.name, email: customer.email, service, date, time, address: address.trim() })
-                .catch(e => console.warn('⚠️ Customer email failed:', e.message));
+        const customerEmail = email?.trim() || customer.email;
+        if (customerEmail) {
+            const { sendBookingConfirmation } = require('../utils/emailTemplates');
+            sendBookingConfirmation({
+                email: customerEmail,
+                customer_name: customer.name,
+                service_name: service,
+                job_date: date,
+                job_time: time,
+                address: address.trim(),
+                job_id: String(jobId).padStart(4, '0')
+            }).catch(e => console.error('❌ Customer confirmation email failed:', e.message));
+        } else {
+            console.warn(`⚠️ No email address for customer ${customer.name} (phone: ${customer.phone}) — confirmation skipped`);
         }
         notifications.sendAdminNotification({ name: customer.name, email: customer.email || 'N/A', phone: customer.phone, service, date, time, address: address.trim(), notes: notes?.trim() || '' })
             .catch(e => console.warn('⚠️ Admin email failed:', e.message));
