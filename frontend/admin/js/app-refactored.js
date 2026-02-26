@@ -355,6 +355,20 @@ async function loadSectionData(sectionName) {
             break;
         case 'settings':
             loadSettings();
+            loadNotifSettingsInline();
+            break;
+        case 'reviews':
+            await loadReviews();
+            break;
+        case 'waiting-list':
+            await loadWaitingList();
+            break;
+        case 'calendar':
+            await loadCalendar();
+            break;
+        case 'notif-log':
+            await loadNotifSettings();
+            await loadNotifLog();
             break;
     }
 }
@@ -691,6 +705,7 @@ function renderCustomersList(customers) {
                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
                     <button class="btn-small" onclick="viewCustomerDetails(${id})">View</button>
                     <button class="btn-small" onclick="editCustomer(${id})">Edit</button>
+                    <button class="btn-small" style="background:#d1fae5;color:#065f46;border-color:#6ee7b7;" onclick="rebookCustomer(${id})">↺ Rebook</button>
                 </div>
             </div>
         `;
@@ -799,18 +814,22 @@ function renderJobsList(jobs) {
         const time = job.job_time || 'TBD';
         const location = job.location || 'N/A';
         const id = job.id || 0;
+        const notes = job.notes ? `<p style="font-size:0.82rem;color:#64748b;margin-top:0.25rem;"><strong>Notes:</strong> ${job.notes}</p>` : '';
+        const recurrenceBadge = job.recurrence_rule ? `<span style="background:#ede9fe;color:#5b21b6;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;margin-left:0.5rem;">🔁 ${job.recurrence_rule}</span>` : '';
+        const checkinBadge = job.checkin_lat ? `<span style="background:#d1fae5;color:#065f46;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;margin-left:0.5rem;" title="GPS check-in recorded">📍 Checked in</span>` : '';
         
         const statusClass = utils.status.getBadgeClass(status);
         
         return `
             <div class="job-card">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                    <h3>${customerName} - ${serviceName}</h3>
+                    <h3>${customerName} - ${serviceName}${recurrenceBadge}${checkinBadge}</h3>
                     <span class="status-badge ${statusClass}">${status}</span>
                 </div>
                 <p><strong>Staff:</strong> ${staffName}</p>
                 <p><strong>Date:</strong> ${date} at ${time}</p>
                 <p><strong>Location:</strong> ${location}</p>
+                ${notes}
                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
                     <button class="btn-small" onclick="viewJobDetails(${id})">View</button>
                     <button class="btn-small" onclick="editJob(${id})">Edit</button>
@@ -889,7 +908,9 @@ async function createJob() {
             job_date: formData['job-date'],
             job_time: formData['job-time'],
             location: formData['job-location'],
-            notes: formData['job-notes'] || null
+            notes: formData['job-notes'] || null,
+            recurrence_rule: formData['job-recurrence'] || null,
+            recurrence_end_date: formData['job-recurrence-end'] || null
         });
         
         if (response.success) {
