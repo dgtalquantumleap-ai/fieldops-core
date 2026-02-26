@@ -926,6 +926,36 @@
             const result = await res.json();
             if (result.success) {
                 showConfirmation(result.data, payload);
+            } else if (result.waitlisted) {
+                document.getElementById('mainCard').innerHTML = `
+                    <div class="confirm-screen" style="animation:fadeInUp 0.5s ease-out">
+                        <div class="confirm-icon">⏳</div>
+                        <div class="confirm-title" style="color:var(--amber)">Added to Waiting List</div>
+                        <p class="confirm-sub">All our cleaners are fully booked for that time slot.</p>
+                        <div class="confirm-details" style="background:#fef3c7;border-color:#fcd34d;">
+                            <div class="confirm-row">
+                                <span class="cl">What happens next?</span>
+                                <span class="cv">We'll call you to confirm a new time</span>
+                            </div>
+                            <div class="confirm-row">
+                                <span class="cl">Phone</span>
+                                <span class="cv">${escapeHtml(payload.phone)}</span>
+                            </div>
+                            <div class="confirm-row">
+                                <span class="cl">Service</span>
+                                <span class="cv">${escapeHtml(payload.service)}</span>
+                            </div>
+                            <div class="confirm-row">
+                                <span class="cl">Requested Date</span>
+                                <span class="cv">${escapeHtml(payload.date)}</span>
+                            </div>
+                        </div>
+                        <p class="confirm-notes">
+                            We'll be in touch soon to find a time that works.<br><br>
+                            Questions? <a href="tel:825-994-6606" style="color:var(--blue)">825-994-6606</a>
+                        </p>
+                        <button class="btn-another" onclick="location.reload()">Try a Different Date</button>
+                    </div>`;
             } else {
                 throw new Error(result.message || result.error || 'Booking failed — please try again.');
             }
