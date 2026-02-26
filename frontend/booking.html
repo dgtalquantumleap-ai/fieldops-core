@@ -723,6 +723,7 @@
 
     // ── SERVICES ─────────────────────────────────────────────────────
     let selectedService = '';
+    let selectedServiceId = null;
     let selectedServicePrice = 0;
 
     async function loadServices() {
@@ -769,6 +770,7 @@
         card.classList.add('selected');
         card.setAttribute('aria-checked', 'true');
         selectedService      = card.dataset.name;
+        selectedServiceId    = parseInt(card.dataset.id) || null;
         selectedServicePrice = parseFloat(card.dataset.price) || 0;
         // Update pill
         const pill = document.getElementById('servicePill');
@@ -907,14 +909,15 @@
         txt.innerHTML = '<span class="spinner"></span> Booking your appointment…';
 
         const payload = {
-            name:    fd.get('name').trim(),
-            phone:   fd.get('phone').trim(),
-            email:   fd.get('email')?.trim() || null,
-            address: fd.get('address').trim(),
-            service: selectedService,
-            date:    fd.get('date'),
-            time:    fd.get('time'),
-            notes:   fd.get('notes')?.trim() || ''
+            name:       fd.get('name').trim(),
+            phone:      fd.get('phone').trim(),
+            email:      fd.get('email')?.trim() || null,
+            address:    fd.get('address').trim(),
+            service:    selectedService,
+            service_id: selectedServiceId,
+            date:       fd.get('date'),
+            time:       fd.get('time'),
+            notes:      fd.get('notes')?.trim() || ''
         };
 
         try {

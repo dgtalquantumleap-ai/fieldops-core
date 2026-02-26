@@ -30,7 +30,7 @@ function validateTime(time) {
 
 router.post('/book', validateBooking, async (req, res) => {
     try {
-        const { name, phone, email, address, service, date, time, notes } = req.body;
+        const { name, phone, email, address, service, service_id, date, time, notes, recurrence_rule } = req.body;
 
         if (!name?.trim())    return res.status(400).json({ success: false, error: 'Name is required',    code: 'MISSING_NAME' });
         if (!address?.trim()) return res.status(400).json({ success: false, error: 'Address is required', code: 'MISSING_ADDRESS' });
@@ -55,9 +55,11 @@ router.post('/book', validateBooking, async (req, res) => {
             customer.email = email.trim();
         }
 
-        const serviceRecord = (await db.query('SELECT * FROM services WHERE name = $1', [service.trim()])).rows[0];
-        if (!serviceRecord)        return res.status(400).json({ success: false, error: 'Service not found',    code: 'SERVICE_NOT_FOUND' });
-        if (!serviceRecord.is_active) return res.status(400).json({ success: false, error: 'Service unavailable', code: 'SERVICE_INACTIVE' });
+        // Look up by ID (preferred — exact match), fall back to name for legacy callers
+        const serviceRecord = service_id
+            ? (await db.query('SELECT * FROM services WHERE id = $1 AND is_active = 1', [parseInt(service_id)])).rows[0]
+            : (await db.query('SELECT * FROM services WHERE name = $1 AND is_active = 1', [service.trim()])).rows[0];
+        if (!serviceRecord) return res.status(400).json({ success: false, error: 'Service not found', code: 'SERVICE_NOT_FOUND' });
 
         const duplicate = (await db.query(
             "SELECT id FROM jobs WHERE customer_id=$1 AND service_id=$2 AND job_date=$3 AND job_time=$4 AND status NOT IN ('Cancelled','cancelled')",
@@ -84,13 +86,35 @@ router.post('/book', validateBooking, async (req, res) => {
             GROUP BY u.id ORDER BY week_jobs ASC LIMIT 1
         `, [date, time])).rows[0];
 
-        if (!assignedStaff) return res.status(409).json({ success: false, error: 'No staff available for this time slot', code: 'NO_STAFF_AVAILABLE' });
+        if (!assignedStaff) {
+            // No staff available — add to waiting list instead of hard error
+            try {
+                await db.query(
+                    `INSERT INTO waiting_list (name, phone, email, address, service, preferred_date, preferred_time, notes)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+                    [name.trim(), phone.trim(), email?.trim() || customer.email || null, address.trim(), service.trim(), date, time, notes?.trim() || null]
+                );
+                notifications.sendEmail({
+                    to: process.env.ADMIN_EMAIL,
+                    subject: `⏳ Waiting List: No staff for ${service} on ${date}`,
+                    html: `<p><strong>${name}</strong> tried to book <strong>${service}</strong> on <strong>${date} at ${time}</strong> but no staff were available. They've been added to the waiting list.</p>`
+                }).catch(() => {});
+            } catch (_) {}
+            return res.status(202).json({
+                success: false,
+                waitlisted: true,
+                error: 'No staff are available for that time slot. You have been added to our waiting list and we will contact you shortly.',
+                code: 'ADDED_TO_WAITLIST'
+            });
+        }
 
         const now = new Date().toISOString();
+        const validRecurrence = ['weekly','biweekly','monthly','quarterly'];
+        const recRule = validRecurrence.includes(recurrence_rule) ? recurrence_rule : null;
         const jobResult = await db.query(`
-            INSERT INTO jobs (customer_id,service_id,assigned_to,job_date,job_time,location,status,notes,estimated_duration,created_at,updated_at)
-            VALUES ($1,$2,$3,$4,$5,$6,'Scheduled',$7,$8,$9,$10) RETURNING id
-        `, [customer.id, serviceRecord.id, assignedStaff.id, date, time, address.trim(), notes?.trim() || '', serviceRecord.duration || 2, now, now]);
+            INSERT INTO jobs (customer_id,service_id,assigned_to,job_date,job_time,location,status,notes,estimated_duration,recurrence_rule,created_at,updated_at)
+            VALUES ($1,$2,$3,$4,$5,$6,'Scheduled',$7,$8,$9,$10,$11) RETURNING id
+        `, [customer.id, serviceRecord.id, assignedStaff.id, date, time, address.trim(), notes?.trim() || '', serviceRecord.duration || 2, recRule, now, now]);
 
         const jobId = jobResult.rows[0].id;
         console.log(`🎉 Job #${jobId} created — ${customer.name} → ${assignedStaff.name}`);
