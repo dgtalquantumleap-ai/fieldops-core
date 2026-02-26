@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', validateJob, async (req, res) => {
     try {
-        const { customer_id, service_id, assigned_to, job_date, job_time, location, notes } = req.body;
+        const { customer_id, service_id, assigned_to, job_date, job_time, location, notes, recurrence_rule, recurrence_end_date } = req.body;
 
         const [custRow, svcRow] = await Promise.all([
             db.query('SELECT id FROM customers WHERE id = $1 AND deleted_at IS NULL', [customer_id]),
@@ -49,11 +49,14 @@ router.post('/', validateJob, async (req, res) => {
             if (!staffRow.rows[0]) return res.status(400).json({ success: false, error: 'Staff member not found', code: 'STAFF_NOT_FOUND' });
         }
 
+        const validRecurrence = ['weekly', 'biweekly', 'monthly', 'quarterly'];
+        const ruleToSave = recurrence_rule && validRecurrence.includes(recurrence_rule) ? recurrence_rule : null;
+
         const insertResult = await db.query(`
-            INSERT INTO jobs (customer_id, service_id, assigned_to, job_date, job_time, location, notes, status, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Scheduled', NOW(), NOW())
+            INSERT INTO jobs (customer_id, service_id, assigned_to, job_date, job_time, location, notes, status, recurrence_rule, recurrence_end_date, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Scheduled', $8, $9, NOW(), NOW())
             RETURNING id
-        `, [customer_id, service_id, assigned_to || null, job_date, job_time, location, notes]);
+        `, [customer_id, service_id, assigned_to || null, job_date, job_time, location, notes, ruleToSave, recurrence_end_date || null]);
 
         const newJob = (await db.query(`${JOB_SELECT} WHERE j.id = $1`, [insertResult.rows[0].id])).rows[0];
 
@@ -223,6 +226,40 @@ router.delete('/:id', async (req, res) => {
     } catch (error) {
         log.error(req.id, 'Error deleting job', error);
         res.status(500).json({ success: false, error: 'Failed to delete job', code: 'DELETE_ERROR' });
+    }
+});
+
+// GPS check-in when staff starts a job
+router.patch('/:id/checkin', async (req, res) => {
+    try {
+        const { lat, lng } = req.body;
+        if (!lat || !lng) return res.status(400).json({ success: false, error: 'lat and lng are required' });
+        const result = await db.query(
+            'UPDATE jobs SET checkin_lat = $1, checkin_lng = $2, checkin_time = NOW() WHERE id = $3 AND deleted_at IS NULL',
+            [parseFloat(lat), parseFloat(lng), req.params.id]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ success: false, error: 'Job not found' });
+        res.json({ success: true, message: 'Check-in recorded' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to record check-in' });
+    }
+});
+
+// Set recurrence rule on a job
+router.patch('/:id/recurrence', async (req, res) => {
+    try {
+        const { recurrence_rule, recurrence_end_date } = req.body;
+        const valid = ['weekly', 'biweekly', 'monthly', 'quarterly', ''];
+        if (!valid.includes(recurrence_rule || '')) {
+            return res.status(400).json({ success: false, error: 'Invalid recurrence_rule' });
+        }
+        await db.query(
+            'UPDATE jobs SET recurrence_rule = $1, recurrence_end_date = $2 WHERE id = $3',
+            [recurrence_rule || null, recurrence_end_date || null, req.params.id]
+        );
+        res.json({ success: true, message: 'Recurrence rule saved' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to set recurrence' });
     }
 });
 
