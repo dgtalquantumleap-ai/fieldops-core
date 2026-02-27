@@ -1,5 +1,6 @@
 const webpush = require('web-push');
 const db = require('../config/database');
+const branding = require('../config/branding');
 
 // Configure VAPID — runs once on require
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -28,7 +29,7 @@ async function sendToUser(userId, payload) {
     if (!subscriptions.length) return;
 
     const message = JSON.stringify({
-        title: payload.title || 'Stilt Heights',
+        title: payload.title || branding.name,
         body: payload.body || '',
         tag: payload.tag || 'fieldops',
         url: payload.url || '/staff/index.html'

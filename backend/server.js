@@ -180,7 +180,8 @@ app.get('/favicon.ico', (req, res) => {
 app.use('/uploads', express.static('uploads'));
 app.use('/admin', express.static(path.join(__dirname, '../frontend/admin')));
 app.use('/staff', express.static(path.join(__dirname, '../frontend/staff-app')));
-app.use('/stiltheights', express.static(path.join(__dirname, '../frontend/stiltheights')));
+app.use('/stiltheights', express.static(path.join(__dirname, '../frontend/stiltheights'))); // legacy alias kept
+app.use('/website', express.static(path.join(__dirname, '../frontend/website')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ============================================
@@ -213,6 +214,7 @@ const { requireAuth, requireAdmin } = require('./middleware/auth');
 // Public routes (no auth required)
 app.use('/api/auth',             require('./routes/auth'));
 app.use('/api/booking',          require('./routes/booking'));
+app.use('/api/branding',         require('./routes/branding'));
 app.use('/api/scheduling',        require('./routes/scheduling'));
 // app.use('/api/ai-test',          require('./routes/ai-test'));
 // app.use('/api/webhooks',         require('./routes/webhooks'));  // Google Forms integration
@@ -231,6 +233,15 @@ app.use('/api/analytics',        requireAuth,  require('./routes/analytics'));
 app.use('/api/wp',               requireAuth,  require('./routes/wordpress'));
 app.use('/api/push',             requireAuth,  require('./routes/push'));
 app.use('/api/accounting',       requireAuth,  require('./routes/accounting'));
+app.use('/api/job-expenses',     requireAuth,  require('./routes/job-expenses'));
+
+// Feature routes (features 1-14)
+app.use('/api/notifications',    requireAdmin, require('./routes/notifications'));
+app.use('/api/waiting-list',     requireAuth,  require('./routes/waiting-list'));
+app.use('/api/reviews',          requireAuth,  require('./routes/reviews'));
+
+// Public review submission (no auth — customers click a link in email)
+app.use('/api/public/reviews',   require('./routes/reviews'));
 
 // Admin-only routes
 app.use('/api/staff-management', requireAdmin, require('./routes/staff-management'));
@@ -241,7 +252,7 @@ app.use('/api/onboarding',       requireAdmin, require('./routes/onboarding'));
 // ============================================
 // ROOT REDIRECT
 // ============================================
-app.get('/', (req, res) => res.redirect('/stiltheights'));
+app.get('/', (req, res) => res.redirect('/website'));
 
 // ============================================
 // CATCH-ALL 404 HANDLER
@@ -291,7 +302,7 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
     
     console.log('\n📍 Access Points:');
-    console.log(`   🏠 Website: ${APP_URL}/stiltheights`);
+    console.log(`   🏠 Website: ${APP_URL}/website`);
     console.log(`   📊 Admin: ${APP_URL}/admin`);
     console.log(`   📱 Staff: ${APP_URL}/staff`);
     console.log(`   📝 Booking: ${APP_URL}/booking.html`);
@@ -306,6 +317,11 @@ server.listen(PORT, '0.0.0.0', () => {
     // ============================================
     // Initialize automated schedulers
     // ============================================
+    const { runMigrations } = require('./config/migrate');
+    runMigrations()
+      .then(() => console.log('   ✅ Database migrations complete'))
+      .catch(err => console.warn('   ⚠️  Migration failed (non-critical):', err.message));
+
     try {
       const scheduler = require('./utils/scheduler');
       scheduler.initSchedulers();

@@ -95,13 +95,15 @@ router.get('/expenses', async (req, res) => {
 
 router.post('/expenses', async (req, res) => {
     try {
-        const { description, amount, category, expense_date, notes } = req.body;
+        const { description, amount, category, expense_date, notes, job_id } = req.body;
         if (!description || !amount) return res.status(400).json({ success: false, error: 'description and amount are required' });
         if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) return res.status(400).json({ success: false, error: 'amount must be a positive number' });
 
         const result = await db.query(
-            'INSERT INTO expenses (description, amount, category, expense_date, notes) VALUES ($1,$2,$3,$4,$5) RETURNING id',
-            [description.trim(), parseFloat(amount), (category || 'General').trim(), expense_date || new Date().toISOString().split('T')[0], notes ? notes.trim() : null]
+            'INSERT INTO expenses (description, amount, category, expense_date, notes, job_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+            [description.trim(), parseFloat(amount), (category || 'General').trim(),
+             expense_date || new Date().toISOString().split('T')[0],
+             notes ? notes.trim() : null, job_id || null]
         );
         const expense = (await db.query('SELECT * FROM expenses WHERE id = $1', [result.rows[0].id])).rows[0];
         res.json({ success: true, data: expense, message: 'Expense recorded' });

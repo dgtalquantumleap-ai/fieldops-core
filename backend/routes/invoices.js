@@ -94,6 +94,7 @@ router.post('/create', async (req, res) => {
             try {
                 if (job.customer_email) {
                     const { sendInvoiceEmail } = require('../utils/emailTemplates');
+                    const branding = require('../config/branding');
                     const customer = (await db.query('SELECT * FROM customers WHERE id = $1', [job.customer_id])).rows[0];
                     await sendInvoiceEmail({
                         customer_name: job.customer_name, customer_email: job.customer_email,
@@ -104,9 +105,9 @@ router.post('/create', async (req, res) => {
                         service_name: job.service_name, job_date: job.job_date,
                         amount: amount.toFixed(2), payment_status: 'Unpaid',
                         payment_status_color: '#fff3cd', payment_status_accent: '#ffc107',
-                        company_name: 'Stilt Heights', company_phone: '(555) 123-4567',
-                        company_email: 'info@stiltheights.com', company_website: 'www.stiltheights.com',
-                        company_address: 'Calgary, Alberta'
+                        company_name: branding.name, company_phone: branding.phone,
+                        company_email: branding.email, company_website: branding.website,
+                        company_address: branding.city
                     });
                 }
             } catch (e) { console.warn('⚠️ Invoice email failed (non-critical):', e.message); }

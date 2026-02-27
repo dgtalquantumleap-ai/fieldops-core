@@ -197,10 +197,11 @@ router.patch('/:id/status', async (req, res) => {
 
                 try {
                     if (jobDetails.customer_email) {
+                        const branding = require('../config/branding');
                         const aiAutomation = require('../utils/aiAutomation');
                         const aiSummary = await aiAutomation.generateJobSummary({ customer_name: jobDetails.customer_name, service_name: jobDetails.service_name, address: jobDetails.address || 'Customer location', duration: jobDetails.duration || 120, notes: jobDetails.notes || '' });
                         const notifications = require('../utils/notifications');
-                        await notifications.sendEmail({ to: jobDetails.customer_email, subject: 'Job Completed - Stilt Heights', body: aiSummary });
+                        await notifications.sendEmail({ to: jobDetails.customer_email, subject: `Job Completed - ${branding.name}`, body: aiSummary });
                     }
                 } catch (e) { console.log('⚠️ AI completion email failed (non-critical):', e.message); }
             }

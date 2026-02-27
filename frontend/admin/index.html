@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stilt Heights - Professional Operations Dashboard</title>
+    <title>Admin Dashboard — FieldOps Core</title>
     <link rel="manifest" href="/admin/manifest.json">
     <link rel="stylesheet" href="/admin/css/styles.css">
     <link rel="stylesheet" href="/admin/css/mobile.css">
@@ -23,11 +23,24 @@
     <header class="mobile-header">
         <div class="header-left">
             <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-            <h1>Stilt Heights Operations</h1>
+            <h1 id="admin-header-title">Operations</h1>
         </div>
         <div class="header-right">
-            <span class="business-name">Stilt Heights</span>
-            <button class="notification-btn" onclick="showNotifications()">🔔</button>
+            <span class="business-name" id="admin-header-biz"></span>
+            <div style="position:relative">
+                <button class="notification-btn" onclick="showSection('notif-log')">🔔</button>
+                <div id="notif-panel" style="position:absolute;right:0;top:calc(100% + 8px);
+                     width:320px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+                     box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;max-height:400px;overflow-y:auto;
+                     display:none"
+                     class="notif-panel-dropdown">
+                    <div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:0.9rem;display:flex;justify-content:space-between;align-items:center">
+                        Recent Notifications
+                        <a href="#notif-log" onclick="showSection('notif-log');document.getElementById('notif-panel').classList.remove('active')" style="font-size:0.75rem;color:#2563eb;text-decoration:none">View all</a>
+                    </div>
+                    <div id="notif-panel-list"></div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -37,8 +50,8 @@
             <div class="logo">
                 <span class="logo-icon">🏠</span>
                 <div>
-                    <h2>Stilt Heights</h2>
-                    <p class="business-subtitle">Professional Operations</p>
+                    <h2 id="admin-sidebar-biz">Operations</h2>
+                    <p class="business-subtitle" id="admin-sidebar-tagline">Professional Operations</p>
                 </div>
             </div>
             <div class="powered-by">
@@ -80,6 +93,22 @@
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
             </a>
+            <a href="#reviews" class="nav-item" onclick="showSection('reviews')">
+                <span class="nav-icon">⭐</span>
+                <span>Reviews</span>
+            </a>
+            <a href="#waiting-list" class="nav-item" onclick="showSection('waiting-list')">
+                <span class="nav-icon">⏳</span>
+                <span>Waiting List</span>
+            </a>
+            <a href="#calendar" class="nav-item" onclick="showSection('calendar')">
+                <span class="nav-icon">📅</span>
+                <span>Calendar</span>
+            </a>
+            <a href="#notif-log" class="nav-item" onclick="showSection('notif-log')">
+                <span class="nav-icon">🔔</span>
+                <span>Notif. Log</span>
+            </a>
             <a href="/admin-ai-dashboard.html" class="nav-item" target="_blank" rel="noopener">
                 <span class="nav-icon">🤖</span>
                 <span>AI Insights</span>
@@ -103,7 +132,7 @@
         <!-- Dashboard Section -->
         <section id="dashboard" class="content-section active">
             <div class="section-header">
-                <h2>Stilt Heights Operations Dashboard</h2>
+                <h2 id="admin-dashboard-title">Operations Dashboard</h2>
                 <div class="header-actions">
                     <button class="btn-primary" onclick="showCreateJobModal()">+ Create Job</button>
                     <button class="btn-secondary" onclick="refreshDashboard()">🔄 Refresh</button>
@@ -441,15 +470,15 @@
                     <div class="setting-content">
                         <div class="form-group">
                             <label for="business-name">Business Name</label>
-                            <input type="text" value="Stilt Heights" id="business-name" title="Business name" placeholder="Enter business name">
+                            <input type="text" id="business-name" title="Business name" placeholder="Enter business name">
                         </div>
                         <div class="form-group">
                             <label for="business-phone">Phone</label>
-                            <input type="tel" value="8259946606" id="business-phone" title="Business phone" placeholder="Enter business phone">
+                            <input type="tel" id="business-phone" title="Business phone" placeholder="Enter business phone">
                         </div>
                         <div class="form-group">
                             <label for="business-email">Email</label>
-                            <input type="email" value="stiltheights@gmail.com" id="business-email" title="Business email" placeholder="Enter business email">
+                            <input type="email" id="business-email" title="Business email" placeholder="Enter business email">
                         </div>
                         <button class="btn-primary" onclick="saveBusinessSettings()">Save Changes</button>
                     </div>
@@ -496,15 +525,17 @@
                 </div>
 
                 <div class="setting-card">
-                    <h3>Module Settings</h3>
+                    <h3>🔔 Notification Settings</h3>
                     <div class="setting-content">
-                        <div class="module-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" checked aria-label="Enable Customer Management module">
-                                <span class="slider"></span>
-                            </label>
-                            <span>Customer Management</span>
-                        </div>
+                        <p style="color:#64748b;font-size:0.875rem;margin-bottom:1rem;">Control which automated notifications are sent. Changes save instantly.</p>
+                        <div id="notif-toggles-inline"><div class="loading">Loading...</div></div>
+                        <button class="btn-primary" style="margin-top:1rem;" onclick="saveNotifSettings()">Save Notification Settings</button>
+                        <button class="btn-secondary" style="margin-top:1rem;margin-left:0.5rem;" onclick="sendTestNotification()">Send Test Email</button>
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>Module Settings</h3>
                         <div class="module-toggle">
                             <label class="toggle-switch">
                                 <input type="checkbox" checked aria-label="Enable Job Management module">
@@ -536,7 +567,82 @@
                     </div>
                 </div>
             </div>
+        <!-- ──────────────────────────────────────────── -->
+        <!-- NOTIFICATION SETTINGS CARD (inside Settings) -->
+        <!-- Added to Settings section via JS init        -->
+        <!-- ──────────────────────────────────────────── -->
         </section>
+
+        <!-- Reviews Section -->
+        <section id="reviews" class="content-section">
+            <div class="section-header">
+                <h2>⭐ Customer Reviews</h2>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="loadReviews()">🔄 Refresh</button>
+                </div>
+            </div>
+            <div class="stats-grid" id="reviews-stats">
+                <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-content"><h3 id="avg-rating">—</h3><p>Avg Rating</p></div></div>
+                <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-content"><h3 id="total-reviews">0</h3><p>Total Reviews</p></div></div>
+                <div class="stat-card"><div class="stat-icon">🌟</div><div class="stat-content"><h3 id="five-star-count">0</h3><p>5 Star</p></div></div>
+                <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-content"><h3 id="low-star-count">0</h3><p>1-2 Star</p></div></div>
+            </div>
+            <div class="reviews-list" id="reviews-list"><div class="loading">Loading reviews...</div></div>
+        </section>
+
+        <!-- Waiting List Section -->
+        <section id="waiting-list" class="content-section">
+            <div class="section-header">
+                <h2>⏳ Waiting List</h2>
+                <div class="header-actions">
+                    <select class="filter-select" id="waiting-filter" onchange="loadWaitingList()">
+                        <option value="all">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="booked">Booked</option>
+                    </select>
+                    <button class="btn-secondary" onclick="loadWaitingList()">🔄 Refresh</button>
+                </div>
+            </div>
+            <div class="waiting-list-items" id="waiting-list-items"><div class="loading">Loading waiting list...</div></div>
+        </section>
+
+        <!-- Staff Calendar Section -->
+        <section id="calendar" class="content-section">
+            <div class="section-header">
+                <h2>📅 Staff Calendar</h2>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="calendarPrev()">◀ Prev</button>
+                    <span id="calendar-title" style="font-weight:700;font-size:1rem;padding:0 1rem;"></span>
+                    <button class="btn-secondary" onclick="calendarNext()">Next ▶</button>
+                </div>
+            </div>
+            <div id="calendar-container" style="overflow-x:auto;"></div>
+        </section>
+
+        <!-- Notification Log Section -->
+        <section id="notif-log" class="content-section">
+            <div class="section-header">
+                <h2>🔔 Notification Log &amp; Settings</h2>
+                <div class="header-actions">
+                    <button class="btn-secondary" onclick="sendTestNotification()">✉️ Send Test Email</button>
+                    <button class="btn-secondary" onclick="loadNotifLog()">🔄 Refresh</button>
+                </div>
+            </div>
+            <!-- Notification Settings Card -->
+            <div class="setting-card" style="margin-bottom:1.5rem;">
+                <h3>🔔 Notification Preferences</h3>
+                <div class="setting-content" id="notif-settings-form">
+                    <div class="loading">Loading settings...</div>
+                </div>
+            </div>
+            <!-- Log Table -->
+            <div class="setting-card">
+                <h3>📋 Recent Notifications Sent</h3>
+                <div id="notif-log-list"><div class="loading">Loading log...</div></div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Footer Attribution -->
@@ -545,9 +651,57 @@
             <p class="footer-text">
                 Powered by <strong>FieldOps Core</strong> • Built by <a href="https://ebenova.com" target="_blank" rel="noopener" class="creator-link">Ebenova Solutions</a>
             </p>
-            <p class="footer-subtitle">Professional Operations Management for Stilt Heights</p>
+            <p class="footer-subtitle" id="admin-footer-subtitle">Professional Operations Management</p>
         </div>
     </footer>
+
+    <!-- Calendar Day Modal -->
+    <div id="calendar-day-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="calendar-day-title">Jobs on this day</h3>
+                <button class="close-btn" onclick="closeModal('calendar-day-modal')">×</button>
+            </div>
+            <div class="modal-body" id="calendar-day-jobs" style="max-height:60vh;overflow-y:auto"></div>
+        </div>
+    </div>
+
+    <!-- Job Expense Modal (Feature 13) -->
+    <div id="job-expense-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💸 Job Expenses — <span id="jexp-job-name"></span></h3>
+                <button class="close-btn" onclick="closeModal('job-expense-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="jexp-job-id">
+                <div id="jexp-list" style="margin-bottom:1rem;min-height:60px"></div>
+                <hr style="border:none;border-top:1px solid #e2e8f0;margin:1rem 0">
+                <h4 style="margin-bottom:0.75rem">Add Expense</h4>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <input type="text" id="jexp-desc" placeholder="e.g. Cleaning supplies">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount ($) *</label>
+                        <input type="number" id="jexp-amount" placeholder="0.00" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="jexp-category">
+                            <option>Supplies</option><option>Transport</option>
+                            <option>Equipment</option><option>Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeModal('job-expense-modal')">Close</button>
+                    <button class="btn-primary" onclick="addJobExpense()">Add Expense</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modals -->
     <div id="modal-overlay" class="modal-overlay" onclick="closeAllModals()"></div>
@@ -594,6 +748,20 @@
                         <input type="text" id="job-location" name="job-location" title="Job location" placeholder="Enter job address" required>
                     </div>
                     <div class="form-group">
+                        <label for="job-recurrence">Recurring Schedule</label>
+                        <select id="job-recurrence" name="job-recurrence" title="Set recurring schedule">
+                            <option value="">One-time (no repeat)</option>
+                            <option value="weekly">🔁 Weekly</option>
+                            <option value="biweekly">🔁 Every 2 Weeks</option>
+                            <option value="monthly">🔁 Monthly</option>
+                            <option value="quarterly">🔁 Quarterly</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="recurrence-end-group" style="display:none;">
+                        <label for="job-recurrence-end">Repeat Until (optional)</label>
+                        <input type="date" id="job-recurrence-end" name="job-recurrence-end" title="Recurrence end date">
+                    </div>
+                    <div class="form-group">
                         <label for="job-notes">Notes</label>
                         <textarea id="job-notes" name="job-notes" title="Additional job notes" rows="3" placeholder="Enter any additional notes"></textarea>
                     </div>
@@ -602,6 +770,15 @@
                         <button type="submit" class="btn-primary">Create Job</button>
                     </div>
                 </form>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var recEl = document.getElementById('job-recurrence');
+                    if (recEl) recEl.addEventListener('change', function() {
+                        var endGroup = document.getElementById('recurrence-end-group');
+                        if (endGroup) endGroup.style.display = this.value ? 'block' : 'none';
+                    });
+                });
+                <\/script>
             </div>
         </div>
     </div>
@@ -1256,6 +1433,10 @@
     
     <!-- Application -->
     <script src="/admin/js/app-refactored.js"></script>
+    <!-- Feature extensions (features 1-14) -->
+    <script src="/admin/js/features.js"></script>
+    <script src="/admin/js/features-2.js"></script>
+    <script src="/admin/js/features-3.js"></script>
     
     <!-- PWA Service Worker Registration -->
     <script>

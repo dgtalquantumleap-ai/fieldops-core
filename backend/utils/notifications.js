@@ -1,5 +1,21 @@
 const nodemailer = require('nodemailer');
+const branding = require('../config/branding');
 require('dotenv').config();
+
+// ── Notification logger ──────────────────────────────────────
+async function logNotification({ type, email, name, subject, status, error, jobId }) {
+    try {
+        const db = require('../config/database');
+        const recipient = name && email ? `${name} <${email}>` : (email || name || null);
+        await db.query(
+            `INSERT INTO notification_log
+             (type, recipient, subject, status, error, job_id)
+             VALUES ($1,$2,$3,$4,$5,$6)`,
+            [type || 'email', recipient, subject || null,
+             status || 'sent', error || null, jobId || null]
+        );
+    } catch (_) { /* non-critical — never block email on log failure */ }
+}
 
 // Simple HTML escaper — prevents HTML injection via user-supplied fields in emails
 const esc = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({
@@ -26,7 +42,7 @@ const sendCustomerConfirmation = async (bookingData) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'Booking Confirmation - Stilt Heights',
+        subject: `Booking Confirmation — ${branding.name}`,
         html: `
             <h2>Booking Confirmed!</h2>
             <p>Hi ${esc(name)},</p>
@@ -38,14 +54,16 @@ const sendCustomerConfirmation = async (bookingData) => {
                 <li><strong>Location:</strong> ${esc(address)}</li>
             </ul>
             <p>We'll see you soon!</p>
-            <p>Best regards,<br>Stilt Heights Team</p>
+            <p>Best regards,<br>${esc(branding.name)} Team</p>
         `
     };
     
     try {
         await transporter.sendMail(mailOptions);
         console.log(`✅ Customer confirmation sent to ${email}`);
+        await logNotification({ type: 'booking_confirmation', email, name, subject: 'Booking Confirmation' });
     } catch (error) {
+        await logNotification({ type: 'booking_confirmation', email, name, subject: 'Booking Confirmation', status: 'failed', error: error.message });
         console.error('Failed to send customer confirmation:', error);
         throw error;
     }
@@ -103,7 +121,7 @@ const sendInvoiceNotification = async (invoiceData) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email || process.env.ADMIN_EMAIL,
-        subject: `Invoice ${invoice_number} from Stilt Heights`,
+        subject: `Invoice ${invoice_number} from ${branding.name}`,
         html: `
             <h2>Invoice Generated</h2>
             <p>Hi ${esc(customer_name)},</p>
@@ -115,7 +133,7 @@ const sendInvoiceNotification = async (invoiceData) => {
                 <li><strong>Due Date:</strong> ${esc(new Date(due_date).toLocaleDateString())}</li>
             </ul>
             <p>Payment is due within 30 days. Thank you for your business!</p>
-            <p>Best regards,<br>Stilt Heights Team</p>
+            <p>Best regards,<br>${esc(branding.name)} Team</p>
         `
     };
     
@@ -146,7 +164,9 @@ const sendEmail = async ({ to, subject, body, html }) => {
     try {
         await transporter.sendMail(mailOptions);
         console.log(`✅ Email sent to ${to}`);
+        await logNotification({ type: 'email', email: to, subject, status: 'sent' });
     } catch (error) {
+        await logNotification({ type: 'email', email: to, subject, status: 'failed', error: error.message });
         console.error(`Failed to send email to ${to}:`, error.message);
         throw error;
     }

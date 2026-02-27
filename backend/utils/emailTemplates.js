@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const branding = require('../config/branding');
 
 const APP_URL = process.env.APP_URL || 'https://fieldops-production-6b97.up.railway.app';
 
@@ -26,10 +27,10 @@ const bookingConfirmationEmail = (data) => {
     address = 'TBD',
     job_id = '0000',
     support_link = `${APP_URL}/admin`,
-    company_name = 'Stilt Heights',
-    company_phone = '(555) 123-4567',
-    company_email = 'info@stiltheights.com',
-    company_website = 'www.stiltheights.com'
+    company_name = branding.name,
+    company_phone = branding.phone,
+    company_email = branding.email,
+    company_website = branding.website
   } = data;
 
   return `
@@ -184,11 +185,11 @@ const invoiceEmail = (data) => {
     payment_status_color = '#fff3cd',
     payment_status_accent = '#ffc107',
     payment_link = `${APP_URL}/admin`,
-    company_name = 'Stilt Heights',
-    company_phone = '(555) 123-4567',
-    company_email = 'info@stiltheights.com',
-    company_website = 'www.stiltheights.com',
-    company_address = '123 Main St, City, State 12345',
+    company_name = branding.name,
+    company_phone = branding.phone,
+    company_email = branding.email,
+    company_website = branding.website,
+    company_address = branding.city,
     payment_portal_link = `${APP_URL}/admin`,
     notes = ''
   } = data;

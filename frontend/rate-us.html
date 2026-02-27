@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Your Service — Stilt Heights</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f9ff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.1); padding: 2.5rem 2rem; max-width: 480px; width: 100%; text-align: center; }
+        .logo { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h1 { font-size: 1.5rem; color: #1e293b; margin-bottom: 0.5rem; }
+        .subtitle { color: #64748b; margin-bottom: 2rem; font-size: 0.95rem; }
+        .stars { display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .star { font-size: 2.5rem; cursor: pointer; transition: transform 0.15s; color: #cbd5e1; }
+        .star:hover, .star.active { color: #f59e0b; transform: scale(1.2); }
+        textarea { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 0.85rem; font-size: 0.95rem; resize: vertical; min-height: 90px; font-family: inherit; color: #374151; }
+        textarea:focus { outline: none; border-color: #3b82f6; }
+        button { width: 100%; background: #2563eb; color: #fff; border: none; padding: 0.9rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; transition: background 0.2s; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        .success { color: #065f46; background: #d1fae5; padding: 1rem 1.5rem; border-radius: 8px; margin-top: 1rem; font-weight: 500; }
+        .error-msg { color: #dc2626; background: #fee2e2; padding: 0.75rem; border-radius: 6px; margin-top: 1rem; font-size: 0.9rem; }
+        .job-info { background: #f8fafc; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b; }
+    </style>
+</head>
+<body>
+<div class="card" id="app">
+    <div class="logo">🏠</div>
+    <h1>How did we do?</h1>
+    <p class="subtitle" id="page-subtitle">Loading your service details...</p>
+    <div id="job-info" class="job-info" style="display:none;"></div>
+    <div id="main-form" style="display:none;">
+        <div class="stars" id="stars">
+            <span class="star" data-rating="1">★</span>
+            <span class="star" data-rating="2">★</span>
+            <span class="star" data-rating="3">★</span>
+            <span class="star" data-rating="4">★</span>
+            <span class="star" data-rating="5">★</span>
+        </div>
+        <textarea id="comment" placeholder="Tell us about your experience (optional)..."></textarea>
+        <button id="submit-btn" disabled onclick="submitReview()">Submit Review</button>
+    </div>
+    <div id="result"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token');
+let selectedRating = 0;
+
+async function init() {
+    if (!token) {
+        document.getElementById('page-subtitle').textContent = 'Invalid review link.';
+        return;
+    }
+    try {
+        const res = await fetch(`/api/reviews/rate/${token}`);
+        const data = await res.json();
+        if (!data.success) {
+            document.getElementById('page-subtitle').textContent = data.error || 'This review link has expired.';
+            return;
+        }
+        const d = data.data;
+        document.getElementById('page-subtitle').textContent = `Hi ${d.customer_name || 'there'}! Rate your ${d.service_name || 'service'}.`;
+        const info = document.getElementById('job-info');
+        info.innerHTML = `<strong>${d.service_name}</strong> on ${d.job_date ? new Date(d.job_date).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : ''}`;
+        info.style.display = 'block';
+        document.getElementById('main-form').style.display = 'block';
+        setupStars();
+    } catch (e) {
+        document.getElementById('page-subtitle').textContent = 'Could not load review link. Please try again.';
+    }
+}
+
+function setupStars() {
+    document.querySelectorAll('.star').forEach(star => {
+        star.addEventListener('click', () => {
+            selectedRating = parseInt(star.dataset.rating);
+            document.querySelectorAll('.star').forEach((s, i) => {
+                s.classList.toggle('active', i < selectedRating);
+            });
+            document.getElementById('submit-btn').disabled = false;
+        });
+        star.addEventListener('mouseover', () => {
+            const r = parseInt(star.dataset.rating);
+            document.querySelectorAll('.star').forEach((s, i) => s.style.color = i < r ? '#f59e0b' : '#cbd5e1');
+        });
+        star.addEventListener('mouseout', () => {
+            document.querySelectorAll('.star').forEach((s, i) => s.style.color = i < selectedRating ? '#f59e0b' : '#cbd5e1');
+        });
+    });
+}
+
+async function submitReview() {
+    if (!selectedRating) return;
+    const comment = document.getElementById('comment').value.trim();
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    try {
+        const res = await fetch(`/api/reviews/submit/${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rating: selectedRating, comment })
+        });
+        const data = await res.json();
+        document.getElementById('main-form').style.display = 'none';
+        document.getElementById('job-info').style.display = 'none';
+        document.getElementById('page-subtitle').textContent = '';
+        document.getElementById('result').innerHTML = data.success
+            ? `<div class="success">⭐ Thank you for your review! We really appreciate your feedback and use it to improve our service.</div>`
+            : `<div class="error-msg">${data.error || 'Something went wrong. Please try again.'}</div>`;
+    } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Submit Review';
+        document.getElementById('result').innerHTML = '<div class="error-msg">Network error. Please try again.</div>';
+    }
+}
+
+init();
+</script>
+</body>
+</html>

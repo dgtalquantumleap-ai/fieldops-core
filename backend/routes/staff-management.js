@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const { sendEmail } = require('../utils/notifications');
+const branding = require('../config/branding');
 
 // Middleware to check if user is admin (async)
 const requireAdmin = async (req, res, next) => {
@@ -77,8 +78,8 @@ router.post('/onboard', requireAdmin, async (req, res) => {
       const baseUrl = process.env.APP_URL || process.env.BASE_URL || 'http://localhost:3000';
       await sendEmail({
         to: newStaff.email,
-        subject: 'Welcome to Stilt Heights - Your Account Details',
-        html: `<h2>Welcome to Stilt Heights!</h2><p>Hi ${newStaff.name},</p><p>Your staff account has been created. Here are your login details:</p><p><strong>Email:</strong> ${newStaff.email}<br><strong>Temporary Password:</strong> ${password}</p><p>Please log in and change your password as soon as possible.</p><p><a href="${baseUrl}/staff/login.html">Login Here</a></p><p>Best regards,<br>Stilt Heights Team</p>`
+        subject: `Welcome to ${branding.name} — Your Account Details`,
+        html: `<h2>Welcome to ${branding.name}!</h2><p>Hi ${newStaff.name},</p><p>Your staff account has been created. Here are your login details:</p><p><strong>Email:</strong> ${newStaff.email}<br><strong>Temporary Password:</strong> ${password}</p><p>Please log in and change your password as soon as possible.</p><p><a href="${baseUrl}/staff/login.html">Login Here</a></p><p>Best regards,<br>${branding.name} Team</p>`
       });
     } catch (emailError) {
       console.error('Failed to send onboarding email:', emailError);
@@ -180,8 +181,8 @@ router.post('/:id/suspend', requireAdmin, async (req, res) => {
     try {
       await sendEmail({
         to: staff.email,
-        subject: 'Your Stilt Heights Account Has Been Suspended',
-        html: `<h2>Account Suspension Notice</h2><p>Hi ${staff.name},</p><p>Your Stilt Heights staff account has been suspended.</p><p><strong>Reason:</strong> ${reason || 'Suspended by admin'}</p><p>Please contact your administrator for more information.</p>`
+        subject: `Your ${branding.name} Account Has Been Suspended`,
+        html: `<h2>Account Suspension Notice</h2><p>Hi ${staff.name},</p><p>Your ${branding.name} staff account has been suspended.</p><p><strong>Reason:</strong> ${reason || 'Suspended by admin'}</p><p>Please contact your administrator for more information.</p>`
       });
     } catch (emailError) { console.error('Failed to send suspension email:', emailError); }
 
@@ -208,8 +209,8 @@ router.post('/:id/reactivate', requireAdmin, async (req, res) => {
       const baseUrl = process.env.APP_URL || process.env.BASE_URL || 'http://localhost:3000';
       await sendEmail({
         to: staff.email,
-        subject: 'Your Stilt Heights Account Has Been Reactivated',
-        html: `<h2>Account Reactivation</h2><p>Hi ${staff.name},</p><p>Your Stilt Heights staff account has been reactivated.</p><p><strong>Reason:</strong> ${reason || 'Reactivated by admin'}</p><p>You can now log back into your account.</p><p><a href="${baseUrl}/staff/login.html">Login Here</a></p>`
+        subject: `Your ${branding.name} Account Has Been Reactivated`,
+        html: `<h2>Account Reactivation</h2><p>Hi ${staff.name},</p><p>Your ${branding.name} staff account has been reactivated.</p><p><strong>Reason:</strong> ${reason || 'Reactivated by admin'}</p><p>You can now log back into your account.</p><p><a href="${baseUrl}/staff/login.html">Login Here</a></p>`
       });
     } catch (emailError) { console.error('Failed to send reactivation email:', emailError); }
 
@@ -247,8 +248,8 @@ router.post('/:id/terminate', requireAdmin, async (req, res) => {
     try {
       await sendEmail({
         to: staff.email,
-        subject: 'Your Stilt Heights Employment Has Been Terminated',
-        html: `<h2>Employment Termination Notice</h2><p>Hi ${staff.name},</p><p>Your employment with Stilt Heights has been terminated.</p><p><strong>Termination Date:</strong> ${termDate}</p><p><strong>Reason:</strong> ${termReason}</p><p>All system access has been revoked and any pending job assignments have been reassigned.</p>`
+        subject: `Your ${branding.name} Employment Has Been Terminated`,
+        html: `<h2>Employment Termination Notice</h2><p>Hi ${staff.name},</p><p>Your employment with ${branding.name} has been terminated.</p><p><strong>Termination Date:</strong> ${termDate}</p><p><strong>Reason:</strong> ${termReason}</p><p>All system access has been revoked and any pending job assignments have been reassigned.</p>`
       });
     } catch (emailError) { console.error('Failed to send termination email:', emailError); }
 

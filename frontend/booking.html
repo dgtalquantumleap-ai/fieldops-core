@@ -555,9 +555,9 @@
 
     <!-- ── SITE HEADER ── -->
     <div class="site-header">
-        <div class="site-logo"><span>🏠</span> Stilt Heights</div>
-        <div class="site-tagline">Professional Cleaning Services — Calgary, AB</div>
-        <a href="tel:825-994-6606" class="site-phone">📞 825-994-6606</a>
+        <div class="site-logo"><span>🏠</span> <span id="biz-name">Loading…</span></div>
+        <div class="site-tagline" id="biz-tagline"></div>
+        <a href="#" id="biz-phone-link" class="site-phone">📞 <span id="biz-phone"></span></a>
     </div>
 
     <!-- ── TRUST STRIP ── -->
@@ -698,9 +698,9 @@
 
     <!-- ── CONTACT FOOTER ── -->
     <div class="contact-footer">
-        <div class="cf-row">📞 <a href="tel:825-994-6606">825-994-6606</a> &nbsp;·&nbsp;
-             📧 <a href="mailto:info@stiltheights.com">info@stiltheights.com</a></div>
-        <div class="cf-row">🕐 Mon–Fri 9 AM – 6 PM &nbsp;·&nbsp; 📍 Calgary, AB &amp; surrounding area</div>
+        <div class="cf-row">📞 <a href="#" id="footer-phone-link" id="footer-phone"></a> &nbsp;·&nbsp;
+             📧 <a href="#" id="footer-email-link"><span id="footer-email"></span></a></div>
+        <div class="cf-row">📍 <span id="footer-city"></span></div>
     </div>
 
 </div><!-- /.wrap -->
@@ -710,6 +710,33 @@
     function escapeHtml(t) {
         return String(t || '').replace(/[&<>"']/g, m =>
             ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
+    }
+
+    // ── BRANDING ──────────────────────────────────────────────────────
+    let biz = { name: '', phone: '', email: '', city: '', tagline: '' };
+
+    async function loadBranding() {
+        try {
+            const data = await (await fetch('/api/branding')).json();
+            biz = data;
+            // Page title + meta
+            document.title = `Book a Service — ${biz.name}`;
+            // Header
+            document.getElementById('biz-name').textContent    = biz.name;
+            document.getElementById('biz-tagline').textContent = biz.tagline || biz.industry || '';
+            document.getElementById('biz-phone').textContent   = biz.phone;
+            const phoneLink = document.getElementById('biz-phone-link');
+            if (phoneLink) phoneLink.href = 'tel:' + biz.phone.replace(/\D/g, '');
+            // Footer
+            const fp = document.getElementById('footer-phone');
+            if (fp) { fp.textContent = biz.phone; fp.closest('a').href = 'tel:' + biz.phone.replace(/\D/g, ''); }
+            const fe = document.getElementById('footer-email');
+            if (fe) { fe.textContent = biz.email; fe.closest('a').href = 'mailto:' + biz.email; }
+            const fc = document.getElementById('footer-city');
+            if (fc) fc.textContent = biz.city;
+        } catch (e) {
+            // Branding load failed — silent, not critical
+        }
     }
 
     // ── TABS ─────────────────────────────────────────────────────────
@@ -734,7 +761,7 @@
             const grid = document.getElementById('serviceCards');
 
             if (!svcs || !svcs.length) {
-                grid.textContent = 'No services available. Please call 825-994-6606.';
+                grid.textContent = `No services available. Please call ${biz.phone || 'us'}.`;
                 return;
             }
 
@@ -836,10 +863,10 @@
         const endDt = new Date(dtRaw.getTime() + 2 * 3600000);
         const fICS  = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
         const ics   = [
-            'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Stilt Heights//EN','BEGIN:VEVENT',
-            'UID:' + ref + '@stiltheights.com',
+            'BEGIN:VCALENDAR','VERSION:2.0',`PRODID:-//${escapeHtml(biz.name)}//EN`,'BEGIN:VEVENT',
+            'UID:' + ref + '@' + (biz.website || 'fieldops').replace(/https?:\/\//,''),
             'DTSTART:' + fICS(dtRaw), 'DTEND:' + fICS(endDt),
-            'SUMMARY:' + escapeHtml(booking.service) + ' — Stilt Heights',
+            'SUMMARY:' + escapeHtml(booking.service) + ' — ' + escapeHtml(biz.name),
             'DESCRIPTION:Booking ref: ' + ref + '. Cleaner: ' + escapeHtml(staff) + '.',
             'LOCATION:' + escapeHtml(data.address),
             'END:VEVENT','END:VCALENDAR'
@@ -877,14 +904,14 @@
                         <span class="cv" style="max-width:60%">${escapeHtml(data.address)}</span>
                     </div>
                 </div>
-                <a href="${escapeHtml(icsUrl)}" download="stilt-heights-${ref}.ics" class="btn-cal">
+                <a href="${escapeHtml(icsUrl)}" download="${biz.name.toLowerCase().replace(/\s+/g,'-')}-${ref}.ics" class="btn-cal">
                     📅 Add to Calendar
                 </a>
                 <p class="confirm-notes">
                     We'll call to confirm at <strong>${escapeHtml(data.phone)}</strong>
                     ${data.email ? '<br>Confirmation email sent to <strong>' + escapeHtml(data.email) + '</strong>' : ''}
                     <br><br>
-                    Questions? <a href="tel:825-994-6606" style="color:var(--blue)">825-994-6606</a>
+                    Questions? <a href="tel:${escapeHtml(biz.phone)}" style="color:var(--blue)">${escapeHtml(biz.phone)}</a>
                     &nbsp;·&nbsp;
                     <a href="#" onclick="document.getElementById('mainCard').innerHTML='';location.reload()" style="color:var(--blue)">Track this booking (${ref})</a>
                 </p>
@@ -955,7 +982,7 @@
                         </div>
                         <p class="confirm-notes">
                             We'll be in touch soon to find a time that works.<br><br>
-                            Questions? <a href="tel:825-994-6606" style="color:var(--blue)">825-994-6606</a>
+                            Questions? <a href="tel:${escapeHtml(biz.phone)}" style="color:var(--blue)">${escapeHtml(biz.phone)}</a>
                         </p>
                         <button class="btn-another" onclick="location.reload()">Try a Different Date</button>
                     </div>`;
@@ -963,7 +990,7 @@
                 throw new Error(result.message || result.error || 'Booking failed — please try again.');
             }
         } catch (err) {
-            showError('error-msg', err.message || 'Something went wrong. Please call 825-994-6606.');
+            showError('error-msg', err.message || `Something went wrong. Please call ${biz.phone || 'us'}.`);
             btn.disabled = false;
             txt.textContent = 'Book Now — Free Quote';
         }
@@ -1034,7 +1061,7 @@
             }
             renderStatusResult(result.data);
         } catch (err) {
-            showError('trackErrorMsg', 'Could not connect. Please try again or call 825-994-6606.');
+            showError('trackErrorMsg', 'Could not connect. Please try again or call ' + (biz.phone || 'us') + '.');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Check';
@@ -1105,6 +1132,7 @@
     })();
 
     // ── INIT ─────────────────────────────────────────────────────────
+    loadBranding();
     loadServices();
 </script>
 </body>
