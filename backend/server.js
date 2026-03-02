@@ -256,7 +256,7 @@ app.use('/api/onboarding',       requireAdmin, require('./routes/onboarding'));
 // ============================================
 // ROOT REDIRECT
 // ============================================
-app.get('/', (req, res) => res.redirect('/website'));
+app.get('/', (req, res) => res.redirect('/stiltheights'));
 
 // ============================================
 // CATCH-ALL 404 HANDLER
