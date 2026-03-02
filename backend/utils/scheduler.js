@@ -43,7 +43,7 @@ function initSchedulers() {
                 WHERE j.status = 'Completed'
                   AND j.updated_at < NOW() - INTERVAL '24 hours'
                   AND j.updated_at > NOW() - INTERVAL '25 hours'
-                  AND (j.follow_up_sent IS NULL OR j.follow_up_sent = false)
+                  AND (j.follow_up_sent IS NULL OR j.follow_up_sent = 0)
             `);
             for (const job of jobs) {
                 try {
@@ -62,7 +62,7 @@ function initSchedulers() {
                                    <p>Your feedback helps us improve and grow. Thank you!</p>`
                         });
                     }
-                    await db.query('UPDATE jobs SET follow_up_sent = true, rating_request_sent = 1 WHERE id = $1', [job.id]);
+                    await db.query('UPDATE jobs SET follow_up_sent = 1, rating_request_sent = 1 WHERE id = $1', [job.id]);
                 } catch (e) { console.error(`❌ Follow-up failed for job ${job.id}:`, e.message); }
             }
         } catch (e) { console.error('❌ Follow-up scheduler error:', e.message); }
@@ -80,7 +80,7 @@ function initSchedulers() {
                 FROM invoices i LEFT JOIN customers c ON i.customer_id = c.id
                 WHERE (i.issued_at + INTERVAL '30 days')::DATE = (NOW() + INTERVAL '3 days')::DATE
                   AND i.status = 'unpaid'
-                  AND (i.reminder_sent_3day IS NULL OR i.reminder_sent_3day = false)
+                  AND (i.reminder_sent_3day IS NULL OR i.reminder_sent_3day = 0)
                   AND i.deleted_at IS NULL
             `);
             for (const inv of invoices) {
@@ -94,7 +94,7 @@ function initSchedulers() {
                                    <p>Please contact us to arrange payment. Thank you!</p>`
                         });
                     }
-                    await db.query('UPDATE invoices SET reminder_sent_3day = true WHERE id = $1', [inv.id]);
+                    await db.query('UPDATE invoices SET reminder_sent_3day = 1 WHERE id = $1', [inv.id]);
                 } catch (e) { console.error(`❌ Payment reminder failed for invoice ${inv.id}:`, e.message); }
             }
         } catch (e) { console.error('❌ Payment reminder scheduler error:', e.message); }
@@ -148,7 +148,7 @@ function initSchedulers() {
                 LEFT JOIN services s ON j.service_id = s.id
                 WHERE j.job_date::DATE = (NOW() + INTERVAL '1 day')::DATE
                   AND j.status IN ('Scheduled','In Progress')
-                  AND (j.reminder_sent IS NULL OR j.reminder_sent = false)
+                  AND (j.reminder_sent IS NULL OR j.reminder_sent = 0)
                   AND j.deleted_at IS NULL
             `);
             for (const job of jobs) {
@@ -174,7 +174,7 @@ function initSchedulers() {
                                    <li><strong>Address:</strong> ${job.location}</li></ul>`
                         });
                     }
-                    await db.query('UPDATE jobs SET reminder_sent = true WHERE id = $1', [job.id]);
+                    await db.query('UPDATE jobs SET reminder_sent = 1 WHERE id = $1', [job.id]);
                 } catch (e) { console.error(`❌ 24h reminder failed for job ${job.id}:`, e.message); }
             }
         } catch (e) { console.error('❌ 24h reminder scheduler error:', e.message); }
@@ -199,7 +199,7 @@ function initSchedulers() {
                   AND (j.job_time IS NOT NULL)
                   AND TO_TIMESTAMP(j.job_date || ' ' || j.job_time, 'YYYY-MM-DD HH24:MI')
                       BETWEEN NOW() + INTERVAL '1h55m' AND NOW() + INTERVAL '2h5m'
-                  AND (j.reminder_2h_sent IS NULL OR j.reminder_2h_sent = false)
+                  AND (j.reminder_2h_sent IS NULL OR j.reminder_2h_sent = 0)
             `);
             for (const job of jobs) {
                 try {
@@ -210,7 +210,7 @@ function initSchedulers() {
                                <p>Your <strong>${job.service_name}</strong> at ${job.location} starts in about <strong>2 hours</strong> at <strong>${job.job_time}</strong>.</p>
                                <p>Our team is on the way! — ${branding.name}</p>`
                     });
-                    await db.query('UPDATE jobs SET reminder_2h_sent = true WHERE id = $1', [job.id]);
+                    await db.query('UPDATE jobs SET reminder_2h_sent = 1 WHERE id = $1', [job.id]);
                 } catch (e) { console.error(`❌ 2h reminder failed for job ${job.id}:`, e.message); }
             }
         } catch (e) { console.error('❌ 2h reminder scheduler error:', e.message); }

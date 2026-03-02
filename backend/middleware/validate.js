@@ -44,11 +44,12 @@ const validateBooking = [
     .normalizeEmail(),
     
   body('address')
-    .optional()
     .trim()
+    .notEmpty()
+    .withMessage('Address is required')
     .isLength({ min: 5, max: 200 })
     .withMessage('Address must be between 5 and 200 characters'),
-    
+
   body('service')
     .trim()
     .notEmpty()
@@ -79,7 +80,8 @@ const validateBooking = [
     }),
     
   body('time')
-    .optional()
+    .notEmpty()
+    .withMessage('Time is required')
     .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .withMessage('Time must be in HH:MM format (24-hour)'),
     

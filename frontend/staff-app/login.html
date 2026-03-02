@@ -26,8 +26,8 @@
 <body>
   <div class="card">
     <div class="logo">
-      <h1>🏠 Stilt Heights</h1>
-      <p>Staff Portal</p>
+      <h1 id="biz-name">🏠 Staff Portal</h1>
+      <p id="biz-tagline">Sign in to continue</p>
     </div>
     <div class="form-group">
       <label>Email</label>
@@ -42,6 +42,13 @@
   </div>
   <script>
     if (localStorage.getItem('staffToken')) window.location.href = '/staff/';
+    fetch('/api/branding').then(r=>r.json()).then(b=>{
+      if(b.name) {
+        document.getElementById('biz-name').textContent = '🏠 ' + b.name;
+        document.getElementById('biz-tagline').textContent = b.tagline || 'Staff Portal';
+        document.title = b.name + ' — Staff Login';
+      }
+    }).catch(()=>{});
 
     async function doLogin() {
       const email = document.getElementById('email').value.trim();
