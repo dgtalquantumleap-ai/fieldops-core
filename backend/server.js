@@ -166,12 +166,16 @@ try {
 // FAVICON HANDLER - Prevent 404 errors
 // ============================================
 app.get('/favicon.ico', (req, res) => {
-    res.status(200).set('Content-Type', 'image/svg+xml').send(`
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-            <rect width="32" height="32" fill="#3b82f6"/>
-            <text x="16" y="22" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="white">🏠</text>
-        </svg>
-    `);
+    res.status(200).set('Content-Type', 'image/svg+xml').send(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 90"><rect x="4" y="60" width="17" height="28" rx="1.5" fill="#1B2A72"/><rect x="79" y="60" width="17" height="28" rx="1.5" fill="#1B2A72"/><polygon points="12.5,60 50,8 87.5,60 76,60 50,24 24,60" fill="#1B2A72"/><polygon points="37,2 63,2 50,20" fill="#CC2936"/><polygon points="50,14 54,20 46,20" fill="#1B2A72"/></svg>`
+    );
+});
+
+// ============================================
+// BLOCK DEVELOPER-ONLY PAGES FROM PUBLIC ACCESS
+// ============================================
+['/test-api.html', '/booking.html.backup'].forEach(p => {
+    app.get(p, (_req, res) => res.status(404).json({ success: false, error: 'Not Found' }));
 });
 
 // ============================================
@@ -307,10 +311,10 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
     
     console.log('\n📍 Access Points:');
-    console.log(`   🏠 Marketing Site: ${APP_URL}/ (custom domain: stiltheightscleans.ca)`);
-    console.log(`   📊 Admin Dashboard: ${APP_URL}/admin`);
-    console.log(`   📱 Staff App: ${APP_URL}/staff`);
-    console.log(`   📝 Booking Form: ${APP_URL}/booking.html`);
+    console.log(`   🏠 Website: ${APP_URL}/website`);
+    console.log(`   📊 Admin: ${APP_URL}/admin`);
+    console.log(`   📱 Staff: ${APP_URL}/staff`);
+    console.log(`   📝 Booking: ${APP_URL}/booking.html`);
     
     console.log('\n🔧 Features:');
     console.log('   ⚡ Real-time updates (Socket.io)');

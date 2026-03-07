@@ -55,7 +55,7 @@ async function init() {
         return;
     }
     try {
-        const res = await fetch(`/api/reviews/rate/${token}`);
+        const res = await fetch(`/api/public/reviews/rate/${token}`);
         const data = await res.json();
         if (!data.success) {
             document.getElementById('page-subtitle').textContent = data.error || 'This review link has expired.';
@@ -99,7 +99,7 @@ async function submitReview() {
     btn.disabled = true;
     btn.textContent = 'Submitting...';
     try {
-        const res = await fetch(`/api/reviews/submit/${token}`, {
+        const res = await fetch(`/api/public/reviews/submit/${token}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ rating: selectedRating, comment })

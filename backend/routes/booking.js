@@ -165,6 +165,37 @@ router.get('/services', async (_req, res) => {
     }
 });
 
+router.post('/quote', async (req, res) => {
+    try {
+        const { name, phone, service, message } = req.body;
+
+        if (!name?.trim())    return res.status(400).json({ success: false, error: 'Name is required' });
+        if (!phone?.trim())   return res.status(400).json({ success: false, error: 'Phone is required' });
+        if (!service?.trim()) return res.status(400).json({ success: false, error: 'Service is required' });
+
+        await notifications.sendEmail({
+            to: process.env.ADMIN_EMAIL,
+            subject: `\uD83D\uDCCB New Quote Request: ${service} \u2014 ${name}`,
+            html: `
+                <h2 style="color:#1B2A72">New Quote Request \u2014 Stilt Heights</h2>
+                <table style="border-collapse:collapse;width:100%;font-family:sans-serif">
+                    <tr><td style="padding:8px;font-weight:600;color:#555;width:140px">Name</td><td style="padding:8px">${name.replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#039;'}[c]))}</td></tr>
+                    <tr style="background:#f9f9f9"><td style="padding:8px;font-weight:600;color:#555">Phone</td><td style="padding:8px"><a href="tel:${phone.replace(/\D/g,'')}">${phone}</a></td></tr>
+                    <tr><td style="padding:8px;font-weight:600;color:#555">Service</td><td style="padding:8px">${service}</td></tr>
+                    <tr style="background:#f9f9f9"><td style="padding:8px;font-weight:600;color:#555">Message</td><td style="padding:8px">${message ? message.replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#039;'}[c])) : '<em>None</em>'}</td></tr>
+                </table>
+                <p style="margin-top:20px;color:#888;font-size:12px">Received via Stilt Heights website quote form.</p>
+            `
+        });
+
+        console.log(`\uD83D\uDCCB Quote request from ${name} (${phone}) for ${service}`);
+        res.json({ success: true, message: 'Quote request received. We will contact you shortly.' });
+    } catch (error) {
+        console.error('\u274C Quote request error:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to send quote request' });
+    }
+});
+
 router.get('/status/:ref', async (req, res) => {
     try {
         const ref = req.params.ref.trim().toUpperCase();

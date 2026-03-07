@@ -226,12 +226,13 @@ function renderStaticServices() {
     const grid = document.getElementById('services-grid');
     if (!grid) return;
     grid.innerHTML = [
-        { icon: '🏠', name: 'Regular Housekeeping',  desc: 'Consistent weekly or bi-weekly cleaning tailored to your routine.',           price: '$200/mo' },
-        { icon: '🧼', name: 'One-time Deep Clean',    desc: 'A thorough top-to-bottom deep clean for any occasion.',                        price: '$80/hr'  },
-        { icon: '🏢', name: 'Commercial Cleaning',    desc: 'Professional cleaning for offices and commercial spaces.',                     price: '$120/hr' },
-        { icon: '📦', name: 'Move In / Out Cleaning', desc: 'Leave your old place spotless or start fresh in your new home.',               price: 'Custom'  },
-        { icon: '🪟', name: 'Window Cleaning',        desc: 'Crystal-clear interior and exterior window cleaning.',                         price: 'Custom'  },
-        { icon: '🟦', name: 'Carpet Cleaning',        desc: 'Deep carpet extraction to remove stains, allergens, and odours.',              price: 'Custom'  },
+        { icon: '🏠', name: 'Routine Clean',                          desc: 'Complete routine home cleaning service.',                           price: 'From $300' },
+        { icon: '🧼', name: 'Deep Cleaning (2 Bedroom)',              desc: 'Thorough deep cleaning for 2 bedroom homes.',                       price: 'From $350' },
+        { icon: '🧼', name: 'Deep Cleaning (3 Bedroom)',              desc: 'Thorough deep cleaning for 3 bedroom homes.',                       price: 'From $400' },
+        { icon: '📦', name: 'Move In/Move Out \u2013 House',          desc: 'Full house move-in/move-out cleaning.',                            price: 'From $550' },
+        { icon: '📦', name: 'Move In/Move Out \u2013 Condo (2-3 Bed)', desc: 'Condo move-out cleaning (2-3 bedroom).',                          price: 'From $470' },
+        { icon: '🟦', name: 'Carpet Cleaning',                        desc: 'Deep carpet extraction to remove stains, allergens, and odours.',   price: 'From $150' },
+        { icon: '🪟', name: 'Window Cleaning',                        desc: 'Interior and exterior window cleaning.',                            price: 'From $100' },
     ].map(s => `
         <div class="service-card">
             <div class="service-icon">${s.icon}</div>
@@ -312,12 +313,12 @@ function loadPricingPlans() {
     if (!grid) return;
 
     const plans = [
-        { name: 'Regular Housekeeping', price: '200', per: '/mo', featured: false, service: 'Regular Housekeeping',
-          feats: ['Weekly or bi-weekly visits', 'Kitchen & bathrooms', 'All living areas', 'Dusting & vacuuming', 'Trash removal', 'Dedicated cleaner'] },
-        { name: 'One-time Deep Clean', price: '80', per: '/hr', featured: true, badge: 'Most Popular', service: 'One-time Cleaning',
-          feats: ['Full top-to-bottom clean', 'All rooms included', 'Inside cabinets & appliances', 'Windows & mirrors', 'Baseboards & vents', '100% satisfaction guarantee'] },
-        { name: 'Commercial Cleaning', price: '120', per: '/hr', featured: false, service: 'Commercial Cleaning',
-          feats: ['Office & retail spaces', 'Restrooms & kitchens', 'Common areas', 'Trash removal', 'Flexible scheduling', 'Fully insured team'] },
+        { name: 'Routine Clean', price: '300', per: '', featured: false, service: 'Routine Clean',
+          feats: ['Complete home clean', 'Kitchen & bathrooms', 'All living areas', 'Dusting & vacuuming', 'Trash removal', 'Dedicated cleaner'] },
+        { name: 'Deep Cleaning (2 Bed)', price: '350', per: '', featured: true, badge: 'Most Popular', service: 'Deep Cleaning (2 Bedroom)',
+          feats: ['Full top-to-bottom deep clean', 'All rooms included', 'Inside appliances', 'Windows & mirrors', 'Baseboards & vents', '100% satisfaction guarantee'] },
+        { name: 'Move In/Move Out', price: '550', per: '+', featured: false, service: 'Move In/Move Out \u2013 House',
+          feats: ['Full house move-in/out clean', 'All rooms & closets', 'Inside all appliances', 'Windows & blinds', 'Baseboards & vents', 'Fully insured team'] },
     ];
 
     grid.innerHTML = plans.map(p => `
@@ -355,8 +356,9 @@ async function loadServicesIntoQuoteForm() {
         sel.innerHTML = '<option value="">Select a service...</option>' +
             list.map(s => `<option value="${escHtml(s.name)}">${escHtml(s.name)}</option>`).join('');
     } catch {
-        const defaults = ['Regular Housekeeping', 'One-time Deep Clean', 'Commercial Cleaning',
-            'Move In / Out Cleaning', 'Carpet Cleaning', 'Window Cleaning'];
+        const defaults = ['Routine Clean', 'Deep Cleaning (2 Bedroom)', 'Deep Cleaning (3 Bedroom)',
+            'Move In/Move Out \u2013 House', 'Move In/Move Out \u2013 Condo (2-3 Bed)',
+            'Carpet Cleaning', 'Window Cleaning'];
         sel.innerHTML = '<option value="">Select a service...</option>' +
             defaults.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
     }
@@ -365,9 +367,34 @@ async function loadServicesIntoQuoteForm() {
 function setupQuoteForm() {
     const form = document.getElementById('quick-quote-form');
     if (!form) return;
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const service = document.getElementById('quick-service').value;
+        const name    = document.getElementById('quick-name')?.value?.trim()    || '';
+        const phone   = document.getElementById('quick-phone')?.value?.trim()   || '';
+        const service = document.getElementById('quick-service')?.value         || '';
+        const message = document.getElementById('quick-message')?.value?.trim() || '';
+        const btn     = form.querySelector('button[type="submit"]');
+
+        if (!name || !phone || !service) {
+            alert('Please fill in your name, phone, and service selection.');
+            return;
+        }
+
+        if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+        try {
+            const res = await fetch(`${API_URL}/booking/quote`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, phone, service, message }),
+            });
+            if (res.ok) {
+                form.innerHTML = '<div style="text-align:center;padding:24px 0;"><p style="font-size:1.2rem;color:#10b981;font-weight:600;">✅ Quote request sent!</p><p style="color:#6b7280;margin-top:8px;">We\'ll be in touch within 24 hours.</p></div>';
+                return;
+            }
+        } catch (_) { /* fall through to redirect */ }
+
+        // Fallback — redirect to booking page if API fails
         window.location.href = `/booking.html${service ? '?service=' + encodeURIComponent(service) : ''}`;
     });
 }
@@ -390,10 +417,13 @@ function formatDate(str) {
 }
 function serviceIcon(name) {
     const icons = {
+        'Routine Clean': '🏠',
+        'Deep Cleaning (2 Bedroom)': '🧼', 'Deep Cleaning (3 Bedroom)': '🧼',
+        'Move In/Move Out \u2013 House': '📦', 'Move In/Move Out \u2013 Condo (2-3 Bed)': '📦',
+        'Carpet Cleaning': '🟦', 'Window Cleaning': '🪟',
+        // Legacy names kept for backwards compat
         'Regular Housekeeping': '🏠', 'One-time Cleaning': '🧼', 'One-time Deep Clean': '🧼',
-        'Commercial Cleaning': '🏢', 'Event Cleanup': '🎉', 'Carpet Cleaning': '🟦',
-        'Window Cleaning': '🪟', 'Move In & Out Cleaning': '📦', 'Move In / Out Cleaning': '📦',
-        'Laundry Services': '👕', 'Trash Removal': '🗑️', 'Post-Construction': '🏗️',
+        'Commercial Cleaning': '🏢', 'Move In & Out Cleaning': '📦', 'Move In / Out Cleaning': '📦',
     };
     return icons[name] || '🧹';
 }

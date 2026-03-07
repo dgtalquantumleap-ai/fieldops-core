@@ -26,7 +26,7 @@ const bookingConfirmationEmail = (data) => {
     job_time = 'TBD',
     address = 'TBD',
     job_id = '0000',
-    support_link = `${APP_URL}/admin`,
+    support_link = `${APP_URL}/booking.html`,
     company_name = branding.name,
     company_phone = branding.phone,
     company_email = branding.email,
@@ -184,13 +184,13 @@ const invoiceEmail = (data) => {
     payment_status = 'Unpaid',
     payment_status_color = '#fff3cd',
     payment_status_accent = '#ffc107',
-    payment_link = `${APP_URL}/admin`,
+    payment_link = `${APP_URL}/booking.html`,
     company_name = branding.name,
     company_phone = branding.phone,
     company_email = branding.email,
     company_website = branding.website,
     company_address = branding.city,
-    payment_portal_link = `${APP_URL}/admin`,
+    payment_portal_link = `${APP_URL}/booking.html`,
     notes = ''
   } = data;
 
