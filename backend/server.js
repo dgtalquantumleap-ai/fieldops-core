@@ -182,6 +182,8 @@ app.use('/admin', express.static(path.join(__dirname, '../frontend/admin')));
 app.use('/staff', express.static(path.join(__dirname, '../frontend/staff-app')));
 app.use('/stiltheights', express.static(path.join(__dirname, '../frontend/stiltheights'))); // legacy alias kept
 app.use('/website', express.static(path.join(__dirname, '../frontend/website')));
+// Serve stiltheights assets (css/, js/) at root so custom domain works cleanly
+app.use(express.static(path.join(__dirname, '../frontend/stiltheights')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ============================================
@@ -252,7 +254,10 @@ app.use('/api/onboarding',       requireAdmin, require('./routes/onboarding'));
 // ============================================
 // ROOT REDIRECT
 // ============================================
-app.get('/', (req, res) => res.redirect('/website'));
+// Serves Stilt Heights marketing page at root — custom domain points here
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/stiltheights/index.html'));
+});
 
 // ============================================
 // CATCH-ALL 404 HANDLER
@@ -302,10 +307,10 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
     
     console.log('\n📍 Access Points:');
-    console.log(`   🏠 Website: ${APP_URL}/website`);
-    console.log(`   📊 Admin: ${APP_URL}/admin`);
-    console.log(`   📱 Staff: ${APP_URL}/staff`);
-    console.log(`   📝 Booking: ${APP_URL}/booking.html`);
+    console.log(`   🏠 Marketing Site: ${APP_URL}/ (custom domain: stiltheightscleans.ca)`);
+    console.log(`   📊 Admin Dashboard: ${APP_URL}/admin`);
+    console.log(`   📱 Staff App: ${APP_URL}/staff`);
+    console.log(`   📝 Booking Form: ${APP_URL}/booking.html`);
     
     console.log('\n🔧 Features:');
     console.log('   ⚡ Real-time updates (Socket.io)');
